@@ -3,25 +3,39 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "cross-env NODE_EXTRA_CA_CERTS=./.certs/zscaler-root-ca.pem next dev",
     "build": "next build",
     "start": "next start",
     "lint": "biome check",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "cross-env NODE_EXTRA_CA_CERTS=./.certs/zscaler-root-ca.pem tsx src/lib/db/migrate.ts",
+    "db:studio": "cross-env NODE_EXTRA_CA_CERTS=./.certs/zscaler-root-ca.pem drizzle-kit studio",
+    "db:check": "cross-env NODE_EXTRA_CA_CERTS=./.certs/zscaler-root-ca.pem tsx src/lib/db/check-connection.ts",
+    "test": "tsx --test src/lib/**/*.test.ts"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "bcrypt": "^6.0.0",
+    "drizzle-orm": "^0.45.2",
     "next": "16.3.5",
+    "next-auth": "5.0.0-beta.32",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "resend": "^6.28.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.2",
     "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
+    "cross-env": "^10.1.0",
+    "drizzle-kit": "^0.31.10",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   },
   "packageManager": "pnpm@12.4.2"

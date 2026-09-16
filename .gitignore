@@ -42,3 +42,12 @@ next-env.d.ts
 
 # vs code
 settings.json
+
+# IA
+**openspec**
+.github
+.claude
+
+# scripts
+
+scripts
