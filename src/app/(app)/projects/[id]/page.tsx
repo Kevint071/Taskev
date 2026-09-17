@@ -266,7 +266,39 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const openCount = tasks.filter((t) => t.status !== "completada").length;
+  const incompleteTasks = tasks.filter((t) => t.status !== "completada");
+  const completedTasks = tasks.filter((t) => t.status === "completada");
+  const openCount = incompleteTasks.length;
+
+  function renderTaskRow(task: LocalTask) {
+    return (
+      <TaskRow
+        key={task.key}
+        task={task}
+        queue={queue}
+        expanded={expandedKey === task.key}
+        dragging={draggedKey === task.key}
+        dropTarget={dropTargetKey === task.key && draggedKey !== task.key}
+        onToggleExpand={() =>
+          setExpandedKey(expandedKey === task.key ? null : task.key)
+        }
+        onDragStart={() => setDraggedKey(task.key)}
+        onDragEnd={() => {
+          setDraggedKey(null);
+          setDropTargetKey(null);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (dropTargetKey !== task.key) setDropTargetKey(task.key);
+        }}
+        onDrop={() => handleDrop(task.key)}
+        onUpdate={(updates) => updateTask(task.key, updates)}
+        onLocalChange={(updates) => applyLocal(task.key, updates)}
+        onRemoteSave={(updates) => saveRemote(task.key, updates)}
+        onDelete={() => deleteTask(task.key)}
+      />
+    );
+  }
 
   return (
     <>
@@ -352,39 +384,32 @@ export default function ProjectDetailPage() {
           description="Añade la primera arriba. Luego puedes arrastrarlas para ordenarlas a tu manera."
         />
       ) : (
-        <Panel>
-          <ul className="divide-y divide-line">
-            {tasks.map((task) => (
-              <TaskRow
-                key={task.key}
-                task={task}
-                queue={queue}
-                expanded={expandedKey === task.key}
-                dragging={draggedKey === task.key}
-                dropTarget={
-                  dropTargetKey === task.key && draggedKey !== task.key
-                }
-                onToggleExpand={() =>
-                  setExpandedKey(expandedKey === task.key ? null : task.key)
-                }
-                onDragStart={() => setDraggedKey(task.key)}
-                onDragEnd={() => {
-                  setDraggedKey(null);
-                  setDropTargetKey(null);
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  if (dropTargetKey !== task.key) setDropTargetKey(task.key);
-                }}
-                onDrop={() => handleDrop(task.key)}
-                onUpdate={(updates) => updateTask(task.key, updates)}
-                onLocalChange={(updates) => applyLocal(task.key, updates)}
-                onRemoteSave={(updates) => saveRemote(task.key, updates)}
-                onDelete={() => deleteTask(task.key)}
-              />
-            ))}
-          </ul>
-        </Panel>
+        <div className="flex flex-col gap-5">
+          {incompleteTasks.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h2 className="text-meta font-medium text-muted">
+                Tareas incompletas
+              </h2>
+              <Panel>
+                <ul className="divide-y divide-line">
+                  {incompleteTasks.map((task) => renderTaskRow(task))}
+                </ul>
+              </Panel>
+            </div>
+          )}
+          {completedTasks.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h2 className="text-meta font-medium text-muted">
+                Tareas completadas
+              </h2>
+              <Panel>
+                <ul className="divide-y divide-line">
+                  {completedTasks.map((task) => renderTaskRow(task))}
+                </ul>
+              </Panel>
+            </div>
+          )}
+        </div>
       )}
 
       <ConfirmDialog
@@ -503,7 +528,7 @@ function TaskRow({
           onClick={onToggleExpand}
           aria-expanded={expanded}
           className={`flex min-w-0 flex-1 items-center gap-2 rounded-[4px] py-1 text-left font-medium ${
-            done ? "text-muted line-through decoration-line-strong" : ""
+            done ? "text-muted" : ""
           }`}
         >
           <span className="truncate">{task.title}</span>
@@ -538,7 +563,7 @@ function TaskRow({
               onChange={(e) =>
                 onUpdate({ status: e.target.value as Task["status"] })
               }
-              className="h-8 w-[136px] pl-6 text-meta"
+              className="h-8 w-[156px] pr-7 pl-6 text-meta"
             >
               {Object.entries(STATUS_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -546,6 +571,18 @@ function TaskRow({
                 </option>
               ))}
             </Select>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              className="pointer-events-none absolute right-2.5 size-3 text-muted"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5.5 8l4.5 4.5L14.5 8" />
+            </svg>
           </label>
           <button
             type="button"

@@ -24,7 +24,7 @@ export function Textarea({
 export function Select({ className = "", ...props }: ComponentProps<"select">) {
   return (
     <select
-      className={`${controlClass} h-9 cursor-pointer pr-7 pl-2.5 ${className}`}
+      className={`${controlClass} h-9 cursor-pointer appearance-none pr-7 pl-2.5 ${className}`}
       {...props}
     />
   );

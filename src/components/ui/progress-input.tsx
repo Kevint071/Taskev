@@ -131,7 +131,7 @@ export function ProgressInput({
                 setDraft(String(saved));
               }
             }}
-            className="tabular h-9 w-12 bg-transparent text-right text-body font-medium focus-visible:shadow-none focus-visible:outline-none"
+            className="tabular h-9 w-9 bg-transparent text-right text-body font-medium focus-visible:shadow-none focus-visible:outline-none"
           />
           <span aria-hidden className="pl-0.5 text-muted">
             %
