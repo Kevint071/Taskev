@@ -1,7 +1,6 @@
 import { asc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { requireUserId } from "@/lib/auth-guard";
-import { getOwnedTask } from "@/lib/data/access";
+import { requireOwnedTask } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
 import { positionBetween, renormalizedPositions } from "@/lib/ordering";
@@ -13,18 +12,11 @@ type Params = { params: Promise<{ id: string }> };
 const MIN_GAP = 1e-6;
 
 export async function POST(request: Request, { params }: Params) {
-  const userId = await requireUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
   const { id: taskId } = await params;
-  const owned = await getOwnedTask(userId, taskId);
-  if (!owned) {
-    return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
-  }
+  const guard = await requireOwnedTask(taskId);
+  if ("response" in guard) return guard.response;
 
-  const projectId = owned.task.projectId;
+  const projectId = guard.task.projectId;
   const body = await request.json().catch(() => null);
   const beforeTaskId =
     typeof body?.beforeTaskId === "string" ? body.beforeTaskId : null;

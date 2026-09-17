@@ -1,7 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { requireUserId } from "@/lib/auth-guard";
-import { getOwnedProject } from "@/lib/data/access";
+import { requireOwnedProject } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
 import { positionAtEnd } from "@/lib/ordering";
@@ -9,19 +8,9 @@ import { positionAtEnd } from "@/lib/ordering";
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: Params) {
-  const userId = await requireUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
   const { id: projectId } = await params;
-  const project = await getOwnedProject(userId, projectId);
-  if (!project) {
-    return NextResponse.json(
-      { error: "Proyecto no encontrado" },
-      { status: 404 },
-    );
-  }
+  const guard = await requireOwnedProject(projectId);
+  if ("response" in guard) return guard.response;
 
   const body = await request.json().catch(() => null);
   const title = typeof body?.title === "string" ? body.title.trim() : "";

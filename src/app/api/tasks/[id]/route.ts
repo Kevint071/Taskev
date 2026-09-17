@@ -1,39 +1,24 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { requireUserId } from "@/lib/auth-guard";
+import { requireOwnedTask } from "@/lib/auth-guard";
 import { TASK_STATUSES } from "@/lib/constraints";
-import { getOwnedTask } from "@/lib/data/access";
 import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, { params }: Params) {
-  const userId = await requireUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
   const { id } = await params;
-  const owned = await getOwnedTask(userId, id);
-  if (!owned) {
-    return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
-  }
+  const guard = await requireOwnedTask(id);
+  if ("response" in guard) return guard.response;
 
-  return NextResponse.json(owned.task);
+  return NextResponse.json(guard.task);
 }
 
 export async function PATCH(request: Request, { params }: Params) {
-  const userId = await requireUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
   const { id } = await params;
-  const owned = await getOwnedTask(userId, id);
-  if (!owned) {
-    return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
-  }
+  const guard = await requireOwnedTask(id);
+  if ("response" in guard) return guard.response;
 
   const body = await request.json().catch(() => null);
   const updates: Partial<typeof tasks.$inferInsert> = {};
@@ -110,16 +95,9 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
-  const userId = await requireUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
   const { id } = await params;
-  const owned = await getOwnedTask(userId, id);
-  if (!owned) {
-    return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
-  }
+  const guard = await requireOwnedTask(id);
+  if ("response" in guard) return guard.response;
 
   await db.delete(tasks).where(eq(tasks.id, id));
 

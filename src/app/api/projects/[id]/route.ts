@@ -1,26 +1,16 @@
 import { asc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { requireUserId } from "@/lib/auth-guard";
-import { getOwnedProject } from "@/lib/data/access";
+import { requireOwnedProject } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { projects, tasks } from "@/lib/db/schema";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, { params }: Params) {
-  const userId = await requireUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
   const { id } = await params;
-  const project = await getOwnedProject(userId, id);
-  if (!project) {
-    return NextResponse.json(
-      { error: "Proyecto no encontrado" },
-      { status: 404 },
-    );
-  }
+  const guard = await requireOwnedProject(id);
+  if ("response" in guard) return guard.response;
+  const { project } = guard;
 
   const projectTasks = await db
     .select()
@@ -32,19 +22,9 @@ export async function GET(_request: Request, { params }: Params) {
 }
 
 export async function PATCH(request: Request, { params }: Params) {
-  const userId = await requireUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
   const { id } = await params;
-  const project = await getOwnedProject(userId, id);
-  if (!project) {
-    return NextResponse.json(
-      { error: "Proyecto no encontrado" },
-      { status: 404 },
-    );
-  }
+  const guard = await requireOwnedProject(id);
+  if ("response" in guard) return guard.response;
 
   const body = await request.json().catch(() => null);
   const updates: Partial<typeof projects.$inferInsert> = {};
@@ -79,19 +59,9 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
-  const userId = await requireUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
   const { id } = await params;
-  const project = await getOwnedProject(userId, id);
-  if (!project) {
-    return NextResponse.json(
-      { error: "Proyecto no encontrado" },
-      { status: 404 },
-    );
-  }
+  const guard = await requireOwnedProject(id);
+  if ("response" in guard) return guard.response;
 
   await db.delete(projects).where(eq(projects.id, id));
 

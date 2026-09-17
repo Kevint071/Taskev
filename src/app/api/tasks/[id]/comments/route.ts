@@ -1,23 +1,15 @@
 import { asc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { requireUserId } from "@/lib/auth-guard";
-import { getOwnedTask } from "@/lib/data/access";
+import { requireOwnedTask } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { taskComments } from "@/lib/db/schema";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, { params }: Params) {
-  const userId = await requireUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
   const { id: taskId } = await params;
-  const owned = await getOwnedTask(userId, taskId);
-  if (!owned) {
-    return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
-  }
+  const guard = await requireOwnedTask(taskId);
+  if ("response" in guard) return guard.response;
 
   const comments = await db
     .select()
@@ -29,16 +21,9 @@ export async function GET(_request: Request, { params }: Params) {
 }
 
 export async function POST(request: Request, { params }: Params) {
-  const userId = await requireUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
   const { id: taskId } = await params;
-  const owned = await getOwnedTask(userId, taskId);
-  if (!owned) {
-    return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
-  }
+  const guard = await requireOwnedTask(taskId);
+  if ("response" in guard) return guard.response;
 
   const body = await request.json().catch(() => null);
   const commentBody = typeof body?.body === "string" ? body.body.trim() : "";

@@ -1,24 +1,27 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { projects, tasks } from "@/lib/db/schema";
 
-/** Returns the project only if it belongs to `userId`, otherwise null. */
-export async function getOwnedProject(userId: string, projectId: string) {
+/**
+ * Unfiltered by owner so callers (see auth-guard's requireOwned* helpers)
+ * can run this alongside the user lookup instead of after it.
+ */
+export async function getProjectById(projectId: string) {
   const [project] = await db
     .select()
     .from(projects)
-    .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+    .where(eq(projects.id, projectId))
     .limit(1);
   return project ?? null;
 }
 
-/** Returns the task (with its project) only if the project belongs to `userId`, otherwise null. */
-export async function getOwnedTask(userId: string, taskId: string) {
+/** Returns the task with its project, unfiltered by owner — see getProjectById. */
+export async function getTaskWithProject(taskId: string) {
   const [row] = await db
     .select({ task: tasks, project: projects })
     .from(tasks)
     .innerJoin(projects, eq(tasks.projectId, projects.id))
-    .where(and(eq(tasks.id, taskId), eq(projects.userId, userId)))
+    .where(eq(tasks.id, taskId))
     .limit(1);
   return row ?? null;
 }
