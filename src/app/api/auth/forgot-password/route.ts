@@ -1,6 +1,9 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { PASSWORD_RESET_TOKEN_TTL_MS } from "@/lib/constraints";
+import {
+  PASSWORD_RESET_ENABLED,
+  PASSWORD_RESET_TOKEN_TTL_MS,
+} from "@/lib/constraints";
 import { db } from "@/lib/db";
 import { passwordResetTokens, users } from "@/lib/db/schema";
 import { sendPasswordResetEmail } from "@/lib/email";
@@ -16,6 +19,10 @@ function genericResponse() {
 }
 
 export async function POST(request: Request) {
+  if (!PASSWORD_RESET_ENABLED) {
+    return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  }
+
   const body = await request.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email.trim() : "";
 

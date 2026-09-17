@@ -1,12 +1,16 @@
 import bcrypt from "bcrypt";
 import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { MIN_PASSWORD_LENGTH } from "@/lib/constraints";
+import { MIN_PASSWORD_LENGTH, PASSWORD_RESET_ENABLED } from "@/lib/constraints";
 import { db } from "@/lib/db";
 import { passwordResetTokens, users } from "@/lib/db/schema";
 import { hashResetToken } from "@/lib/tokens";
 
 export async function POST(request: Request) {
+  if (!PASSWORD_RESET_ENABLED) {
+    return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  }
+
   const body = await request.json().catch(() => null);
   const token = typeof body?.token === "string" ? body.token : "";
   const password = typeof body?.password === "string" ? body.password : "";

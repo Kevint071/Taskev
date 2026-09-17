@@ -35,20 +35,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
 
-        return { id: user.id, email: user.email };
+        return { id: user.id, email: user.email, name: user.name };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
+        token.name = user.name ?? null;
+      }
+      // After a profile change the client calls `update()`; re-read the name
+      // from the database instead of trusting the client payload.
+      if (trigger === "update" && typeof token.id === "string") {
+        const [row] = await db
+          .select({ name: users.name })
+          .from(users)
+          .where(eq(users.id, token.id))
+          .limit(1);
+        token.name = row?.name ?? null;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user && typeof token.id === "string") {
         session.user.id = token.id;
+        session.user.name = token.name ?? null;
       }
       return session;
     },

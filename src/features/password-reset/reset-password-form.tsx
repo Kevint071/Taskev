@@ -1,8 +1,15 @@
 "use client";
 
-import Link from "next/link";
+// Parked while PASSWORD_RESET_ENABLED is false. To re-enable, render
+// <ResetPasswordScreen /> from src/app/(auth)/reset-password/page.tsx.
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { AuthCard, TextLink } from "@/components/auth-card";
+import { Button } from "@/components/ui/button";
+import { Field, FormError } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { MIN_PASSWORD_LENGTH } from "@/lib/constraints";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -33,50 +40,49 @@ function ResetPasswordForm() {
   }
 
   if (!token) {
-    return <p className="text-sm text-red-600">Enlace inválido.</p>;
+    return <FormError message="El enlace no es válido." />;
   }
 
   if (success) {
     return (
-      <p className="text-sm text-neutral-700">
-        Contraseña actualizada. Redirigiendo a iniciar sesión...
+      <p className="text-muted">
+        Contraseña actualizada. Te llevamos a iniciar sesión…
       </p>
     );
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <input
-        type="password"
-        required
-        minLength={8}
-        placeholder="Nueva contraseña (mínimo 8 caracteres)"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className="rounded border border-neutral-300 px-3 py-2"
-      />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="rounded bg-neutral-900 px-3 py-2 text-white disabled:opacity-50"
+      <Field
+        label="Nueva contraseña"
+        hint={`Al menos ${MIN_PASSWORD_LENGTH} caracteres`}
       >
-        {loading ? "Guardando..." : "Restablecer contraseña"}
-      </button>
+        <Input
+          type="password"
+          required
+          minLength={MIN_PASSWORD_LENGTH}
+          autoComplete="new-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      </Field>
+      <FormError message={error} />
+      <Button type="submit" variant="primary" disabled={loading}>
+        {loading ? "Guardando…" : "Guardar contraseña"}
+      </Button>
     </form>
   );
 }
 
-export default function ResetPasswordPage() {
+export function ResetPasswordScreen() {
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-16">
-      <h1 className="text-2xl font-semibold">Restablecer contraseña</h1>
+    <AuthCard
+      title="Nueva contraseña"
+      footer={<TextLink href="/login">Volver a iniciar sesión</TextLink>}
+    >
       <Suspense fallback={null}>
         <ResetPasswordForm />
       </Suspense>
-      <Link href="/login" className="text-sm underline">
-        Volver a iniciar sesión
-      </Link>
-    </main>
+    </AuthCard>
   );
 }
