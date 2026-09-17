@@ -105,7 +105,7 @@ export default function ProjectsPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 maxLength={MAX_PROJECT_NAME_LENGTH}
-                className="w-full pr-14"
+                className="w-full pr-20"
               />
               <span className="tabular pointer-events-none absolute inset-y-0 right-3 flex items-center text-meta text-muted">
                 {name.length}/{MAX_PROJECT_NAME_LENGTH}

@@ -89,7 +89,6 @@ export default function ProjectDetailPage() {
 
   function closeAddTask() {
     setAddingTask(false);
-    setNewTaskTitle("");
     setError(null);
   }
 
@@ -452,7 +451,7 @@ export default function ProjectDetailPage() {
                   )
                 }
                 maxLength={MAX_TASK_TITLE_LENGTH}
-                className="w-full pr-14"
+                className="w-full pr-20"
               />
               <span className="tabular pointer-events-none absolute inset-y-0 right-3 flex items-center text-meta text-muted">
                 {newTaskTitle.length}/{MAX_TASK_TITLE_LENGTH}
