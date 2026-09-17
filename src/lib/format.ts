@@ -40,6 +40,13 @@ export function formatDateTime(iso: string): string {
   return dateTime.format(new Date(iso)).replace(".", "");
 }
 
+/** Truncates to the first `limit` words, appending "..." when text is cut. */
+export function truncateWords(text: string, limit: number): string {
+  const words = text.trim().split(/\s+/);
+  if (words.length <= limit) return text;
+  return `${words.slice(0, limit).join(" ")}...`;
+}
+
 /** True when a UTC-midnight due date falls before the local calendar day of `now`. */
 export function isOverdue(iso: string | Date, now = new Date()): boolean {
   const due = typeof iso === "string" ? new Date(iso) : iso;

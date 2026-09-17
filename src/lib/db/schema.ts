@@ -48,6 +48,7 @@ export const taskStatusEnum = pgEnum("task_status", [
   "disponible",
   "en_curso",
   "bloqueada",
+  "pausada",
   "completada",
 ]);
 
@@ -66,6 +67,7 @@ export const tasks = pgTable(
       .notNull()
       .default("0"),
     dueDate: timestamp("due_date", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
     position: doublePrecision("position").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

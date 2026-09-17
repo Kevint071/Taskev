@@ -4,6 +4,7 @@ import { requireOwnedTask } from "@/lib/auth-guard";
 import { TASK_STATUSES } from "@/lib/constraints";
 import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
+import { blockedFromDisponible } from "@/lib/progress";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -80,6 +81,66 @@ export async function PATCH(request: Request, { params }: Params) {
         );
       }
       updates.dueDate = dueDate;
+    }
+  }
+
+  if (body?.completedAt !== undefined) {
+    if (body.completedAt === null) {
+      updates.completedAt = null;
+    } else {
+      const completedAt = new Date(body.completedAt);
+      if (Number.isNaN(completedAt.getTime())) {
+        return NextResponse.json(
+          { error: "Fecha de finalización inválida" },
+          { status: 400 },
+        );
+      }
+      updates.completedAt = completedAt;
+    }
+  }
+
+  if (updates.status !== undefined) {
+    const resultingProgress = updates.progressPct ?? guard.task.progressPct;
+    const resultingCompletedAt =
+      "completedAt" in updates ? updates.completedAt : guard.task.completedAt;
+
+    if (updates.status === "completada") {
+      if (resultingProgress < 100) {
+        return NextResponse.json(
+          { error: "El avance debe estar al 100% para completar la tarea" },
+          { status: 400 },
+        );
+      }
+      if (!resultingCompletedAt) {
+        return NextResponse.json(
+          { error: "Falta la fecha de finalización" },
+          { status: 400 },
+        );
+      }
+    } else if (updates.status === "disponible") {
+      const blocked = blockedFromDisponible(
+        resultingProgress,
+        guard.task.completedAt,
+      );
+      if (blocked === "progress") {
+        return NextResponse.json(
+          { error: "El avance debe estar en 0% para pasar a disponible" },
+          { status: 400 },
+        );
+      }
+      if (blocked === "completedAt") {
+        return NextResponse.json(
+          {
+            error:
+              "La tarea todavía tiene fecha de finalización; cambia antes a otro estado",
+          },
+          { status: 400 },
+        );
+      }
+      if (!("completedAt" in updates)) updates.completedAt = null;
+    } else if (!("completedAt" in updates)) {
+      // Leaving "completada" clears a stale completion date.
+      updates.completedAt = null;
     }
   }
 

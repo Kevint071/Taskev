@@ -10,16 +10,23 @@ import {
   type TaskComment,
 } from "@/components/project-types";
 import { Button } from "@/components/ui/button";
+import { CalendarPanel } from "@/components/ui/calendar-panel";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DateField } from "@/components/ui/date-field";
 import { Field, FormError } from "@/components/ui/field";
-import { PlusIcon } from "@/components/ui/icons";
+import { CheckIcon, PlusIcon } from "@/components/ui/icons";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { EmptyState, LoadingRows, Panel } from "@/components/ui/panel";
+import { Popover } from "@/components/ui/popover";
 import { ProgressChip } from "@/components/ui/progress-chip";
 import { ProgressInput } from "@/components/ui/progress-input";
 import { STATUS_DOT } from "@/components/ui/status-badge";
+import { Toast, type ToastState } from "@/components/ui/toast";
 import { handleUnauthenticated } from "@/lib/api-client";
+import { todayUtcMidnight } from "@/lib/calendar";
 import { formatDateTime, formatDueDate, isOverdue } from "@/lib/format";
+import { blockedFromDisponible, canCompleteAtProgress } from "@/lib/progress";
+import { computeRelevance } from "@/lib/relevance";
 import {
   ApiError,
   createSyncQueue,
@@ -37,7 +44,15 @@ import {
 type LocalTask = Task & { key: string };
 type ProjectDetail = Project & { tasks: Task[] };
 type TaskUpdates = Partial<
-  Pick<Task, "title" | "description" | "status" | "progressPct" | "dueDate">
+  Pick<
+    Task,
+    | "title"
+    | "description"
+    | "status"
+    | "progressPct"
+    | "dueDate"
+    | "completedAt"
+  >
 > & { priority?: number };
 
 type SyncState = "idle" | "saving" | "saved";
@@ -54,7 +69,9 @@ export default function ProjectDetailPage() {
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
   const [dropTargetKey, setDropTargetKey] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<"auto" | "manual">("auto");
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastState>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const newTaskInputRef = useRef<HTMLInputElement>(null);
@@ -72,6 +89,10 @@ export default function ProjectDetailPage() {
     setAddingTask(false);
     setNewTaskTitle("");
     setError(null);
+  }
+
+  function showToast(message: string) {
+    setToast({ id: Date.now(), message });
   }
 
   async function load() {
@@ -158,6 +179,7 @@ export default function ProjectDetailPage() {
         progressPct: 0,
         priority: "0",
         dueDate: null,
+        completedAt: null,
         position: Number.MAX_SAFE_INTEGER,
         createdAt: now,
         updatedAt: now,
@@ -289,12 +311,36 @@ export default function ProjectDetailPage() {
   const completedTasks = tasks.filter((t) => t.status === "completada");
   const openCount = incompleteTasks.length;
 
+  if (sortMode === "auto") {
+    const now = new Date();
+    incompleteTasks.sort(
+      (a, b) =>
+        computeRelevance(
+          Number(b.priority),
+          b.dueDate ? new Date(b.dueDate) : null,
+          now,
+          b.progressPct,
+        ) -
+        computeRelevance(
+          Number(a.priority),
+          a.dueDate ? new Date(a.dueDate) : null,
+          now,
+          a.progressPct,
+        ),
+    );
+    completedTasks.sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
+  }
+
   function renderTaskRow(task: LocalTask) {
     return (
       <TaskRow
         key={task.key}
         task={task}
         queue={queue}
+        sortable={sortMode === "manual"}
         expanded={expandedKey === task.key}
         dragging={draggedKey === task.key}
         dropTarget={dropTargetKey === task.key && draggedKey !== task.key}
@@ -315,6 +361,7 @@ export default function ProjectDetailPage() {
         onLocalChange={(updates) => applyLocal(task.key, updates)}
         onRemoteSave={(updates) => saveRemote(task.key, updates)}
         onDelete={() => deleteTask(task.key)}
+        onBlocked={showToast}
       />
     );
   }
@@ -429,9 +476,12 @@ export default function ProjectDetailPage() {
         <div className="flex flex-col gap-5">
           {incompleteTasks.length > 0 && (
             <div className="flex flex-col gap-2">
-              <h2 className="text-meta font-medium text-muted">
-                Tareas incompletas
-              </h2>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-meta font-medium text-muted">
+                  Tareas incompletas
+                </h2>
+                <SortModeToggle mode={sortMode} onChange={setSortMode} />
+              </div>
               <Panel>
                 <ul className="divide-y divide-line">
                   {incompleteTasks.map((task) => renderTaskRow(task))}
@@ -468,6 +518,8 @@ export default function ProjectDetailPage() {
         onConfirm={handleDeleteProject}
         onClose={() => setConfirmDelete(false)}
       />
+
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
     </>
   );
 }
@@ -500,6 +552,40 @@ function SyncStatus({ state }: { state: SyncState }) {
   );
 }
 
+function SortModeToggle({
+  mode,
+  onChange,
+}: {
+  mode: "auto" | "manual";
+  onChange: (mode: "auto" | "manual") => void;
+}) {
+  return (
+    <fieldset className="flex shrink-0 rounded-control border border-line-strong p-0.5">
+      <legend className="sr-only">Orden de las tareas</legend>
+      {(
+        [
+          { value: "auto", label: "Automático" },
+          { value: "manual", label: "Manual" },
+        ] as const
+      ).map(({ value, label }) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => onChange(value)}
+          aria-pressed={mode === value}
+          className={`rounded-[4px] px-2.5 py-1 text-meta font-medium transition-colors ${
+            mode === value
+              ? "bg-accent text-accent-ink"
+              : "text-muted hover:text-ink"
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </fieldset>
+  );
+}
+
 function BackLink() {
   return (
     <Link
@@ -511,9 +597,32 @@ function BackLink() {
   );
 }
 
+function getCaretOffsetFromClick(e: React.MouseEvent): number | null {
+  const doc = document as Document & {
+    caretRangeFromPoint?: (x: number, y: number) => Range | null;
+    caretPositionFromPoint?: (
+      x: number,
+      y: number,
+    ) => { offsetNode: Node; offset: number } | null;
+  };
+  if (doc.caretRangeFromPoint) {
+    const range = doc.caretRangeFromPoint(e.clientX, e.clientY);
+    if (range?.startContainer.nodeType === Node.TEXT_NODE) {
+      return range.startOffset;
+    }
+  } else if (doc.caretPositionFromPoint) {
+    const pos = doc.caretPositionFromPoint(e.clientX, e.clientY);
+    if (pos?.offsetNode.nodeType === Node.TEXT_NODE) {
+      return pos.offset;
+    }
+  }
+  return null;
+}
+
 function TaskRow({
   task,
   queue,
+  sortable,
   expanded,
   dragging,
   dropTarget,
@@ -526,9 +635,11 @@ function TaskRow({
   onLocalChange,
   onRemoteSave,
   onDelete,
+  onBlocked,
 }: {
   task: LocalTask;
   queue: SyncQueue;
+  sortable: boolean;
   expanded: boolean;
   dragging: boolean;
   dropTarget: boolean;
@@ -541,18 +652,85 @@ function TaskRow({
   onLocalChange: (updates: TaskUpdates) => void;
   onRemoteSave: (updates: TaskUpdates) => void;
   onDelete: () => void;
+  onBlocked: (message: string) => void;
 }) {
   const done = task.status === "completada";
   const overdue = !done && task.dueDate && isOverdue(task.dueDate);
   const creating = isTempId(task.id);
 
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(task.title);
+  const titleInputRef = useRef<HTMLTextAreaElement>(null);
+  const titleCaretRef = useRef<number | null>(null);
+  const [completePromptOpen, setCompletePromptOpen] = useState(false);
+
+  useEffect(() => {
+    const el = titleInputRef.current;
+    if (!editingTitle || !el) return;
+    el.focus();
+    const caret = titleCaretRef.current;
+    const pos = caret == null ? el.value.length : Math.min(caret, el.value.length);
+    el.setSelectionRange(pos, pos);
+  }, [editingTitle]);
+
+  useEffect(() => {
+    const el = titleInputRef.current;
+    if (!editingTitle || !el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [editingTitle, titleDraft]);
+
+  function startEditingTitle(e: React.MouseEvent) {
+    if (!expanded) return;
+    e.stopPropagation();
+    titleCaretRef.current = getCaretOffsetFromClick(e);
+    setTitleDraft(task.title);
+    setEditingTitle(true);
+  }
+
+  function commitTitle() {
+    setEditingTitle(false);
+    const trimmed = titleDraft.trim();
+    if (trimmed && trimmed !== task.title) onUpdate({ title: trimmed });
+  }
+
+  function handleStatusChange(next: Task["status"]) {
+    if (next === "completada") {
+      if (!canCompleteAtProgress(task.progressPct)) {
+        onBlocked("Sube el avance al 100% para poder completar la tarea.");
+        return;
+      }
+      setCompletePromptOpen(true);
+      return;
+    }
+    if (next === "disponible") {
+      const blocked = blockedFromDisponible(task.progressPct, task.completedAt);
+      if (blocked === "progress") {
+        onBlocked("Baja el avance a 0% antes de pasarla a disponible.");
+        return;
+      }
+      if (blocked === "completedAt") {
+        onBlocked(
+          "Esta tarea todavía tiene fecha de finalización. Cambia antes a otro estado.",
+        );
+        return;
+      }
+    }
+    onUpdate({ status: next, completedAt: null });
+  }
+
+  function confirmComplete(date: Date) {
+    setCompletePromptOpen(false);
+    onUpdate({ status: "completada", completedAt: date.toISOString() });
+  }
+
   return (
     <li
-      draggable
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
+      draggable={sortable}
+      onDragStart={sortable ? onDragStart : undefined}
+      onDragEnd={sortable ? onDragEnd : undefined}
+      onDragOver={sortable ? onDragOver : undefined}
+      onDrop={sortable ? onDrop : undefined}
       className={`transition-opacity ${dragging ? "opacity-40" : ""} ${
         dropTarget ? "shadow-[inset_0_2px_0_var(--accent)]" : ""
       } ${expanded ? "bg-sunken/40" : ""}`}
@@ -573,8 +751,16 @@ function TaskRow({
         className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 cursor-pointer sm:flex-nowrap"
       >
         <span
-          className="cursor-grab text-muted select-none active:cursor-grabbing"
-          title="Arrastra para reordenar"
+          className={`select-none ${
+            sortable
+              ? "cursor-grab text-muted active:cursor-grabbing"
+              : "text-line-strong"
+          }`}
+          title={
+            sortable
+              ? "Arrastra para reordenar"
+              : "Cambia a orden manual para arrastrar"
+          }
           aria-hidden="true"
         >
           ⠿
@@ -584,7 +770,38 @@ function TaskRow({
             done ? "text-muted" : ""
           }`}
         >
-          <span className="truncate">{task.title}</span>
+          {editingTitle ? (
+            <textarea
+              ref={titleInputRef}
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              onBlur={commitTitle}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  commitTitle();
+                } else if (e.key === "Escape") {
+                  setTitleDraft(task.title);
+                  setEditingTitle(false);
+                }
+              }}
+              aria-label="Título de la tarea"
+              rows={1}
+              className="-mx-1 min-w-0 flex-1 resize-none overflow-hidden whitespace-normal break-words rounded-[4px] bg-transparent px-1 font-medium text-ink caret-accent outline-none"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={startEditingTitle}
+              title="Editar nombre"
+              className={`min-w-0 rounded-[4px] px-1 -mx-1 text-left hover:bg-sunken ${
+                expanded ? "whitespace-normal break-words" : "truncate"
+              }`}
+            >
+              {task.title}
+            </button>
+          )}
           {creating && (
             <span
               title="Guardando"
@@ -604,40 +821,64 @@ function TaskRow({
             </span>
           )}
           <ProgressChip value={task.progressPct} />
-          {/* biome-ignore lint/a11y/noLabelWithoutControl: wraps the Select component */}
-          <label className="relative flex items-center">
-            <span className="sr-only">Estado</span>
-            <span
-              aria-hidden="true"
-              className={`pointer-events-none absolute left-2.5 size-2 rounded-full ${STATUS_DOT[task.status]}`}
-            />
-            <Select
-              value={task.status}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) =>
-                onUpdate({ status: e.target.value as Task["status"] })
-              }
-              className="h-8 w-32 pr-7 pl-6 text-meta"
-            >
-              {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              className="pointer-events-none absolute right-2.5 size-3 text-muted"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5.5 8l4.5 4.5L14.5 8" />
-            </svg>
-          </label>
+          <Popover
+            open={completePromptOpen}
+            onClose={() => setCompletePromptOpen(false)}
+          >
+            {/* biome-ignore lint/a11y/noLabelWithoutControl: wraps the Select component */}
+            <label className="relative flex items-center">
+              <span className="sr-only">Estado</span>
+              <span
+                aria-hidden="true"
+                className={`pointer-events-none absolute left-2.5 size-2 rounded-full ${STATUS_DOT[task.status]}`}
+              />
+              <Select
+                value={task.status}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) =>
+                  handleStatusChange(e.target.value as Task["status"])
+                }
+                className="h-8 w-32 pr-7 pl-6 text-meta"
+              >
+                {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                className="pointer-events-none absolute right-2.5 size-3 text-muted"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5.5 8l4.5 4.5L14.5 8" />
+              </svg>
+            </label>
+            {completePromptOpen && (
+              // biome-ignore lint/a11y/noStaticElementInteractions: event boundary only, stops the row's own click-to-expand handler; the panel's own buttons are the real interactive elements
+              <div
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                className="absolute right-0 top-full z-20 mt-1.5"
+              >
+                <p className="mb-1.5 px-1 text-meta font-medium text-muted">
+                  Fecha de finalización
+                </p>
+                <CalendarPanel
+                  selected={todayUtcMidnight()}
+                  shortcuts={[
+                    { key: "today", label: "Hoy", date: todayUtcMidnight() },
+                  ]}
+                  onSelect={confirmComplete}
+                />
+              </div>
+            )}
+          </Popover>
           <button
             type="button"
             onClick={(e) => {
@@ -692,6 +933,7 @@ function TaskDetails({
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [description, setDescription] = useState(task.description ?? "");
+  const [bannerCompleteOpen, setBannerCompleteOpen] = useState(false);
 
   // A task still being created has no comments on the server yet.
   const serverId = isTempId(task.id) ? null : task.id;
@@ -749,7 +991,7 @@ function TaskDetails({
   }
 
   return (
-    <div className="animate-reveal flex flex-col gap-5 border-t border-line px-4 py-4 sm:pl-10">
+    <div className="animate-reveal flex flex-col gap-5 px-4 py-4 sm:pl-10">
       <div className="flex flex-wrap items-end gap-4">
         <ProgressInput
           value={task.progressPct}
@@ -768,21 +1010,55 @@ function TaskDetails({
             className="tabular"
           />
         </Field>
-        <Field label="Fecha límite">
-          <Input
-            type="date"
-            defaultValue={task.dueDate ? task.dueDate.slice(0, 10) : ""}
-            onChange={(e) =>
-              onUpdate({
-                // Due dates are stored as UTC midnight.
-                dueDate: e.target.value
-                  ? `${e.target.value}T00:00:00.000Z`
-                  : null,
-              })
-            }
-            className="tabular"
+        <Field label="Fecha límite" className="w-44">
+          <DateField
+            value={task.dueDate}
+            onChange={(dueDate) => onUpdate({ dueDate })}
           />
         </Field>
+        {task.status === "completada" && (
+          <Field label="Fecha de finalización" className="w-44">
+            <DateField
+              value={task.completedAt}
+              onChange={(completedAt) => onUpdate({ completedAt })}
+              allowClear={false}
+              placeholder="Elige la fecha"
+            />
+          </Field>
+        )}
+        {task.progressPct >= 100 && task.status !== "completada" && (
+          <Popover
+            open={bannerCompleteOpen}
+            onClose={() => setBannerCompleteOpen(false)}
+            className="w-fit"
+          >
+            <button
+              type="button"
+              onClick={() => setBannerCompleteOpen(true)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-control border border-accent/30 bg-accent-soft px-3.5 text-ui font-medium text-accent transition-colors hover:border-accent/60"
+            >
+              <CheckIcon />
+              Marcar completada
+            </button>
+            {bannerCompleteOpen && (
+              <div className="absolute z-20 mt-1.5">
+                <CalendarPanel
+                  selected={todayUtcMidnight()}
+                  shortcuts={[
+                    { key: "today", label: "Hoy", date: todayUtcMidnight() },
+                  ]}
+                  onSelect={(date) => {
+                    setBannerCompleteOpen(false);
+                    onUpdate({
+                      status: "completada",
+                      completedAt: date.toISOString(),
+                    });
+                  }}
+                />
+              </div>
+            )}
+          </Popover>
+        )}
       </div>
 
       <Field label="Descripción">

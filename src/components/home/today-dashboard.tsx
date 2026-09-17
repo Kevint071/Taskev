@@ -9,7 +9,7 @@ import {
   type OverviewTask,
   type ProjectOverview,
 } from "@/lib/data/overview";
-import { formatDueDate } from "@/lib/format";
+import { formatDueDate, truncateWords } from "@/lib/format";
 import { buildTodaySections } from "@/lib/today";
 
 export async function TodayDashboard({
@@ -93,7 +93,7 @@ function NextTask({ task }: { task: OverviewTask }) {
         href={`/projects/${task.projectId}`}
         className="w-fit rounded-[4px] text-[22px] leading-[1.35] font-semibold tracking-tight hover:text-accent md:text-[26px]"
       >
-        {task.title}
+        {truncateWords(task.title, 15)}
       </Link>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-meta text-muted">
         <span>{task.projectName}</span>
