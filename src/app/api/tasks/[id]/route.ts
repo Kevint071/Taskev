@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireOwnedTask } from "@/lib/auth-guard";
-import { TASK_STATUSES } from "@/lib/constraints";
+import { MAX_TASK_TITLE_LENGTH, TASK_STATUSES } from "@/lib/constraints";
 import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
 import { blockedFromDisponible } from "@/lib/progress";
@@ -29,6 +29,14 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!title) {
       return NextResponse.json(
         { error: "El título no puede estar vacío" },
+        { status: 400 },
+      );
+    }
+    if (title.length > MAX_TASK_TITLE_LENGTH) {
+      return NextResponse.json(
+        {
+          error: `El título no puede tener más de ${MAX_TASK_TITLE_LENGTH} caracteres`,
+        },
         { status: 400 },
       );
     }

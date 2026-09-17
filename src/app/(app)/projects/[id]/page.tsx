@@ -24,6 +24,7 @@ import { STATUS_DOT } from "@/components/ui/status-badge";
 import { Toast, type ToastState } from "@/components/ui/toast";
 import { handleUnauthenticated } from "@/lib/api-client";
 import { todayUtcMidnight } from "@/lib/calendar";
+import { MAX_TASK_TITLE_LENGTH } from "@/lib/constraints";
 import { formatDateTime, formatDueDate, isOverdue } from "@/lib/format";
 import { blockedFromDisponible, canCompleteAtProgress } from "@/lib/progress";
 import { computeRelevance } from "@/lib/relevance";
@@ -75,6 +76,7 @@ export default function ProjectDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const newTaskInputRef = useRef<HTMLInputElement>(null);
+  const newTaskOverflowRef = useRef(0);
 
   useEffect(() => {
     if (addingTask) newTaskInputRef.current?.focus();
@@ -159,7 +161,7 @@ export default function ProjectDetailPage() {
 
   function handleAddTask(e: React.FormEvent) {
     e.preventDefault();
-    const title = newTaskTitle.trim();
+    const title = newTaskTitle.trim().slice(0, MAX_TASK_TITLE_LENGTH);
     if (!title) {
       setError("Escribe un título para la tarea");
       return;
@@ -425,15 +427,37 @@ export default function ProjectDetailPage() {
           className="animate-reveal flex flex-col gap-2"
         >
           <div className="flex gap-4">
-            <Input
-              ref={newTaskInputRef}
-              type="text"
-              aria-label="Título de la nueva tarea"
-              placeholder="Añade una tarea y pulsa Enter"
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              className="min-w-0 flex-1"
-            />
+            <div className="relative min-w-0 flex-1">
+              <Input
+                ref={newTaskInputRef}
+                type="text"
+                aria-label="Título de la nueva tarea"
+                placeholder="Añade una tarea y pulsa Enter"
+                value={newTaskTitle}
+                onChange={(e) => {
+                  setNewTaskTitle(e.target.value);
+                  if (e.target.value.length < MAX_TASK_TITLE_LENGTH) {
+                    newTaskOverflowRef.current = 0;
+                  }
+                }}
+                onKeyDown={(e) =>
+                  trackTitleOverflowAttempt(
+                    newTaskTitle.length,
+                    e.key,
+                    newTaskOverflowRef,
+                    () =>
+                      showToast(
+                        `Máximo: ${MAX_TASK_TITLE_LENGTH} caracteres.`,
+                      ),
+                  )
+                }
+                maxLength={MAX_TASK_TITLE_LENGTH}
+                className="w-full pr-14"
+              />
+              <span className="tabular pointer-events-none absolute inset-y-0 right-3 flex items-center text-meta text-muted">
+                {newTaskTitle.length}/{MAX_TASK_TITLE_LENGTH}
+              </span>
+            </div>
             <Button type="submit" variant="primary">
               Añadir
             </Button>
@@ -619,6 +643,23 @@ function getCaretOffsetFromClick(e: React.MouseEvent): number | null {
   return null;
 }
 
+const TITLE_OVERFLOW_WARNING_THRESHOLD = 5;
+
+/** Warns after a few keystrokes attempted past the title limit, instead of on every one. */
+function trackTitleOverflowAttempt(
+  currentLength: number,
+  key: string,
+  counterRef: React.MutableRefObject<number>,
+  onLimitReached: () => void,
+) {
+  if (currentLength < MAX_TASK_TITLE_LENGTH || key.length !== 1) return;
+  counterRef.current += 1;
+  if (counterRef.current >= TITLE_OVERFLOW_WARNING_THRESHOLD) {
+    counterRef.current = 0;
+    onLimitReached();
+  }
+}
+
 function TaskRow({
   task,
   queue,
@@ -662,6 +703,7 @@ function TaskRow({
   const [titleDraft, setTitleDraft] = useState(task.title);
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
   const titleCaretRef = useRef<number | null>(null);
+  const titleOverflowRef = useRef(0);
   const [completePromptOpen, setCompletePromptOpen] = useState(false);
 
   useEffect(() => {
@@ -690,7 +732,7 @@ function TaskRow({
 
   function commitTitle() {
     setEditingTitle(false);
-    const trimmed = titleDraft.trim();
+    const trimmed = titleDraft.trim().slice(0, MAX_TASK_TITLE_LENGTH);
     if (trimmed && trimmed !== task.title) onUpdate({ title: trimmed });
   }
 
@@ -774,7 +816,12 @@ function TaskRow({
             <textarea
               ref={titleInputRef}
               value={titleDraft}
-              onChange={(e) => setTitleDraft(e.target.value)}
+              onChange={(e) => {
+                setTitleDraft(e.target.value);
+                if (e.target.value.length < MAX_TASK_TITLE_LENGTH) {
+                  titleOverflowRef.current = 0;
+                }
+              }}
               onClick={(e) => e.stopPropagation()}
               onBlur={commitTitle}
               onKeyDown={(e) => {
@@ -784,10 +831,21 @@ function TaskRow({
                 } else if (e.key === "Escape") {
                   setTitleDraft(task.title);
                   setEditingTitle(false);
+                } else {
+                  trackTitleOverflowAttempt(
+                    titleDraft.length,
+                    e.key,
+                    titleOverflowRef,
+                    () =>
+                      onBlocked(
+                        `Máximo: ${MAX_TASK_TITLE_LENGTH} caracteres.`,
+                      ),
+                  );
                 }
               }}
               aria-label="Título de la tarea"
               rows={1}
+              maxLength={MAX_TASK_TITLE_LENGTH}
               className="-mx-1 min-w-0 flex-1 resize-none overflow-hidden whitespace-normal break-words rounded-[4px] bg-transparent px-1 font-medium text-ink caret-accent outline-none"
             />
           ) : (
@@ -795,7 +853,7 @@ function TaskRow({
               type="button"
               onClick={startEditingTitle}
               title="Editar nombre"
-              className={`min-w-0 rounded-[4px] px-1 -mx-1 text-left hover:bg-sunken ${
+              className={`min-w-0 flex-1 rounded-[4px] px-1 -mx-1 text-left ${
                 expanded ? "whitespace-normal break-words" : "truncate"
               }`}
             >

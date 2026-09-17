@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireOwnedProject } from "@/lib/auth-guard";
+import { MAX_TASK_TITLE_LENGTH } from "@/lib/constraints";
 import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
 import { positionAtEnd } from "@/lib/ordering";
@@ -17,6 +18,14 @@ export async function POST(request: Request, { params }: Params) {
   if (!title) {
     return NextResponse.json(
       { error: "El título de la tarea es requerido" },
+      { status: 400 },
+    );
+  }
+  if (title.length > MAX_TASK_TITLE_LENGTH) {
+    return NextResponse.json(
+      {
+        error: `El título no puede tener más de ${MAX_TASK_TITLE_LENGTH} caracteres`,
+      },
       { status: 400 },
     );
   }
