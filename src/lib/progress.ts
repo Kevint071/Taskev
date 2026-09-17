@@ -22,3 +22,22 @@ export function parseProgressInput(raw: string): number | null {
   if (!Number.isFinite(value)) return null;
   return clampProgress(value);
 }
+
+/** A task can only become "completada" once its progress reaches 100%. */
+export function canCompleteAtProgress(progressPct: number): boolean {
+  return progressPct >= PROGRESS_MAX;
+}
+
+/**
+ * A task can only return to "disponible" once it has no leftover progress and
+ * no leftover completion date — both must be cleared (typically by passing
+ * through another status first) before it counts as untouched again.
+ */
+export function blockedFromDisponible(
+  progressPct: number,
+  completedAt: unknown,
+): "progress" | "completedAt" | null {
+  if (progressPct !== PROGRESS_MIN) return "progress";
+  if (completedAt) return "completedAt";
+  return null;
+}

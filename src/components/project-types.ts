@@ -18,10 +18,11 @@ export type Task = {
   projectId: string;
   title: string;
   description: string | null;
-  status: "disponible" | "en_curso" | "bloqueada" | "completada";
+  status: "disponible" | "en_curso" | "bloqueada" | "pausada" | "completada";
   progressPct: number;
   priority: string;
   dueDate: string | null;
+  completedAt: string | null;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -44,5 +45,6 @@ export const STATUS_LABELS: Record<Task["status"], string> = {
   disponible: "Disponible",
   en_curso: "En curso",
   bloqueada: "Bloqueada",
+  pausada: "Pausada",
   completada: "Completada",
 };

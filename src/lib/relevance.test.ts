@@ -44,3 +44,15 @@ test("computeRelevance: high enough priority without a due date can outrank an u
   const lowPriorityUrgent = computeRelevance(1, day(1), NOW);
   assert.ok(highPriorityNoDate > lowPriorityUrgent);
 });
+
+test("computeRelevance: more progress outranks less progress at equal priority and due date", () => {
+  const almostDone = computeRelevance(1, day(5), NOW, 90);
+  const barelyStarted = computeRelevance(1, day(5), NOW, 10);
+  assert.ok(almostDone > barelyStarted);
+});
+
+test("computeRelevance: progress defaults to zero when omitted", () => {
+  const withoutProgress = computeRelevance(1, day(5), NOW);
+  const withZeroProgress = computeRelevance(1, day(5), NOW, 0);
+  assert.equal(withoutProgress, withZeroProgress);
+});

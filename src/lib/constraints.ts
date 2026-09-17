@@ -3,6 +3,7 @@ export const TASK_STATUSES = [
   "disponible",
   "en_curso",
   "bloqueada",
+  "pausada",
   "completada",
 ] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];

@@ -4,6 +4,7 @@ export const STATUS_DOT: Record<Task["status"], string> = {
   disponible: "bg-status-open",
   en_curso: "bg-status-progress",
   bloqueada: "bg-status-blocked",
+  pausada: "bg-status-paused",
   completada: "bg-status-done",
 };
 
