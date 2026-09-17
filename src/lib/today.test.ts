@@ -58,7 +58,7 @@ test("overdue holds tasks due before today, this week holds the next 7 days", ()
   );
 });
 
-test("the next task is not repeated in the other sections", () => {
+test("the next task also appears in overdue/this week when it qualifies", () => {
   const result = buildTodaySections(
     [
       task("urgent", { due: "2026-09-10", relevance: 100 }),
@@ -69,7 +69,7 @@ test("the next task is not repeated in the other sections", () => {
   assert.equal(result.next?.id, "urgent");
   assert.deepEqual(
     result.overdue.map((t) => t.id),
-    ["other"],
+    ["urgent", "other"],
   );
 });
 

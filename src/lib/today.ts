@@ -24,8 +24,10 @@ export function startOfDayKey(now: Date): number {
 
 /**
  * Splits tasks into the "Hoy" sections. `next` is the open task with the
- * highest relevance and is not repeated below; overdue wins over this week;
- * completed tasks are ignored. Lists are sorted by due date, earliest first.
+ * highest relevance, shown separately as the featured task; it also appears
+ * in overdue/this week below if its due date qualifies, so those lists
+ * always reflect every matching task. Overdue wins over this week; completed
+ * tasks are ignored. Lists are sorted by due date, earliest first.
  */
 export function buildTodaySections<T extends TodayTask>(
   tasks: T[],
@@ -46,7 +48,7 @@ export function buildTodaySections<T extends TodayTask>(
   const thisWeek: T[] = [];
 
   for (const task of open) {
-    if (task === next || !task.dueDate) continue;
+    if (!task.dueDate) continue;
     const due = task.dueDate.getTime();
     if (due < today) overdue.push(task);
     else if (due <= weekEnd) thisWeek.push(task);
