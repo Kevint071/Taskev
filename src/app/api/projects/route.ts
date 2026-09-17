@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireUserId } from "@/lib/auth-guard";
+import { MAX_PROJECT_NAME_LENGTH } from "@/lib/constraints";
 import { db } from "@/lib/db";
 import { projects, tasks } from "@/lib/db/schema";
 
@@ -65,6 +66,15 @@ export async function POST(request: Request) {
   if (!name) {
     return NextResponse.json(
       { error: "El nombre del proyecto es requerido" },
+      { status: 400 },
+    );
+  }
+
+  if (name.length > MAX_PROJECT_NAME_LENGTH) {
+    return NextResponse.json(
+      {
+        error: `El nombre no puede tener más de ${MAX_PROJECT_NAME_LENGTH} caracteres`,
+      },
       { status: 400 },
     );
   }

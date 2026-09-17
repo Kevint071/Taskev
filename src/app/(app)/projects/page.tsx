@@ -9,6 +9,7 @@ import { PlusIcon } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { EmptyState, PageHeader, Panel } from "@/components/ui/panel";
 import { handleUnauthenticated } from "@/lib/api-client";
+import { MAX_PROJECT_NAME_LENGTH } from "@/lib/constraints";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
@@ -95,15 +96,21 @@ export default function ProjectsPage() {
           className="animate-reveal flex flex-col gap-2"
         >
           <div className="flex gap-4">
-            <Input
-              ref={nameInputRef}
-              type="text"
-              aria-label="Nombre del nuevo proyecto"
-              placeholder="Nombre del nuevo proyecto"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="min-w-0 flex-1"
-            />
+            <div className="relative min-w-0 flex-1">
+              <Input
+                ref={nameInputRef}
+                type="text"
+                aria-label="Nombre del nuevo proyecto"
+                placeholder="Nombre del nuevo proyecto"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={MAX_PROJECT_NAME_LENGTH}
+                className="w-full pr-14"
+              />
+              <span className="tabular pointer-events-none absolute inset-y-0 right-3 flex items-center text-meta text-muted">
+                {name.length}/{MAX_PROJECT_NAME_LENGTH}
+              </span>
+            </div>
             <Button type="submit" variant="primary">
               Crear
             </Button>
