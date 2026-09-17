@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildTodaySections, type TodayTask } from "./today";
+import { buildTodayMetrics, buildTodaySections, type TodayTask } from "./today";
 
 // Local noon on 2026-09-16, so the calendar day is unambiguous in any zone.
 const now = new Date(2026, 8, 16, 12, 0, 0);
@@ -17,10 +17,15 @@ function task(
   };
 }
 
+function utcDay(date: string): Date {
+  return new Date(`${date}T00:00:00Z`);
+}
+
 test("empty list has no next task and empty sections", () => {
   const result = buildTodaySections([], now);
   assert.equal(result.next, null);
   assert.deepEqual(result.overdue, []);
+  assert.deepEqual(result.dueToday, []);
   assert.deepEqual(result.thisWeek, []);
 });
 
@@ -36,7 +41,7 @@ test("next is the open task with the highest relevance", () => {
   assert.equal(result.next?.id, "b");
 });
 
-test("overdue holds tasks due before today, this week holds the next 7 days", () => {
+test("overdue, due-today and this-week each hold their own tasks", () => {
   const result = buildTodaySections(
     [
       task("next", { relevance: 100 }),
@@ -53,8 +58,12 @@ test("overdue holds tasks due before today, this week holds the next 7 days", ()
     ["yesterday"],
   );
   assert.deepEqual(
+    result.dueToday.map((t) => t.id),
+    ["today"],
+  );
+  assert.deepEqual(
     result.thisWeek.map((t) => t.id),
-    ["today", "in7"],
+    ["in7"],
   );
 });
 
@@ -77,12 +86,13 @@ test("completed tasks are ignored everywhere", () => {
   const result = buildTodaySections(
     [
       task("done", { due: "2026-09-10", relevance: 999, status: "completada" }),
-      task("done2", { due: "2026-09-17", status: "completada" }),
+      task("done2", { due: "2026-09-16", status: "completada" }),
     ],
     now,
   );
   assert.equal(result.next, null);
   assert.deepEqual(result.overdue, []);
+  assert.deepEqual(result.dueToday, []);
   assert.deepEqual(result.thisWeek, []);
 });
 
@@ -99,4 +109,43 @@ test("sections are sorted by due date", () => {
     result.thisWeek.map((t) => t.id),
     ["early", "late"],
   );
+});
+
+test("buildTodayMetrics: counts completions today and this week", () => {
+  const metrics = buildTodayMetrics(
+    [utcDay("2026-09-16"), utcDay("2026-09-15"), utcDay("2026-09-01"), null],
+    now,
+  );
+
+  assert.equal(metrics.completedToday, 1);
+  assert.equal(metrics.completedThisWeek, 2);
+});
+
+test("buildTodayMetrics: streak counts consecutive days ending today", () => {
+  const metrics = buildTodayMetrics(
+    [
+      utcDay("2026-09-16"),
+      utcDay("2026-09-15"),
+      utcDay("2026-09-14"),
+      utcDay("2026-09-12"),
+    ],
+    now,
+  );
+
+  assert.equal(metrics.streak, 3);
+});
+
+test("buildTodayMetrics: streak gives today a grace day when nothing is done yet", () => {
+  const metrics = buildTodayMetrics(
+    [utcDay("2026-09-15"), utcDay("2026-09-14")],
+    now,
+  );
+
+  assert.equal(metrics.streak, 2);
+});
+
+test("buildTodayMetrics: streak is zero once a day is skipped", () => {
+  const metrics = buildTodayMetrics([utcDay("2026-09-13")], now);
+
+  assert.equal(metrics.streak, 0);
 });

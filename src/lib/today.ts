@@ -11,6 +11,7 @@ export type TodayTask = {
 export type TodaySections<T extends TodayTask> = {
   next: T | null;
   overdue: T[];
+  dueToday: T[];
   thisWeek: T[];
 };
 
@@ -25,9 +26,11 @@ export function startOfDayKey(now: Date): number {
 /**
  * Splits tasks into the "Hoy" sections. `next` is the open task with the
  * highest relevance, shown separately as the featured task; it also appears
- * in overdue/this week below if its due date qualifies, so those lists
- * always reflect every matching task. Overdue wins over this week; completed
- * tasks are ignored. Lists are sorted by due date, earliest first.
+ * in the lists below if its due date qualifies, so those lists always
+ * reflect every matching task. `dueToday` is kept separate from `thisWeek`
+ * so today's agenda doesn't get lost in the week's noise. Overdue wins over
+ * due-today, which wins over this week; completed tasks are ignored. Lists
+ * are sorted by due date, earliest first.
  */
 export function buildTodaySections<T extends TodayTask>(
   tasks: T[],
@@ -45,12 +48,14 @@ export function buildTodaySections<T extends TodayTask>(
   const today = startOfDayKey(now);
   const weekEnd = today + WEEK_WINDOW_DAYS * MS_PER_DAY;
   const overdue: T[] = [];
+  const dueToday: T[] = [];
   const thisWeek: T[] = [];
 
   for (const task of open) {
     if (!task.dueDate) continue;
     const due = task.dueDate.getTime();
     if (due < today) overdue.push(task);
+    else if (due === today) dueToday.push(task);
     else if (due <= weekEnd) thisWeek.push(task);
   }
 
@@ -60,6 +65,49 @@ export function buildTodaySections<T extends TodayTask>(
   return {
     next,
     overdue: overdue.sort(byDue),
+    dueToday: dueToday.sort(byDue),
     thisWeek: thisWeek.sort(byDue),
   };
+}
+
+export type TodayMetrics = {
+  completedToday: number;
+  completedThisWeek: number;
+  streak: number;
+};
+
+/**
+ * Completion metrics for the "Hoy" ritual: how much closed today/this week,
+ * and the current daily streak. `completedAt` is stored as UTC midnight of
+ * the chosen calendar day, same as `dueDate`, so it's compared directly
+ * against `now`'s day key rather than re-derived. The streak gives today a
+ * grace period — if nothing is completed yet today, it still counts
+ * yesterday's run — so it only breaks once a full day is skipped.
+ */
+export function buildTodayMetrics(
+  completedAtDates: (Date | null)[],
+  now: Date,
+): TodayMetrics {
+  const today = startOfDayKey(now);
+  const weekStart = today - (WEEK_WINDOW_DAYS - 1) * MS_PER_DAY;
+  const days = new Set<number>();
+  let completedToday = 0;
+  let completedThisWeek = 0;
+
+  for (const date of completedAtDates) {
+    if (!date) continue;
+    const day = date.getTime();
+    days.add(day);
+    if (day === today) completedToday++;
+    if (day >= weekStart && day <= today) completedThisWeek++;
+  }
+
+  let cursor = days.has(today) ? today : today - MS_PER_DAY;
+  let streak = 0;
+  while (days.has(cursor)) {
+    streak++;
+    cursor -= MS_PER_DAY;
+  }
+
+  return { completedToday, completedThisWeek, streak };
 }

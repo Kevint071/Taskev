@@ -2,15 +2,15 @@ import Link from "next/link";
 import { LocalDate } from "@/components/local-date";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState, Panel } from "@/components/ui/panel";
-import { ProgressChip } from "@/components/ui/progress-chip";
 import { StatusBadge, StatusDot } from "@/components/ui/status-badge";
-import {
-  getUserTaskOverview,
-  type OverviewTask,
-  type ProjectOverview,
-} from "@/lib/data/overview";
-import { formatDueDate, truncateWords } from "@/lib/format";
-import { buildTodaySections } from "@/lib/today";
+import { getRecentComments, type RecentComment } from "@/lib/data/activity";
+import { getUserTaskOverview, type OverviewTask } from "@/lib/data/overview";
+import { formatDateTime, formatDueDate, truncateWords } from "@/lib/format";
+import { buildTodayMetrics, buildTodaySections } from "@/lib/today";
+
+const IN_PROGRESS_LIMIT = 3;
+const UNPLANNED_PREVIEW_LIMIT = 3;
+const ACTIVITY_LIMIT = 5;
 
 export async function TodayDashboard({
   userId,
@@ -20,9 +20,25 @@ export async function TodayDashboard({
   name: string | null;
 }) {
   const now = new Date();
-  const { tasks, projects } = await getUserTaskOverview(userId, now);
-  const { next, overdue, thisWeek } = buildTodaySections(tasks, now);
+  const [{ tasks, projectCount }, activity] = await Promise.all([
+    getUserTaskOverview(userId, now),
+    getRecentComments(userId, ACTIVITY_LIMIT),
+  ]);
+  const { next, overdue, dueToday, thisWeek } = buildTodaySections(tasks, now);
   const firstName = name?.split(" ")[0];
+
+  const openTasks = tasks.filter((t) => t.status !== "completada");
+  const blocked = openTasks.filter((t) => t.status === "bloqueada");
+  const inProgress = openTasks
+    .filter((t) => t.status === "en_curso")
+    .slice(0, IN_PROGRESS_LIMIT);
+  const unplanned = openTasks.filter(
+    (t) => !t.dueDate && Number(t.priority) === 0,
+  );
+  const metrics = buildTodayMetrics(
+    tasks.filter((t) => t.status === "completada").map((t) => t.completedAt),
+    now,
+  );
 
   return (
     <>
@@ -38,36 +54,50 @@ export async function TodayDashboard({
         </p>
       </header>
 
+      {(metrics.completedToday > 0 ||
+        metrics.completedThisWeek > 0 ||
+        metrics.streak > 0) && <MetricsBar metrics={metrics} />}
+
       {next ? (
         <NextTask task={next} />
       ) : (
         <EmptyState
           title={
-            projects.length === 0
+            projectCount === 0
               ? "Empieza creando un proyecto"
               : "No tienes tareas abiertas"
           }
           description={
-            projects.length === 0
+            projectCount === 0
               ? "Un proyecto agrupa tareas con un mismo objetivo. Después añade tareas y Taskev te dirá cuál va primero."
               : "Añade una tarea a cualquier proyecto y aparecerá aquí según su prioridad y fecha límite."
           }
           action={
             <ButtonLink href="/projects" variant="primary">
-              {projects.length === 0 ? "Crear un proyecto" : "Ir a proyectos"}
+              {projectCount === 0 ? "Crear un proyecto" : "Ir a proyectos"}
             </ButtonLink>
           }
         />
       )}
 
+      {blocked.length > 0 && (
+        <TaskSection
+          title="Bloqueadas"
+          tasks={blocked}
+          empty=""
+          tone="blocked"
+        />
+      )}
+
       {next && (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <TaskSection
             title="Vencidas"
             tasks={overdue}
             empty="Nada vencido. Bien."
             tone="danger"
           />
+          <TaskSection title="Hoy" tasks={dueToday} empty="Nada vence hoy." />
           <TaskSection
             title="Próximos 7 días"
             tasks={thisWeek}
@@ -76,7 +106,13 @@ export async function TodayDashboard({
         </div>
       )}
 
-      {projects.length > 0 && <ProjectsSummary projects={projects} />}
+      {inProgress.length > 0 && (
+        <TaskSection title="En curso" tasks={inProgress} empty="" />
+      )}
+
+      {unplanned.length > 0 && <UnplannedNotice tasks={unplanned} />}
+
+      {activity.length > 0 && <ActivityFeed items={activity} />}
     </>
   );
 }
@@ -124,6 +160,58 @@ function NextTask({ task }: { task: OverviewTask }) {
   );
 }
 
+function MetricsBar({
+  metrics,
+}: {
+  metrics: {
+    completedToday: number;
+    completedThisWeek: number;
+    streak: number;
+  };
+}) {
+  return (
+    <div className="grid grid-cols-3 divide-x divide-line overflow-hidden rounded-panel border border-line bg-raised shadow-panel">
+      <MetricStat
+        label="Hoy"
+        value={metrics.completedToday}
+        suffix="completadas"
+      />
+      <MetricStat
+        label="Esta semana"
+        value={metrics.completedThisWeek}
+        suffix="completadas"
+      />
+      <MetricStat
+        label="Racha"
+        value={metrics.streak}
+        suffix={metrics.streak === 1 ? "día" : "días"}
+      />
+    </div>
+  );
+}
+
+function MetricStat({
+  label,
+  value,
+  suffix,
+}: {
+  label: string;
+  value: number;
+  suffix: string;
+}) {
+  return (
+    <div className="flex flex-col gap-0.5 px-4 py-3">
+      <p className="text-meta text-muted">{label}</p>
+      <p className="tabular">
+        <span className="text-[22px] font-semibold tracking-tight">
+          {value}
+        </span>{" "}
+        <span className="text-meta text-muted">{suffix}</span>
+      </p>
+    </div>
+  );
+}
+
 function TaskSection({
   title,
   tasks,
@@ -133,15 +221,22 @@ function TaskSection({
   title: string;
   tasks: OverviewTask[];
   empty: string;
-  tone?: "danger";
+  tone?: "danger" | "blocked";
 }) {
+  const toneClass =
+    tone === "danger"
+      ? "text-danger"
+      : tone === "blocked"
+        ? "text-status-blocked"
+        : "text-muted";
+
   return (
     <section className="flex flex-col gap-2">
       <h2 className="flex items-baseline gap-2 font-semibold">
         {title}
         <span
           className={`tabular text-meta font-medium ${
-            tone === "danger" && tasks.length > 0 ? "text-danger" : "text-muted"
+            tasks.length > 0 ? toneClass : "text-muted"
           }`}
         >
           {tasks.length}
@@ -149,7 +244,7 @@ function TaskSection({
       </h2>
       <Panel>
         {tasks.length === 0 ? (
-          <p className="px-4 py-3 text-muted">{empty}</p>
+          empty && <p className="px-4 py-3 text-muted">{empty}</p>
         ) : (
           <ul className="divide-y divide-line">
             {tasks.map((task) => (
@@ -184,32 +279,54 @@ function TaskSection({
   );
 }
 
-function ProjectsSummary({ projects }: { projects: ProjectOverview[] }) {
+function UnplannedNotice({ tasks }: { tasks: OverviewTask[] }) {
+  const preview = tasks.slice(0, UNPLANNED_PREVIEW_LIMIT);
+  const rest = tasks.length - preview.length;
+
+  return (
+    <Panel className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 py-3 text-meta">
+      <span className="font-medium">
+        {tasks.length} {tasks.length === 1 ? "tarea" : "tareas"} sin fecha ni
+        prioridad
+      </span>
+      <span className="text-muted">— quizá deberías planearlas:</span>
+      {preview.map((task, i) => (
+        <span key={task.id} className="text-muted">
+          <Link
+            href={`/projects/${task.projectId}`}
+            className="text-ink hover:text-accent"
+          >
+            {task.title}
+          </Link>
+          {i < preview.length - 1 && ","}
+        </span>
+      ))}
+      {rest > 0 && <span className="text-muted">+{rest} más</span>}
+    </Panel>
+  );
+}
+
+function ActivityFeed({ items }: { items: RecentComment[] }) {
   return (
     <section className="flex flex-col gap-2">
-      <div className="flex items-baseline justify-between">
-        <h2 className="font-semibold">Proyectos</h2>
-        <Link href="/projects" className="text-meta text-muted hover:text-ink">
-          Ver todos
-        </Link>
-      </div>
+      <h2 className="font-semibold">Actividad reciente</h2>
       <Panel>
         <ul className="divide-y divide-line">
-          {projects.map((p) => (
-            <li key={p.id}>
+          {items.map((item) => (
+            <li key={item.id}>
               <Link
-                href={`/projects/${p.id}`}
-                className="flex items-center gap-4 px-4 py-2.5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken"
+                href={`/projects/${item.projectId}`}
+                className="flex flex-col gap-1 px-4 py-2.5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken"
               >
-                <span className="min-w-0 flex-1 truncate font-medium">
-                  {p.name}
-                </span>
-                <span className="tabular shrink-0 text-meta text-muted">
-                  {p.openCount} {p.openCount === 1 ? "abierta" : "abiertas"}
-                </span>
-                <span title="Avance medio">
-                  <ProgressChip value={p.avgProgress} />
-                </span>
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="truncate text-meta font-medium">
+                    {item.taskTitle}
+                  </p>
+                  <span className="tabular shrink-0 text-meta text-muted">
+                    {formatDateTime(item.createdAt.toISOString())}
+                  </span>
+                </div>
+                <p className="truncate text-muted">{item.body}</p>
               </Link>
             </li>
           ))}
