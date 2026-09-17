@@ -127,22 +127,24 @@ function TopTasks({ tasks }: { tasks: OverviewTask[] }) {
   const ranked = tasks.length > 1;
 
   return (
-    <Panel className="relative overflow-hidden">
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-0 left-0 w-1 bg-accent"
-      />
-      <p className="px-5 pt-4 pb-1 pl-6 text-meta font-medium text-accent md:px-6 md:pt-5 md:pl-7">
+    <section className="flex flex-col gap-2">
+      <p className="text-meta font-medium text-accent">
         {ranked ? "Prioridades de hoy" : "Siguiente tarea"}
       </p>
-      <ul className="divide-y divide-line">
-        {tasks.map((task, i) => (
-          <li key={task.id}>
-            <PriorityTask task={task} rank={ranked ? i + 1 : undefined} />
-          </li>
-        ))}
-      </ul>
-    </Panel>
+      <Panel className="relative overflow-hidden">
+        <span
+          aria-hidden="true"
+          className="absolute inset-y-0 left-0 w-1 bg-accent"
+        />
+        <ul className="divide-y divide-line">
+          {tasks.map((task, i) => (
+            <li key={task.id}>
+              <PriorityTask task={task} rank={ranked ? i + 1 : undefined} />
+            </li>
+          ))}
+        </ul>
+      </Panel>
+    </section>
   );
 }
 
@@ -150,7 +152,7 @@ function PriorityTask({ task, rank }: { task: OverviewTask; rank?: number }) {
   return (
     <Link
       href={`/projects/${task.projectId}`}
-      className="flex items-start gap-3 px-5 py-4 pl-6 transition-colors hover:bg-sunken md:pl-7"
+      className="flex items-start gap-3 px-5 py-4 pl-6 transition-colors hover:bg-sunken md:py-5 md:pl-7"
     >
       {rank && <RankBadge rank={rank} emphasis={rank === 1} />}
       <div className="min-w-0 flex-1">
