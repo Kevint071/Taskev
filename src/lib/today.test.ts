@@ -21,15 +21,15 @@ function utcDay(date: string): Date {
   return new Date(`${date}T00:00:00Z`);
 }
 
-test("empty list has no next task and empty sections", () => {
+test("empty list has no top tasks and empty sections", () => {
   const result = buildTodaySections([], now);
-  assert.equal(result.next, null);
+  assert.deepEqual(result.top, []);
   assert.deepEqual(result.overdue, []);
   assert.deepEqual(result.dueToday, []);
   assert.deepEqual(result.thisWeek, []);
 });
 
-test("next is the open task with the highest relevance", () => {
+test("top holds open tasks ordered by relevance, highest first", () => {
   const result = buildTodaySections(
     [
       task("a", { relevance: 10 }),
@@ -38,7 +38,26 @@ test("next is the open task with the highest relevance", () => {
     ],
     now,
   );
-  assert.equal(result.next?.id, "b");
+  assert.deepEqual(
+    result.top.map((t) => t.id),
+    ["b", "c", "a"],
+  );
+});
+
+test("top is capped at 3 tasks by default", () => {
+  const result = buildTodaySections(
+    [
+      task("a", { relevance: 10 }),
+      task("b", { relevance: 90 }),
+      task("c", { relevance: 40 }),
+      task("d", { relevance: 70 }),
+    ],
+    now,
+  );
+  assert.deepEqual(
+    result.top.map((t) => t.id),
+    ["b", "d", "c"],
+  );
 });
 
 test("overdue, due-today and this-week each hold their own tasks", () => {
@@ -67,7 +86,7 @@ test("overdue, due-today and this-week each hold their own tasks", () => {
   );
 });
 
-test("the next task also appears in overdue/this week when it qualifies", () => {
+test("top tasks also appear in overdue/this week when they qualify", () => {
   const result = buildTodaySections(
     [
       task("urgent", { due: "2026-09-10", relevance: 100 }),
@@ -75,7 +94,10 @@ test("the next task also appears in overdue/this week when it qualifies", () => 
     ],
     now,
   );
-  assert.equal(result.next?.id, "urgent");
+  assert.deepEqual(
+    result.top.map((t) => t.id),
+    ["urgent", "other"],
+  );
   assert.deepEqual(
     result.overdue.map((t) => t.id),
     ["urgent", "other"],
@@ -90,7 +112,7 @@ test("completed tasks are ignored everywhere", () => {
     ],
     now,
   );
-  assert.equal(result.next, null);
+  assert.deepEqual(result.top, []);
   assert.deepEqual(result.overdue, []);
   assert.deepEqual(result.dueToday, []);
   assert.deepEqual(result.thisWeek, []);

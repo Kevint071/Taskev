@@ -3,9 +3,14 @@ import { LocalDate } from "@/components/local-date";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState, Panel } from "@/components/ui/panel";
 import { StatusBadge, StatusDot } from "@/components/ui/status-badge";
-import { getRecentComments, type RecentComment } from "@/lib/data/activity";
+import {
+  groupRecentCommentsByProject,
+  type ProjectActivityGroup,
+  type TaskActivityGroup,
+} from "@/lib/activity";
+import { getRecentComments } from "@/lib/data/activity";
 import { getUserTaskOverview, type OverviewTask } from "@/lib/data/overview";
-import { formatDateTime, formatDueDate, truncateWords } from "@/lib/format";
+import { formatDueDate, formatRelativeTime, truncateWords } from "@/lib/format";
 import { buildTodayMetrics, buildTodaySections } from "@/lib/today";
 
 const IN_PROGRESS_LIMIT = 3;
@@ -20,11 +25,12 @@ export async function TodayDashboard({
   name: string | null;
 }) {
   const now = new Date();
-  const [{ tasks, projectCount }, activity] = await Promise.all([
+  const [{ tasks, projectCount }, comments] = await Promise.all([
     getUserTaskOverview(userId, now),
     getRecentComments(userId, ACTIVITY_LIMIT),
   ]);
-  const { next, overdue, dueToday, thisWeek } = buildTodaySections(tasks, now);
+  const { top, overdue, dueToday, thisWeek } = buildTodaySections(tasks, now);
+  const activity = groupRecentCommentsByProject(comments);
   const firstName = name?.split(" ")[0];
 
   const openTasks = tasks.filter((t) => t.status !== "completada");
@@ -58,8 +64,8 @@ export async function TodayDashboard({
         metrics.completedThisWeek > 0 ||
         metrics.streak > 0) && <MetricsBar metrics={metrics} />}
 
-      {next ? (
-        <NextTask task={next} />
+      {top.length > 0 ? (
+        <TopTasks tasks={top} />
       ) : (
         <EmptyState
           title={
@@ -89,7 +95,7 @@ export async function TodayDashboard({
         />
       )}
 
-      {next && (
+      {top.length > 0 && (
         <div className="grid gap-4 md:grid-cols-3">
           <TaskSection
             title="Vencidas"
@@ -112,25 +118,59 @@ export async function TodayDashboard({
 
       {unplanned.length > 0 && <UnplannedNotice tasks={unplanned} />}
 
-      {activity.length > 0 && <ActivityFeed items={activity} />}
+      {activity.length > 0 && <ActivityFeed groups={activity} />}
     </>
   );
 }
 
-function NextTask({ task }: { task: OverviewTask }) {
+function TopTasks({ tasks }: { tasks: OverviewTask[] }) {
+  const [featured, ...rest] = tasks;
+
   return (
-    <Panel className="relative flex flex-col gap-4 overflow-hidden p-5 pl-6 md:p-6 md:pl-7">
+    <Panel className="relative overflow-hidden">
       <span
         aria-hidden="true"
         className="absolute inset-y-0 left-0 w-1 bg-accent"
       />
-      <p className="text-meta font-medium text-accent">Siguiente tarea</p>
-      <Link
-        href={`/projects/${task.projectId}`}
-        className="w-fit rounded-[4px] text-[22px] leading-[1.35] font-semibold tracking-tight hover:text-accent md:text-[26px]"
-      >
-        {truncateWords(task.title, 15)}
-      </Link>
+      <ul className="divide-y divide-line">
+        <li>
+          <FeaturedTask
+            task={featured}
+            rank={rest.length > 0 ? 1 : undefined}
+            label={rest.length > 0 ? "Prioridades de hoy" : "Siguiente tarea"}
+          />
+        </li>
+        {rest.map((task, i) => (
+          <li key={task.id}>
+            <PriorityRow task={task} rank={i + 2} />
+          </li>
+        ))}
+      </ul>
+    </Panel>
+  );
+}
+
+function FeaturedTask({
+  task,
+  rank,
+  label,
+}: {
+  task: OverviewTask;
+  rank?: number;
+  label: string;
+}) {
+  return (
+    <div className="flex flex-col gap-4 p-5 pl-6 md:p-6 md:pl-7">
+      <p className="text-meta font-medium text-accent">{label}</p>
+      <div className="flex items-start gap-3">
+        {rank && <RankBadge rank={rank} emphasis />}
+        <Link
+          href={`/projects/${task.projectId}`}
+          className="w-fit rounded-[4px] text-[22px] leading-[1.35] font-semibold tracking-tight hover:text-accent md:text-[26px]"
+        >
+          {truncateWords(task.title, 15)}
+        </Link>
+      </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-meta text-muted">
         <span>{task.projectName}</span>
         <StatusBadge status={task.status} />
@@ -156,7 +196,45 @@ function NextTask({ task }: { task: OverviewTask }) {
           {task.progressPct}%
         </span>
       </div>
-    </Panel>
+    </div>
+  );
+}
+
+function PriorityRow({ task, rank }: { task: OverviewTask; rank: number }) {
+  return (
+    <Link
+      href={`/projects/${task.projectId}`}
+      className="flex items-center gap-3 px-5 py-3 pl-6 transition-colors hover:bg-sunken md:pl-7"
+    >
+      <RankBadge rank={rank} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium">{truncateWords(task.title, 12)}</p>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-meta text-muted">
+          <span className="truncate">{task.projectName}</span>
+          <StatusBadge status={task.status} />
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-3 text-meta">
+        {task.dueDate && (
+          <span className="tabular text-muted">
+            {formatDueDate(task.dueDate)}
+          </span>
+        )}
+        <span className="tabular font-medium">{task.progressPct}%</span>
+      </div>
+    </Link>
+  );
+}
+
+function RankBadge({ rank, emphasis }: { rank: number; emphasis?: boolean }) {
+  return (
+    <span
+      className={`tabular flex size-6 shrink-0 items-center justify-center rounded-full text-meta font-semibold ${
+        emphasis ? "bg-accent text-accent-ink" : "bg-sunken text-muted"
+      }`}
+    >
+      {rank}
+    </span>
   );
 }
 
@@ -306,32 +384,67 @@ function UnplannedNotice({ tasks }: { tasks: OverviewTask[] }) {
   );
 }
 
-function ActivityFeed({ items }: { items: RecentComment[] }) {
+function ActivityFeed({ groups }: { groups: ProjectActivityGroup[] }) {
   return (
     <section className="flex flex-col gap-2">
       <h2 className="font-semibold">Actividad reciente</h2>
-      <Panel>
-        <ul className="divide-y divide-line">
-          {items.map((item) => (
-            <li key={item.id}>
-              <Link
-                href={`/projects/${item.projectId}`}
-                className="flex flex-col gap-1 px-4 py-2.5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken"
-              >
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="truncate text-meta font-medium">
-                    {item.taskTitle}
-                  </p>
-                  <span className="tabular shrink-0 text-meta text-muted">
-                    {formatDateTime(item.createdAt.toISOString())}
-                  </span>
-                </div>
-                <p className="truncate text-muted">{item.body}</p>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </Panel>
+      <div className="flex flex-col gap-4">
+        {groups.map((project) => (
+          <div key={project.projectId} className="flex flex-col gap-2">
+            <h3 className="text-meta font-medium text-muted">
+              {project.projectName}
+            </h3>
+            <Panel>
+              <ul className="divide-y divide-line">
+                {project.tasks.map((task) => (
+                  <li key={task.taskId}>
+                    <ActivityTaskRow
+                      projectId={project.projectId}
+                      task={task}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          </div>
+        ))}
+      </div>
     </section>
+  );
+}
+
+function ActivityTaskRow({
+  projectId,
+  task,
+}: {
+  projectId: string;
+  task: TaskActivityGroup;
+}) {
+  return (
+    <Link
+      href={`/projects/${projectId}`}
+      className="flex flex-col gap-2 px-4 py-3 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken"
+    >
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="truncate font-medium">{task.taskTitle}</p>
+        {task.comments.length > 1 && (
+          <span className="tabular shrink-0 text-meta text-muted">
+            {task.comments.length} comentarios
+          </span>
+        )}
+      </div>
+      <ul className="flex flex-col gap-1.5 border-l-2 border-line pl-3">
+        {task.comments.map((comment) => (
+          <li key={comment.id} className="flex items-baseline gap-3">
+            <span className="min-w-0 flex-1 truncate text-muted">
+              {comment.body}
+            </span>
+            <span className="tabular shrink-0 text-meta text-muted">
+              {formatRelativeTime(comment.createdAt)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Link>
   );
 }

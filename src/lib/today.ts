@@ -9,11 +9,13 @@ export type TodayTask = {
 };
 
 export type TodaySections<T extends TodayTask> = {
-  next: T | null;
+  top: T[];
   overdue: T[];
   dueToday: T[];
   thisWeek: T[];
 };
+
+export const TOP_TASKS_LIMIT = 3;
 
 /**
  * Due dates are stored as UTC midnight of the chosen calendar day, so "today"
@@ -24,26 +26,24 @@ export function startOfDayKey(now: Date): number {
 }
 
 /**
- * Splits tasks into the "Hoy" sections. `next` is the open task with the
- * highest relevance, shown separately as the featured task; it also appears
- * in the lists below if its due date qualifies, so those lists always
- * reflect every matching task. `dueToday` is kept separate from `thisWeek`
- * so today's agenda doesn't get lost in the week's noise. Overdue wins over
- * due-today, which wins over this week; completed tasks are ignored. Lists
- * are sorted by due date, earliest first.
+ * Splits tasks into the "Hoy" sections. `top` holds the open tasks with the
+ * highest relevance (up to `topLimit`), shown separately as today's featured
+ * priorities; they also appear in the lists below if their due date
+ * qualifies, so those lists always reflect every matching task. `dueToday`
+ * is kept separate from `thisWeek` so today's agenda doesn't get lost in the
+ * week's noise. Overdue wins over due-today, which wins over this week;
+ * completed tasks are ignored. Lists are sorted by due date, earliest first.
  */
 export function buildTodaySections<T extends TodayTask>(
   tasks: T[],
   now: Date,
+  topLimit: number = TOP_TASKS_LIMIT,
 ): TodaySections<T> {
   const open = tasks.filter((t) => t.status !== "completada");
 
-  let next: T | null = null;
-  for (const task of open) {
-    if (next === null || (task.relevance ?? 0) > (next.relevance ?? 0)) {
-      next = task;
-    }
-  }
+  const top = [...open]
+    .sort((a, b) => (b.relevance ?? 0) - (a.relevance ?? 0))
+    .slice(0, topLimit);
 
   const today = startOfDayKey(now);
   const weekEnd = today + WEEK_WINDOW_DAYS * MS_PER_DAY;
@@ -63,7 +63,7 @@ export function buildTodaySections<T extends TodayTask>(
     (a.dueDate?.getTime() ?? 0) - (b.dueDate?.getTime() ?? 0);
 
   return {
-    next,
+    top,
     overdue: overdue.sort(byDue),
     dueToday: dueToday.sort(byDue),
     thisWeek: thisWeek.sort(byDue),
