@@ -1,1 +1,158 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Cool paper, blue-black ink and a single cobalt accent for "what matters now". */
+:root {
+  --surface: #f4f6f9;
+  --raised: #ffffff;
+  --sunken: #eceff4;
+  --line: #e0e5ec;
+  --line-strong: #c9d1dc;
+  --ink: #1a2332;
+  --muted: #5b6678;
+  --accent: #3553c7;
+  --accent-soft: #e9edfb;
+  --accent-ink: #ffffff;
+  --danger: #c0392b;
+  --status-open: #8a94a6;
+  --status-progress: #3553c7;
+  --status-blocked: #c0392b;
+  --status-done: #2f8a5b;
+  --shadow-panel: 0 1px 2px rgba(26, 35, 50, 0.04);
+  color-scheme: light;
+}
+
+/* Slate rather than near-black, so text never sits on a pitch-dark field. */
+.dark {
+  --surface: #1e232d;
+  --raised: #262c38;
+  --sunken: #1a1f28;
+  --line: #343b49;
+  --line-strong: #465062;
+  --ink: #e6e9ef;
+  --muted: #a3acbb;
+  --accent: #8fa4f5;
+  --accent-soft: #2f3854;
+  --accent-ink: #141a2b;
+  --danger: #f08a7c;
+  --status-open: #a3acbb;
+  --status-progress: #8fa4f5;
+  --status-blocked: #f08a7c;
+  --status-done: #6fc59a;
+  --shadow-panel: none;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-sunken: var(--sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-danger: var(--danger);
+  --color-status-open: var(--status-open);
+  --color-status-progress: var(--status-progress);
+  --color-status-blocked: var(--status-blocked);
+  --color-status-done: var(--status-done);
+
+  --radius-control: 6px;
+  --radius-panel: 10px;
+
+  --text-meta: 13px;
+  --text-meta--line-height: 18px;
+  --text-ui: 14px;
+  --text-ui--line-height: 20px;
+  --text-body: 16px;
+  --text-body--line-height: 26px;
+  --text-section: 20px;
+  --text-section--line-height: 28px;
+  --text-section--letter-spacing: -0.01em;
+  --text-page: 28px;
+  --text-page--line-height: 34px;
+  --text-page--letter-spacing: -0.02em;
+  --text-display: clamp(2.25rem, 6vw, 2.75rem);
+  --text-display--line-height: 1.08;
+  --text-display--letter-spacing: -0.03em;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--surface);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility shadow-panel {
+  box-shadow: var(--shadow-panel);
+}
+
+/* A task that exists on screen but is still being saved in the background. */
+@keyframes syncing {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@utility animate-syncing {
+  animation: syncing 1.2s ease-in-out infinite;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-reveal {
+  animation: reveal 160ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: must beat component-level motion */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: must beat component-level motion */
+    transition-duration: 0.01ms !important;
+  }
+}

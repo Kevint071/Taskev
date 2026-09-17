@@ -7,6 +7,11 @@ export type Project = {
   createdAt: string;
 };
 
+export type ProjectSummary = Project & {
+  openCount: number;
+  taskCount: number;
+};
+
 export type Task = {
   id: string;
   projectId: string;

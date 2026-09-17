@@ -1,7 +1,15 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { AppShell } from "@/components/app-shell";
+import { Landing } from "@/components/home/landing";
+import { TodayDashboard } from "@/components/home/today-dashboard";
+import { getCurrentUser } from "@/lib/auth-guard";
 
 export default async function Home() {
-  const session = await auth();
-  redirect(session?.user ? "/projects" : "/login");
+  const user = await getCurrentUser();
+  if (!user) return <Landing />;
+
+  return (
+    <AppShell user={user}>
+      <TodayDashboard userId={user.id} name={user.name} />
+    </AppShell>
+  );
 }
