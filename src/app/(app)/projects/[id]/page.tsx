@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Field, FormError } from "@/components/ui/field";
+import { PlusIcon } from "@/components/ui/icons";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { EmptyState, LoadingRows, Panel } from "@/components/ui/panel";
 import { ProgressChip } from "@/components/ui/progress-chip";
@@ -46,6 +47,7 @@ export default function ProjectDetailPage() {
   const router = useRouter();
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<LocalTask[]>([]);
+  const [addingTask, setAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -55,6 +57,22 @@ export default function ProjectDetailPage() {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const newTaskInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (addingTask) newTaskInputRef.current?.focus();
+  }, [addingTask]);
+
+  function openAddTask() {
+    setError(null);
+    setAddingTask(true);
+  }
+
+  function closeAddTask() {
+    setAddingTask(false);
+    setNewTaskTitle("");
+    setError(null);
+  }
 
   async function load() {
     const res = await fetch(`/api/projects/${id}`);
@@ -146,6 +164,7 @@ export default function ProjectDetailPage() {
       },
     ]);
     setNewTaskTitle("");
+    newTaskInputRef.current?.focus();
 
     queue.create(key, async () => {
       const created = await sendJson<Task>(
@@ -345,22 +364,45 @@ export default function ProjectDetailPage() {
         </header>
       </div>
 
-      <form onSubmit={handleAddTask} className="flex flex-col gap-2">
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            aria-label="Título de la nueva tarea"
-            placeholder="Añade una tarea y pulsa Enter"
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            className="min-w-0 flex-1"
-          />
-          <Button type="submit" variant="primary">
-            Añadir tarea
-          </Button>
-        </div>
-        <FormError message={error} />
-      </form>
+      {addingTask ? (
+        <form
+          onSubmit={handleAddTask}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") closeAddTask();
+          }}
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+              closeAddTask();
+            }
+          }}
+          className="animate-reveal flex flex-col gap-2"
+        >
+          <div className="flex gap-4">
+            <Input
+              ref={newTaskInputRef}
+              type="text"
+              aria-label="Título de la nueva tarea"
+              placeholder="Añade una tarea y pulsa Enter"
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              className="min-w-0 flex-1"
+            />
+            <Button type="submit" variant="primary">
+              Añadir
+            </Button>
+          </div>
+          <FormError message={error} />
+        </form>
+      ) : (
+        <Button
+          variant="secondary"
+          onClick={openAddTask}
+          className="self-start"
+        >
+          <PlusIcon />
+          Añadir tarea
+        </Button>
+      )}
 
       {syncError && (
         <div
@@ -381,7 +423,7 @@ export default function ProjectDetailPage() {
       {tasks.length === 0 ? (
         <EmptyState
           title="Este proyecto no tiene tareas"
-          description="Añade la primera arriba. Luego puedes arrastrarlas para ordenarlas a tu manera."
+          description="Añade la primera con el botón de arriba. Luego puedes arrastrarlas para ordenarlas a tu manera."
         />
       ) : (
         <div className="flex flex-col gap-5">
@@ -575,7 +617,7 @@ function TaskRow({
               onChange={(e) =>
                 onUpdate({ status: e.target.value as Task["status"] })
               }
-              className="h-8 w-[156px] pr-7 pl-6 text-meta"
+              className="h-8 w-32 pr-7 pl-6 text-meta"
             >
               {Object.entries(STATUS_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>

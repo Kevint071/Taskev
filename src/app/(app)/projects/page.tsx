@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ProjectSummary } from "@/components/project-types";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/field";
+import { PlusIcon } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { EmptyState, PageHeader, Panel } from "@/components/ui/panel";
 import { handleUnauthenticated } from "@/lib/api-client";
@@ -12,9 +13,26 @@ import { handleUnauthenticated } from "@/lib/api-client";
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [showArchived, setShowArchived] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (creating) nameInputRef.current?.focus();
+  }, [creating]);
+
+  function openCreate() {
+    setError(null);
+    setCreating(true);
+  }
+
+  function closeCreate() {
+    setCreating(false);
+    setName("");
+    setError(null);
+  }
 
   async function load(archived: boolean) {
     setLoading(true);
@@ -43,7 +61,7 @@ export default function ProjectsPage() {
       setError(data.error ?? "No se pudo crear el proyecto");
       return;
     }
-    setName("");
+    closeCreate();
     if (showArchived) setShowArchived(false);
     else load(false);
   }
@@ -53,24 +71,46 @@ export default function ProjectsPage() {
       <PageHeader
         title="Proyectos"
         description="Agrupa tus tareas por objetivo. Archiva lo que ya no está activo."
+        actions={
+          !creating && (
+            <Button variant="primary" onClick={openCreate}>
+              <PlusIcon />
+              Nuevo proyecto
+            </Button>
+          )
+        }
       />
 
-      <form onSubmit={handleCreate} className="flex flex-col gap-2">
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            aria-label="Nombre del nuevo proyecto"
-            placeholder="Nombre del nuevo proyecto"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="min-w-0 flex-1"
-          />
-          <Button type="submit" variant="primary">
-            Crear proyecto
-          </Button>
-        </div>
-        <FormError message={error} />
-      </form>
+      {creating && (
+        <form
+          onSubmit={handleCreate}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") closeCreate();
+          }}
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+              closeCreate();
+            }
+          }}
+          className="animate-reveal flex flex-col gap-2"
+        >
+          <div className="flex gap-4">
+            <Input
+              ref={nameInputRef}
+              type="text"
+              aria-label="Nombre del nuevo proyecto"
+              placeholder="Nombre del nuevo proyecto"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="min-w-0 flex-1"
+            />
+            <Button type="submit" variant="primary">
+              Crear
+            </Button>
+          </div>
+          <FormError message={error} />
+        </form>
+      )}
 
       <section className="flex flex-col gap-3">
         <div
@@ -122,7 +162,7 @@ export default function ProjectsPage() {
             description={
               showArchived
                 ? "Cuando archives un proyecto aparecerá aquí, con todas sus tareas intactas."
-                : "Escribe un nombre arriba para crear el primero."
+                : "Usa el botón de arriba para crear el primero."
             }
           />
         ) : (
