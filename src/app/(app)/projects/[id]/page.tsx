@@ -515,7 +515,21 @@ function TaskRow({
         dropTarget ? "shadow-[inset_0_2px_0_var(--accent)]" : ""
       } ${expanded ? "bg-sunken/40" : ""}`}
     >
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:flex-nowrap">
+      {/* biome-ignore lint/a11y/useSemanticElements: wraps a select and a button, which can't nest inside a real <button> */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onToggleExpand}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onToggleExpand();
+          }
+        }}
+        aria-expanded={expanded}
+        className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 cursor-pointer sm:flex-nowrap"
+      >
         <span
           className="cursor-grab text-muted select-none active:cursor-grabbing"
           title="Arrastra para reordenar"
@@ -523,10 +537,7 @@ function TaskRow({
         >
           ⠿
         </span>
-        <button
-          type="button"
-          onClick={onToggleExpand}
-          aria-expanded={expanded}
+        <span
           className={`flex min-w-0 flex-1 items-center gap-2 rounded-[4px] py-1 text-left font-medium ${
             done ? "text-muted" : ""
           }`}
@@ -540,7 +551,7 @@ function TaskRow({
               <span className="sr-only">Guardando</span>
             </span>
           )}
-        </button>
+        </span>
         <div className="ml-6 flex items-center gap-3 sm:ml-0">
           {task.dueDate && (
             <span
@@ -560,6 +571,7 @@ function TaskRow({
             />
             <Select
               value={task.status}
+              onClick={(e) => e.stopPropagation()}
               onChange={(e) =>
                 onUpdate({ status: e.target.value as Task["status"] })
               }
@@ -586,7 +598,10 @@ function TaskRow({
           </label>
           <button
             type="button"
-            onClick={onDelete}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
             aria-label={`Eliminar la tarea ${task.title}`}
             title="Eliminar tarea"
             className="flex size-8 items-center justify-center rounded-control text-muted hover:bg-danger/10 hover:text-danger"

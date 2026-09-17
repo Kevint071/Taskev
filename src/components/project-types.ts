@@ -10,6 +10,7 @@ export type Project = {
 export type ProjectSummary = Project & {
   openCount: number;
   taskCount: number;
+  avgProgress: number;
 };
 
 export type Task = {

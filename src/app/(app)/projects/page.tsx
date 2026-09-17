@@ -6,12 +6,7 @@ import type { ProjectSummary } from "@/components/project-types";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  EmptyState,
-  LoadingRows,
-  PageHeader,
-  Panel,
-} from "@/components/ui/panel";
+import { EmptyState, PageHeader, Panel } from "@/components/ui/panel";
 import { handleUnauthenticated } from "@/lib/api-client";
 
 export default function ProjectsPage() {
@@ -108,7 +103,15 @@ export default function ProjectsPage() {
         </div>
 
         {loading ? (
-          <LoadingRows />
+          <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }, (_, i) => (
+              <li
+                // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders
+                key={i}
+                className="h-36 animate-pulse rounded-panel bg-sunken"
+              />
+            ))}
+          </ul>
         ) : projects.length === 0 ? (
           <EmptyState
             title={
@@ -123,40 +126,71 @@ export default function ProjectsPage() {
             }
           />
         ) : (
-          <Panel>
-            <ul className="divide-y divide-line">
-              {projects.map((p) => (
-                <li key={p.id}>
-                  <Link
-                    href={`/projects/${p.id}`}
-                    className="group flex items-center gap-4 px-4 py-3.5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{p.name}</p>
-                      {p.description && (
-                        <p className="truncate text-meta text-muted">
-                          {p.description}
-                        </p>
-                      )}
-                    </div>
-                    <span className="tabular shrink-0 text-meta text-muted">
-                      {p.taskCount === 0
-                        ? "Sin tareas"
-                        : `${p.openCount} ${p.openCount === 1 ? "abierta" : "abiertas"}`}
-                    </span>
-                    <span
-                      aria-hidden
-                      className="text-muted transition-transform group-hover:translate-x-0.5"
-                    >
-                      ›
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </Panel>
+          <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {projects.map((p) => (
+              <li key={p.id}>
+                <ProjectCard project={p} />
+              </li>
+            ))}
+          </ul>
         )}
       </section>
     </>
+  );
+}
+
+function ProjectCard({ project: p }: { project: ProjectSummary }) {
+  const done = p.avgProgress >= 100 && p.taskCount > 0;
+  return (
+    <Link href={`/projects/${p.id}`} className="group block h-full">
+      <Panel className="flex h-full flex-col gap-5 p-5 transition-colors group-hover:border-line-strong">
+        <div className="min-w-0">
+          <p className="truncate font-medium group-hover:text-accent">
+            {p.name}
+          </p>
+          {p.description ? (
+            <p className="mt-1 line-clamp-2 text-meta text-muted">
+              {p.description}
+            </p>
+          ) : (
+            <p className="mt-1 text-meta text-muted">
+              {p.taskCount === 0
+                ? "Sin tareas"
+                : `${p.openCount} ${p.openCount === 1 ? "abierta" : "abiertas"}`}
+            </p>
+          )}
+        </div>
+
+        <div className="mt-auto flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            {p.description && (
+              <span className="tabular text-meta text-muted">
+                {p.taskCount === 0
+                  ? "Sin tareas"
+                  : `${p.openCount} ${p.openCount === 1 ? "abierta" : "abiertas"}`}
+              </span>
+            )}
+            <span
+              className={`tabular ml-auto text-meta font-medium ${done ? "text-status-done" : "text-ink"}`}
+            >
+              {p.avgProgress}%
+            </span>
+          </div>
+          <div
+            role="progressbar"
+            aria-label={`Avance de ${p.name}`}
+            aria-valuenow={p.avgProgress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            className="h-1.5 overflow-hidden rounded-full bg-sunken"
+          >
+            <div
+              className={`h-full rounded-full ${done ? "bg-status-done" : "bg-accent"}`}
+              style={{ width: `${p.avgProgress}%` }}
+            />
+          </div>
+        </div>
+      </Panel>
+    </Link>
   );
 }

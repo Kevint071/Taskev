@@ -30,6 +30,10 @@ export async function GET(request: Request) {
           Number,
         ),
       taskCount: count(tasks.id),
+      avgProgress:
+        sql<number>`coalesce(round(avg(${tasks.progressPct})), 0)`.mapWith(
+          Number,
+        ),
     })
     .from(projects)
     .leftJoin(tasks, eq(tasks.projectId, projects.id))
