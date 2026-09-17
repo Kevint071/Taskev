@@ -1,8 +1,17 @@
-import { and, eq, isNotNull, isNull } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  isNotNull,
+  isNull,
+  sql,
+} from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireUserId } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
-import { projects } from "@/lib/db/schema";
+import { projects, tasks } from "@/lib/db/schema";
 
 export async function GET(request: Request) {
   const userId = await requireUserId();
@@ -14,8 +23,16 @@ export async function GET(request: Request) {
     new URL(request.url).searchParams.get("archived") === "true";
 
   const rows = await db
-    .select()
+    .select({
+      ...getTableColumns(projects),
+      openCount:
+        sql<number>`count(${tasks.id}) filter (where ${tasks.status} <> 'completada')`.mapWith(
+          Number,
+        ),
+      taskCount: count(tasks.id),
+    })
     .from(projects)
+    .leftJoin(tasks, eq(tasks.projectId, projects.id))
     .where(
       and(
         eq(projects.userId, userId),
@@ -23,7 +40,9 @@ export async function GET(request: Request) {
           ? isNotNull(projects.archivedAt)
           : isNull(projects.archivedAt),
       ),
-    );
+    )
+    .groupBy(projects.id)
+    .orderBy(desc(projects.createdAt));
 
   return NextResponse.json(rows);
 }
