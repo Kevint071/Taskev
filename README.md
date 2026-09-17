@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Taskev
 
-## Getting Started
+**Sabe en qué trabajar a continuación.**
 
-First, run the development server:
+Taskev es un gestor de tareas enfocado en personas con muchos proyectos compitiendo por su atención. Convierte una larga lista de responsabilidades en una vista clara y útil del trabajo que importa ahora.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ¿Por qué Taskev?
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+La mayoría de las listas de tareas te muestran todo lo que podrías hacer. Taskev te ayuda a decidir qué hacer a continuación.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Empieza por hoy.** Abre la aplicación y consulta primero tus tareas más relevantes, según su prioridad, progreso y fecha límite.
+- **Mantén el trabajo organizado.** Agrupa las tareas en proyectos para que cada una tenga el contexto necesario sin dificultar la revisión de tu día.
+- **Detecta lo que necesita atención.** Identifica rápidamente el trabajo atrasado, bloqueado, en curso y próximo.
+- **Haz visible el progreso.** Sigue el estado y el porcentaje de finalización sin perder de vista el proyecto completo.
+- **Planifica con fechas reales.** Usa el calendario para consultar el trabajo programado y las próximas fechas límite.
+- **Mantén el control.** Añade notas y comentarios para conservar las decisiones y el contexto junto a cada tarea.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## La experiencia
 
-## Learn More
+### Una vista diaria tranquila
 
-To learn more about Next.js, take a look at the following resources:
+El panel de Hoy reúne en un solo lugar las próximas acciones, las fechas límite, las tareas bloqueadas y la actividad reciente. En lugar de decidir cada mañana por dónde empezar, puedes comenzar con el trabajo que ya está identificado como más importante.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Proyectos que siguen siendo accionables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Los proyectos agrupan tareas relacionadas en torno a un objetivo común. Cada proyecto puede dividirse en tareas ordenadas con estado, prioridad, fecha límite, progreso y comentarios.
 
-## Deploy on Vercel
+### Una lista de tareas que refleja la realidad
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Las tareas pueden estar disponibles, en curso, pausadas, bloqueadas o completadas. Esto facilita distinguir el trabajo que puedes hacer ahora del que está esperando a otra persona o condición.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Aspectos destacados
+
+- Cuentas personales con inicio de sesión seguro y recuperación de contraseña
+- Organización de tareas por proyectos activos y archivados
+- Clasificación por prioridad y relevancia para descubrir la próxima acción
+- Seguimiento del progreso y estados de tarea significativos
+- Panel de Hoy con trabajo atrasado y próximo
+- Vista de calendario para las tareas programadas
+- Comentarios y actividad reciente por proyecto
+- Interfaz adaptable con temas claro y oscuro
+
+## Acerca del proyecto
+
+Taskev está diseñado como una aplicación personal y enfocada en la productividad. El repositorio contiene la aplicación web y su lógica de dominio, con persistencia en PostgreSQL y una interfaz moderna basada en React.
+
+### Tecnologías
+
+- [Next.js](https://nextjs.org/)
+- [React](https://react.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [PostgreSQL](https://www.postgresql.org/)
+- [Drizzle ORM](https://orm.drizzle.team/)
+
+## Estado
+
+Taskev está en desarrollo activo. El flujo principal está disponible: crear proyectos, añadir y priorizar tareas, seguir el progreso, planificar fechas límite y usar el panel de Hoy para centrar la atención.
