@@ -124,7 +124,7 @@ export async function TodayDashboard({
 }
 
 function TopTasks({ tasks }: { tasks: OverviewTask[] }) {
-  const [featured, ...rest] = tasks;
+  const ranked = tasks.length > 1;
 
   return (
     <Panel className="relative overflow-hidden">
@@ -132,17 +132,13 @@ function TopTasks({ tasks }: { tasks: OverviewTask[] }) {
         aria-hidden="true"
         className="absolute inset-y-0 left-0 w-1 bg-accent"
       />
+      <p className="px-5 pt-4 pb-1 pl-6 text-meta font-medium text-accent md:px-6 md:pt-5 md:pl-7">
+        {ranked ? "Prioridades de hoy" : "Siguiente tarea"}
+      </p>
       <ul className="divide-y divide-line">
-        <li>
-          <FeaturedTask
-            task={featured}
-            rank={rest.length > 0 ? 1 : undefined}
-            label={rest.length > 0 ? "Prioridades de hoy" : "Siguiente tarea"}
-          />
-        </li>
-        {rest.map((task, i) => (
+        {tasks.map((task, i) => (
           <li key={task.id}>
-            <PriorityRow task={task} rank={i + 2} />
+            <PriorityTask task={task} rank={ranked ? i + 1 : undefined} />
           </li>
         ))}
       </ul>
@@ -150,77 +146,42 @@ function TopTasks({ tasks }: { tasks: OverviewTask[] }) {
   );
 }
 
-function FeaturedTask({
-  task,
-  rank,
-  label,
-}: {
-  task: OverviewTask;
-  rank?: number;
-  label: string;
-}) {
+function PriorityTask({ task, rank }: { task: OverviewTask; rank?: number }) {
   return (
-    <div className="flex flex-col gap-4 p-5 pl-6 md:p-6 md:pl-7">
-      <p className="text-meta font-medium text-accent">{label}</p>
-      <div className="flex items-start gap-3">
-        {rank && <RankBadge rank={rank} emphasis />}
-        <Link
-          href={`/projects/${task.projectId}`}
-          className="w-fit rounded-[4px] text-[22px] leading-[1.35] font-semibold tracking-tight hover:text-accent md:text-[26px]"
-        >
-          {truncateWords(task.title, 15)}
-        </Link>
-      </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-meta text-muted">
-        <span>{task.projectName}</span>
-        <StatusBadge status={task.status} />
-        {task.dueDate && (
-          <span className="tabular">Vence {formatDueDate(task.dueDate)}</span>
-        )}
-      </div>
-      <div className="flex items-center gap-3">
+    <Link
+      href={`/projects/${task.projectId}`}
+      className="flex items-start gap-3 px-5 py-4 pl-6 transition-colors hover:bg-sunken md:pl-7"
+    >
+      {rank && <RankBadge rank={rank} emphasis={rank === 1} />}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="truncate text-[16px] font-semibold tracking-tight">
+            {truncateWords(task.title, 14)}
+          </p>
+          <span className="tabular shrink-0 text-meta font-medium text-muted">
+            {task.progressPct}%
+          </span>
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-meta text-muted">
+          <span className="truncate">{task.projectName}</span>
+          <StatusBadge status={task.status} />
+          {task.dueDate && (
+            <span className="tabular">Vence {formatDueDate(task.dueDate)}</span>
+          )}
+        </div>
         <div
           role="progressbar"
-          aria-label="Avance"
+          aria-label={`Avance de ${task.title}`}
           aria-valuenow={task.progressPct}
           aria-valuemin={0}
           aria-valuemax={100}
-          className="h-1.5 flex-1 overflow-hidden rounded-full bg-sunken"
+          className="mt-2 h-1 overflow-hidden rounded-full bg-sunken"
         >
           <div
             className="h-full rounded-full bg-accent"
             style={{ width: `${task.progressPct}%` }}
           />
         </div>
-        <span className="tabular text-meta font-medium">
-          {task.progressPct}%
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function PriorityRow({ task, rank }: { task: OverviewTask; rank: number }) {
-  return (
-    <Link
-      href={`/projects/${task.projectId}`}
-      className="flex items-center gap-3 px-5 py-3 pl-6 transition-colors hover:bg-sunken md:pl-7"
-    >
-      <RankBadge rank={rank} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{truncateWords(task.title, 12)}</p>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-meta text-muted">
-          <span className="truncate">{task.projectName}</span>
-          <StatusBadge status={task.status} />
-        </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-3 text-meta">
-        {task.dueDate && (
-          <span className="tabular text-muted">
-            {formatDueDate(task.dueDate)}
-          </span>
-        )}
-        <span className="tabular font-medium">{task.progressPct}%</span>
       </div>
     </Link>
   );
@@ -229,7 +190,7 @@ function PriorityRow({ task, rank }: { task: OverviewTask; rank: number }) {
 function RankBadge({ rank, emphasis }: { rank: number; emphasis?: boolean }) {
   return (
     <span
-      className={`tabular flex size-6 shrink-0 items-center justify-center rounded-full text-meta font-semibold ${
+      className={`tabular mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-meta font-semibold ${
         emphasis ? "bg-accent text-accent-ink" : "bg-sunken text-muted"
       }`}
     >
