@@ -791,84 +791,108 @@ function TaskRow({
         aria-expanded={expanded}
         className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 cursor-pointer sm:flex-nowrap"
       >
-        <span
-          className={`select-none ${
-            sortable
-              ? "cursor-grab text-muted active:cursor-grabbing"
-              : "text-line-strong"
-          }`}
-          title={
-            sortable
-              ? "Arrastra para reordenar"
-              : "Cambia a orden manual para arrastrar"
-          }
-          aria-hidden="true"
-        >
-          ⠿
+        <span className="flex min-w-0 flex-1 items-center gap-3">
+          <span
+            className={`select-none ${
+              sortable
+                ? "cursor-grab text-muted active:cursor-grabbing"
+                : "text-line-strong"
+            }`}
+            title={
+              sortable
+                ? "Arrastra para reordenar"
+                : "Cambia a orden manual para arrastrar"
+            }
+            aria-hidden="true"
+          >
+            ⠿
+          </span>
+          <span
+            className={`flex min-w-0 flex-1 items-center gap-2 rounded-[4px] py-1 text-left font-medium ${
+              done ? "text-muted" : ""
+            }`}
+          >
+            {editingTitle ? (
+              <textarea
+                ref={titleInputRef}
+                value={titleDraft}
+                onChange={(e) => {
+                  setTitleDraft(e.target.value);
+                  if (e.target.value.length < MAX_TASK_TITLE_LENGTH) {
+                    titleOverflowRef.current = 0;
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onBlur={commitTitle}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    commitTitle();
+                  } else if (e.key === "Escape") {
+                    setTitleDraft(task.title);
+                    setEditingTitle(false);
+                  } else {
+                    trackTitleOverflowAttempt(
+                      titleDraft.length,
+                      e.key,
+                      titleOverflowRef,
+                      () =>
+                        onBlocked(
+                          `Máximo: ${MAX_TASK_TITLE_LENGTH} caracteres.`,
+                        ),
+                    );
+                  }
+                }}
+                aria-label="Título de la tarea"
+                rows={1}
+                maxLength={MAX_TASK_TITLE_LENGTH}
+                className="-mx-1 min-w-0 flex-1 resize-none overflow-hidden whitespace-normal break-words rounded-[4px] bg-transparent px-1 font-medium text-ink caret-accent outline-none"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={startEditingTitle}
+                title="Editar nombre"
+                className={`min-w-0 flex-1 rounded-[4px] px-1 -mx-1 text-left ${
+                  expanded ? "whitespace-normal break-words" : "truncate"
+                }`}
+              >
+                {task.title}
+              </button>
+            )}
+            {creating && (
+              <span
+                title="Guardando"
+                className="animate-syncing size-1.5 shrink-0 rounded-full bg-accent"
+              >
+                <span className="sr-only">Guardando</span>
+              </span>
+            )}
+          </span>
         </span>
-        <span
-          className={`flex min-w-0 flex-1 items-center gap-2 rounded-[4px] py-1 text-left font-medium ${
-            done ? "text-muted" : ""
-          }`}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          aria-label={`Eliminar la tarea ${task.title}`}
+          title="Eliminar tarea"
+          className="order-none flex size-8 shrink-0 items-center justify-center rounded-control text-muted hover:bg-danger/10 hover:text-danger sm:order-1"
         >
-          {editingTitle ? (
-            <textarea
-              ref={titleInputRef}
-              value={titleDraft}
-              onChange={(e) => {
-                setTitleDraft(e.target.value);
-                if (e.target.value.length < MAX_TASK_TITLE_LENGTH) {
-                  titleOverflowRef.current = 0;
-                }
-              }}
-              onClick={(e) => e.stopPropagation()}
-              onBlur={commitTitle}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  commitTitle();
-                } else if (e.key === "Escape") {
-                  setTitleDraft(task.title);
-                  setEditingTitle(false);
-                } else {
-                  trackTitleOverflowAttempt(
-                    titleDraft.length,
-                    e.key,
-                    titleOverflowRef,
-                    () =>
-                      onBlocked(
-                        `Máximo: ${MAX_TASK_TITLE_LENGTH} caracteres.`,
-                      ),
-                  );
-                }
-              }}
-              aria-label="Título de la tarea"
-              rows={1}
-              maxLength={MAX_TASK_TITLE_LENGTH}
-              className="-mx-1 min-w-0 flex-1 resize-none overflow-hidden whitespace-normal break-words rounded-[4px] bg-transparent px-1 font-medium text-ink caret-accent outline-none"
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={startEditingTitle}
-              title="Editar nombre"
-              className={`min-w-0 flex-1 rounded-[4px] px-1 -mx-1 text-left ${
-                expanded ? "whitespace-normal break-words" : "truncate"
-              }`}
-            >
-              {task.title}
-            </button>
-          )}
-          {creating && (
-            <span
-              title="Guardando"
-              className="animate-syncing size-1.5 shrink-0 rounded-full bg-accent"
-            >
-              <span className="sr-only">Guardando</span>
-            </span>
-          )}
-        </span>
-        <div className="ml-6 flex items-center gap-3 sm:ml-0">
+          <svg
+            viewBox="0 0 20 20"
+            className="size-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M4 6h12M8 6V4.5h4V6M6 6l.7 9.5h6.6L14 6" />
+          </svg>
+        </button>
+        <div className="ml-8 flex basis-full flex-wrap items-center gap-2 sm:ml-0 sm:basis-auto sm:flex-nowrap sm:gap-3">
           {task.dueDate && (
             <span
               className={`tabular text-meta ${overdue ? "font-medium text-danger" : "text-muted"}`}
@@ -936,28 +960,6 @@ function TaskRow({
               </div>
             )}
           </Popover>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            aria-label={`Eliminar la tarea ${task.title}`}
-            title="Eliminar tarea"
-            className="flex size-8 items-center justify-center rounded-control text-muted hover:bg-danger/10 hover:text-danger"
-          >
-            <svg
-              viewBox="0 0 20 20"
-              className="size-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              aria-hidden="true"
-            >
-              <path d="M4 6h12M8 6V4.5h4V6M6 6l.7 9.5h6.6L14 6" />
-            </svg>
-          </button>
         </div>
       </div>
 
