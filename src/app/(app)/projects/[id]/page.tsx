@@ -789,11 +789,11 @@ function TaskRow({
           }
         }}
         aria-expanded={expanded}
-        className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 cursor-pointer sm:flex-nowrap"
+        className="flex flex-wrap items-center gap-x-3 gap-y-2.5 px-3 py-3 cursor-pointer sm:flex-nowrap sm:py-2.5"
       >
         <span className="flex min-w-0 flex-1 items-center gap-3">
           <span
-            className={`select-none ${
+            className={`hidden select-none sm:inline ${
               sortable
                 ? "cursor-grab text-muted active:cursor-grabbing"
                 : "text-line-strong"
@@ -808,7 +808,7 @@ function TaskRow({
             ⠿
           </span>
           <span
-            className={`flex min-w-0 flex-1 items-center gap-2 rounded-[4px] py-1 text-left font-medium ${
+            className={`flex min-w-0 flex-1 items-center gap-2 rounded-[4px] py-1 text-left text-body font-medium sm:text-ui ${
               done ? "text-muted" : ""
             }`}
           >
@@ -878,7 +878,7 @@ function TaskRow({
           }}
           aria-label={`Eliminar la tarea ${task.title}`}
           title="Eliminar tarea"
-          className="order-none flex size-8 shrink-0 items-center justify-center rounded-control text-muted hover:bg-danger/10 hover:text-danger sm:order-1"
+          className="order-none flex size-9 shrink-0 items-center justify-center rounded-control text-muted active:bg-danger/10 active:text-danger sm:order-1 sm:size-8 sm:hover:bg-danger/10 sm:hover:text-danger"
         >
           <svg
             viewBox="0 0 20 20"
@@ -892,10 +892,10 @@ function TaskRow({
             <path d="M4 6h12M8 6V4.5h4V6M6 6l.7 9.5h6.6L14 6" />
           </svg>
         </button>
-        <div className="ml-8 flex basis-full flex-wrap items-center gap-2 sm:ml-0 sm:basis-auto sm:flex-nowrap sm:gap-3">
+        <div className="flex basis-full flex-wrap items-center gap-x-4 gap-y-1.5 sm:basis-auto sm:flex-nowrap sm:gap-3">
           {task.dueDate && (
             <span
-              className={`tabular text-meta ${overdue ? "font-medium text-danger" : "text-muted"}`}
+              className={`order-1 mr-2.5 ml-auto tabular text-meta sm:order-none sm:mr-0 sm:ml-0 ${overdue ? "font-medium text-danger" : "text-muted"}`}
               title={overdue ? "Vencida" : "Fecha límite"}
             >
               {formatDueDate(task.dueDate)}
@@ -919,7 +919,7 @@ function TaskRow({
                 onChange={(e) =>
                   handleStatusChange(e.target.value as Task["status"])
                 }
-                className="h-8 w-32 pr-7 pl-6 text-meta"
+                className="h-8 w-auto min-w-[6.5rem] border-transparent bg-transparent pr-7 pl-6 text-meta sm:w-32 sm:border-line-strong sm:bg-raised"
               >
                 {Object.entries(STATUS_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
