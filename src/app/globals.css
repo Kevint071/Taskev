@@ -26,23 +26,23 @@
 
 /* Slate rather than near-black, so text never sits on a pitch-dark field. */
 .dark {
-  --surface: #1e232d;
-  --raised: #262c38;
-  --sunken: #1a1f28;
-  --line: #343b49;
-  --line-strong: #465062;
-  --ink: #e6e9ef;
-  --muted: #a3acbb;
+  --surface: #0a0c10;
+  --raised: #14171d;
+  --sunken: #050608;
+  --line: #23272f;
+  --line-strong: #343a44;
+  --ink: #f2f4f8;
+  --muted: #aab4c8;
   --accent: #8fa4f5;
-  --accent-soft: #2f3854;
-  --accent-ink: #141a2b;
+  --accent-soft: #1c2338;
+  --accent-ink: #0a0c10;
   --danger: #f08a7c;
-  --status-open: #a3acbb;
+  --status-open: #8b93a3;
   --status-progress: #8fa4f5;
   --status-blocked: #f08a7c;
   --status-paused: #d9a441;
   --status-done: #6fc59a;
-  --shadow-panel: none;
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.6);
   color-scheme: dark;
 }
 
