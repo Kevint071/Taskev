@@ -152,7 +152,7 @@ function PriorityTask({ task, rank }: { task: OverviewTask; rank?: number }) {
   return (
     <Link
       href={`/projects/${task.projectId}`}
-      className="flex min-w-0 items-start gap-3 px-5 py-4 pl-6 transition-colors hover:bg-sunken md:py-5 md:pl-7"
+      className="flex min-w-0 items-center gap-3 px-5 py-4 pl-6 transition-colors hover:bg-sunken md:gap-4 md:py-5 md:pl-7"
     >
       {rank && <RankBadge rank={rank} emphasis={rank === 1} />}
       <div className="min-w-0 flex-1">
@@ -164,11 +164,21 @@ function PriorityTask({ task, rank }: { task: OverviewTask; rank?: number }) {
             {task.progressPct}%
           </span>
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-meta text-muted">
+        <div className="mt-1 flex min-w-0 items-center gap-2 text-[12px] leading-[18px] text-muted">
           <span className="truncate">{task.projectName}</span>
+          <span aria-hidden="true" className="text-line-strong">
+            ·
+          </span>
           <StatusBadge status={task.status} />
           {task.dueDate && (
-            <span className="tabular">Vence {formatDueDate(task.dueDate)}</span>
+            <>
+              <span aria-hidden="true" className="text-line-strong">
+                ·
+              </span>
+              <span className="shrink-0 tabular">
+                vence {formatDueDate(task.dueDate)}
+              </span>
+            </>
           )}
         </div>
         <div
@@ -192,7 +202,7 @@ function PriorityTask({ task, rank }: { task: OverviewTask; rank?: number }) {
 function RankBadge({ rank, emphasis }: { rank: number; emphasis?: boolean }) {
   return (
     <span
-      className={`tabular mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-meta font-semibold ${
+      className={`tabular flex size-7 shrink-0 items-center justify-center rounded-full text-meta font-semibold ${
         emphasis ? "bg-accent text-accent-ink" : "bg-sunken text-muted"
       }`}
     >
