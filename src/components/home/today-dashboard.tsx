@@ -1,6 +1,8 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { LocalDate } from "@/components/local-date";
 import { ButtonLink } from "@/components/ui/button";
+import { CalendarIcon, CheckIcon, FlameIcon } from "@/components/ui/icons";
 import { EmptyState, Panel } from "@/components/ui/panel";
 import { StatusBadge, StatusDot } from "@/components/ui/status-badge";
 import {
@@ -221,21 +223,28 @@ function MetricsBar({
   };
 }) {
   return (
-    <div className="grid min-w-0 grid-cols-3 divide-x divide-line overflow-hidden rounded-panel border border-line bg-raised shadow-panel">
+    <div className="grid grid-cols-3 gap-1 sm:gap-0 sm:divide-x sm:divide-line">
       <MetricStat
         label="Hoy"
         value={metrics.completedToday}
         suffix="completadas"
+        icon={<CheckIcon className="text-status-done" />}
+        mobileIcon={<CheckIcon className="size-5 text-status-done" />}
       />
       <MetricStat
         label="Esta semana"
         value={metrics.completedThisWeek}
         suffix="completadas"
+        icon={<CalendarIcon className="size-4 text-accent" />}
+        mobileIcon={<CalendarIcon className="size-5 text-accent" />}
       />
       <MetricStat
         label="Racha"
         value={metrics.streak}
         suffix={metrics.streak === 1 ? "día" : "días"}
+        icon={<FlameIcon />}
+        mobileIcon={<FlameIcon className="size-7" />}
+        mobileTint="rgba(249, 115, 22, 0.16)"
       />
     </div>
   );
@@ -245,20 +254,50 @@ function MetricStat({
   label,
   value,
   suffix,
+  icon,
+  mobileIcon,
+  mobileTint,
 }: {
   label: string;
   value: number;
   suffix: string;
+  icon?: ReactNode;
+  mobileIcon?: ReactNode;
+  mobileTint?: string;
 }) {
   return (
-    <div className="min-w-0 flex flex-col gap-0.5 px-3 py-3 sm:px-4">
-      <p className="text-meta text-muted">{label}</p>
-      <p className="tabular">
-        <span className="text-[22px] font-semibold tracking-tight">
+    <div className="min-w-0">
+      {/* Mobile: compact stat card, icon riding on top of the number. */}
+      <div className="flex flex-col items-center gap-1.5 py-1 text-center sm:hidden">
+        <span
+          className="flex size-11 shrink-0 items-center justify-center rounded-full"
+          style={{ backgroundColor: mobileTint ?? "var(--sunken)" }}
+        >
+          {mobileIcon ?? icon}
+        </span>
+        <span className="tabular text-[20px] font-semibold leading-none tracking-tight">
           {value}
-        </span>{" "}
-        <span className="text-meta text-muted">{suffix}</span>
-      </p>
+        </span>
+        <span className="text-[11px] leading-tight text-muted">
+          {label}
+          <br />
+          {suffix}
+        </span>
+      </div>
+
+      {/* Desktop: label on top, icon beside the number. */}
+      <div className="hidden sm:flex sm:flex-col sm:gap-2 sm:px-5 sm:py-4">
+        <p className="text-meta text-muted">{label}</p>
+        <p className="flex items-center gap-2 tabular">
+          {icon}
+          <span className="flex items-baseline gap-1.5">
+            <span className="text-[24px] font-semibold leading-none tracking-tight">
+              {value}
+            </span>
+            <span className="text-meta font-medium text-muted">{suffix}</span>
+          </span>
+        </p>
+      </div>
     </div>
   );
 }
