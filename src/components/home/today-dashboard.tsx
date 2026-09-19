@@ -201,13 +201,13 @@ function SecondaryTile({ task, rank }: { task: OverviewTask; rank: number }) {
   return (
     <Link
       href={`/projects/${task.projectId}`}
-      className="flex min-w-0 flex-col gap-3 rounded-panel border border-line bg-raised p-3.5 transition-colors hover:bg-sunken dark:border-white/10 dark:bg-[#14171d]"
+      className="relative flex min-w-0 flex-col gap-3 rounded-panel border border-line bg-raised p-3.5 transition-colors hover:bg-sunken dark:border-white/10 dark:bg-[#14171d]"
     >
       <div className="flex min-w-0 items-start gap-2">
-        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-muted">
+        <span className="absolute right-3.5 top-3.5 text-[10px] font-bold uppercase tracking-wide text-muted">
           #{rank}
         </span>
-        <span className="line-clamp-3 min-w-0 flex-1 text-[12.5px] font-semibold leading-snug text-ink dark:text-white">
+        <span className="line-clamp-3 min-w-0 flex-1 pr-7 text-[12.5px] font-semibold leading-snug text-ink dark:text-white">
           {truncateWords(task.title, 12)}
         </span>
       </div>
