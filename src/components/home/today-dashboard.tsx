@@ -134,37 +134,49 @@ function TopTasks({ tasks }: { tasks: OverviewTask[] }) {
       <p className="text-meta font-medium text-accent dark:text-white">
         {tasks.length > 1 ? "Prioridades de hoy" : "Siguiente tarea"}
       </p>
-      <HeroTask task={hero} />
-      {rest.length > 0 && (
-        <Panel className="overflow-hidden">
-          <ul className="divide-y divide-line">
-            {rest.map((task, i) => (
-              <li key={task.id}>
-                <SecondaryTask task={task} rank={i + 2} />
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      )}
+      <div
+        className="grid min-w-0 grid-cols-2 gap-2.5 max-[360px]:grid-cols-1"
+      >
+        <HeroTile task={hero} />
+        {rest.map((task, i) => (
+          <SecondaryTile key={task.id} task={task} rank={i + 2} />
+        ))}
+      </div>
     </section>
   );
 }
 
-function HeroTask({ task }: { task: OverviewTask }) {
+function HeroTile({ task }: { task: OverviewTask }) {
   return (
     <Link
       href={`/projects/${task.projectId}`}
-      className="group relative block overflow-hidden rounded-panel border border-line bg-accent-soft p-5 transition-colors dark:border-black/10 dark:bg-[#13151b] md:p-6"
+      className="group relative col-span-full block overflow-hidden rounded-panel border border-line bg-accent-soft p-5 transition-colors dark:border-black/10 dark:bg-[#13151b] md:p-6"
     >
       <span
         aria-hidden="true"
         className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full bg-accent opacity-20 blur-2xl dark:opacity-30"
       />
       <div className="relative flex flex-col gap-3">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
+        <span className="inline-flex items-center gap-1.5 pr-12 text-[11px] font-semibold uppercase tracking-wide text-accent">
+          <span className="size-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_0_3px_rgba(53,83,199,0.15)] dark:shadow-[0_0_0_3px_rgba(143,164,245,0.2)]" />
           Foco de hoy
         </span>
-        <p className="text-[19px] font-bold leading-tight tracking-tight text-ink dark:text-white">
+        <span
+          role="progressbar"
+          aria-label={`Avance de ${task.title}`}
+          aria-valuenow={task.progressPct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          className="absolute right-0 top-0 flex size-9 shrink-0 items-center justify-center rounded-full"
+          style={{
+            background: `conic-gradient(var(--accent) ${task.progressPct}%, var(--line-strong) 0)`,
+          }}
+        >
+          <span className="flex size-[26px] items-center justify-center rounded-full bg-[#f4f2ee] text-[9.5px] font-bold text-ink dark:bg-[#13151b] dark:text-white">
+            {task.progressPct}
+          </span>
+        </span>
+        <p className="pr-12 text-[19px] font-bold leading-tight tracking-tight text-ink dark:text-white">
           {truncateWords(task.title, 14)}
         </p>
         <div className="flex min-w-0 items-center gap-2 text-[12px] leading-[18px] text-muted dark:text-white/60">
@@ -187,39 +199,37 @@ function HeroTask({ task }: { task: OverviewTask }) {
             </>
           )}
         </div>
-        <div
-          role="progressbar"
-          aria-label={`Avance de ${task.title}`}
-          aria-valuenow={task.progressPct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          className="h-1.5 overflow-hidden rounded-full bg-black/10 dark:bg-white/10"
-        >
-          <div
-            className="h-full rounded-full bg-accent"
-            style={{ width: `${task.progressPct}%` }}
-          />
-        </div>
       </div>
     </Link>
   );
 }
 
-function SecondaryTask({ task, rank }: { task: OverviewTask; rank: number }) {
+function SecondaryTile({ task, rank }: { task: OverviewTask; rank: number }) {
   return (
     <Link
       href={`/projects/${task.projectId}`}
-      className="flex min-w-0 items-center gap-3 px-4 py-3 transition-colors hover:bg-sunken"
+      className="flex min-w-0 flex-col gap-3 rounded-panel border border-line bg-raised p-3.5 transition-colors hover:bg-sunken dark:border-white/10 dark:bg-[#14171d]"
     >
-      <span className="tabular w-4 shrink-0 text-meta font-semibold text-muted">
-        {rank}
-      </span>
-      <span className="min-w-0 flex-1 truncate font-medium">
-        {truncateWords(task.title, 14)}
-      </span>
-      <span className="tabular shrink-0 text-meta font-medium text-muted">
-        {task.progressPct}%
-      </span>
+      <div className="flex min-w-0 items-start gap-2">
+        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-muted">
+          #{rank}
+        </span>
+        <span className="line-clamp-3 min-w-0 flex-1 text-[12.5px] font-semibold leading-snug text-ink dark:text-white">
+          {truncateWords(task.title, 12)}
+        </span>
+      </div>
+      <div className="mt-auto flex items-center gap-1.5">
+        <StatusDot status={task.status} />
+        <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-line dark:bg-white/10">
+          <div
+            className="h-full rounded-full bg-accent"
+            style={{ width: `${task.progressPct}%` }}
+          />
+        </div>
+        <span className="tabular shrink-0 text-[10.5px] font-semibold text-muted">
+          {task.progressPct}%
+        </span>
+      </div>
     </Link>
   );
 }
