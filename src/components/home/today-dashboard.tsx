@@ -4,7 +4,8 @@ import { LocalDate } from "@/components/local-date";
 import { ButtonLink } from "@/components/ui/button";
 import { CalendarIcon, CheckIcon, FlameIcon } from "@/components/ui/icons";
 import { EmptyState, Panel } from "@/components/ui/panel";
-import { StatusBadge, StatusDot } from "@/components/ui/status-badge";
+import { StatusDot } from "@/components/ui/status-badge";
+import { STATUS_LABELS } from "@/components/project-types";
 import {
   groupRecentCommentsByProject,
   type ProjectActivityGroup,
@@ -126,55 +127,58 @@ export async function TodayDashboard({
 }
 
 function TopTasks({ tasks }: { tasks: OverviewTask[] }) {
-  const ranked = tasks.length > 1;
+  const [hero, ...rest] = tasks;
 
   return (
     <section className="flex min-w-0 flex-col gap-2">
       <p className="text-meta font-medium text-accent">
-        {ranked ? "Prioridades de hoy" : "Siguiente tarea"}
+        {tasks.length > 1 ? "Prioridades de hoy" : "Siguiente tarea"}
       </p>
-      <Panel className="relative overflow-hidden">
-        <span
-          aria-hidden="true"
-          className="absolute inset-y-0 left-0 w-1 bg-accent"
-        />
-        <ul className="divide-y divide-line">
-          {tasks.map((task, i) => (
-            <li key={task.id}>
-              <PriorityTask task={task} rank={ranked ? i + 1 : undefined} />
-            </li>
-          ))}
-        </ul>
-      </Panel>
+      <HeroTask task={hero} />
+      {rest.length > 0 && (
+        <Panel className="overflow-hidden">
+          <ul className="divide-y divide-line">
+            {rest.map((task, i) => (
+              <li key={task.id}>
+                <SecondaryTask task={task} rank={i + 2} />
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
     </section>
   );
 }
 
-function PriorityTask({ task, rank }: { task: OverviewTask; rank?: number }) {
+function HeroTask({ task }: { task: OverviewTask }) {
   return (
     <Link
       href={`/projects/${task.projectId}`}
-      className="flex min-w-0 items-center gap-3 px-5 py-4 pl-6 transition-colors hover:bg-sunken md:gap-4 md:py-5 md:pl-7"
+      className="group relative block overflow-hidden rounded-panel border border-line bg-accent-soft p-5 transition-colors dark:border-black/10 dark:bg-[#13151b] md:p-6"
     >
-      {rank && <RankBadge rank={rank} emphasis={rank === 1} />}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-3">
-          <p className="truncate text-[16px] font-semibold tracking-tight">
-            {truncateWords(task.title, 14)}
-          </p>
-          <span className="tabular shrink-0 text-meta font-medium text-muted">
-            {task.progressPct}%
-          </span>
-        </div>
-        <div className="mt-1 flex min-w-0 items-center gap-2 text-[12px] leading-[18px] text-muted">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full bg-accent opacity-20 blur-2xl dark:opacity-30"
+      />
+      <div className="relative flex flex-col gap-3">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
+          Foco de hoy
+        </span>
+        <p className="text-[19px] font-bold leading-tight tracking-tight text-ink dark:text-white">
+          {truncateWords(task.title, 14)}
+        </p>
+        <div className="flex min-w-0 items-center gap-2 text-[12px] leading-[18px] text-muted dark:text-white/60">
           <span className="truncate">{task.projectName}</span>
-          <span aria-hidden="true" className="text-line-strong">
+          <span aria-hidden="true" className="text-line-strong dark:text-white/25">
             ·
           </span>
-          <StatusBadge status={task.status} />
+          <span className="inline-flex items-center gap-1.5">
+            <StatusDot status={task.status} />
+            {STATUS_LABELS[task.status]}
+          </span>
           {task.dueDate && (
             <>
-              <span aria-hidden="true" className="text-line-strong">
+              <span aria-hidden="true" className="text-line-strong dark:text-white/25">
                 ·
               </span>
               <span className="shrink-0 tabular">
@@ -189,7 +193,7 @@ function PriorityTask({ task, rank }: { task: OverviewTask; rank?: number }) {
           aria-valuenow={task.progressPct}
           aria-valuemin={0}
           aria-valuemax={100}
-          className="mt-2 h-1 overflow-hidden rounded-full bg-sunken"
+          className="h-1.5 overflow-hidden rounded-full bg-black/10 dark:bg-white/10"
         >
           <div
             className="h-full rounded-full bg-accent"
@@ -201,15 +205,22 @@ function PriorityTask({ task, rank }: { task: OverviewTask; rank?: number }) {
   );
 }
 
-function RankBadge({ rank, emphasis }: { rank: number; emphasis?: boolean }) {
+function SecondaryTask({ task, rank }: { task: OverviewTask; rank: number }) {
   return (
-    <span
-      className={`tabular flex size-7 shrink-0 items-center justify-center rounded-full text-meta font-semibold ${
-        emphasis ? "bg-accent text-accent-ink" : "bg-sunken text-muted"
-      }`}
+    <Link
+      href={`/projects/${task.projectId}`}
+      className="flex min-w-0 items-center gap-3 px-4 py-3 transition-colors hover:bg-sunken"
     >
-      {rank}
-    </span>
+      <span className="tabular w-4 shrink-0 text-meta font-semibold text-muted">
+        {rank}
+      </span>
+      <span className="min-w-0 flex-1 truncate font-medium">
+        {truncateWords(task.title, 14)}
+      </span>
+      <span className="tabular shrink-0 text-meta font-medium text-muted">
+        {task.progressPct}%
+      </span>
+    </Link>
   );
 }
 
