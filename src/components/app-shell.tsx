@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -79,7 +79,6 @@ export function AppShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
-  const displayName = user.name ?? user.email;
 
   return (
     <div className="flex min-w-0 min-h-dvh flex-1">
@@ -102,25 +101,18 @@ export function AppShell({
             <SideLink item={NAV[3]} active={NAV[3].match(pathname)} />
           </div>
           <ThemeToggle compact className="w-full" />
-          <div className="flex items-center justify-between gap-2 px-2">
-            <span
-              className="min-w-0 truncate text-meta font-medium"
-              title={user.email}
-            >
-              {displayName}
-            </span>
-            <SignOutButton />
-          </div>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Mobile header */}
-        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-line bg-surface/90 px-4 backdrop-blur md:hidden">
-          <Link href="/" className="rounded-control">
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-end border-b border-line bg-surface/90 px-4 backdrop-blur md:px-10">
+          <Link
+            href="/"
+            className="absolute left-4 top-1/2 -translate-y-1/2 rounded-control md:hidden"
+          >
             <Brand />
           </Link>
-          <SignOutButton />
+          <UserMenu user={user} />
         </header>
 
         <main className="mx-auto flex min-w-0 w-full max-w-[880px] flex-1 flex-col gap-8 px-4 pt-6 pb-28 md:px-10 md:pt-10 md:pb-16">
@@ -177,14 +169,86 @@ function SideLink({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-function SignOutButton() {
+function UserMenu({ user }: { user: { email: string; name: string | null } }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const identity = user.name?.trim() || user.email;
+  const initials = getInitials(identity);
+  const color = getAvatarColor(identity);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
   return (
-    <button
-      type="button"
-      onClick={() => signOut({ callbackUrl: "/" })}
-      className="shrink-0 rounded-control px-2 py-1 text-meta text-muted hover:bg-sunken hover:text-ink"
-    >
-      Cerrar sesión
-    </button>
+    <div ref={menuRef} className="relative">
+      <button
+        type="button"
+        aria-label={`Abrir menú de ${identity}`}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        onClick={() => setOpen((current) => !current)}
+        className="flex size-9 items-center justify-center rounded-full text-sm font-semibold text-white shadow-sm transition-transform hover:scale-105 focus-visible:outline-offset-2"
+        style={{ backgroundColor: color }}
+      >
+        {initials}
+      </button>
+      {open ? (
+        <div
+          role="menu"
+          aria-label="Menú de usuario"
+          className="animate-reveal absolute right-0 top-11 z-30 w-56 rounded-panel border border-line bg-raised p-2 shadow-lg"
+        >
+          <div className="border-b border-line px-3 pb-2 pt-1">
+            <p className="truncate text-ui font-medium text-ink">{identity}</p>
+            {user.name ? (
+              <p className="truncate text-meta text-muted">{user.email}</p>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="mt-1 flex w-full rounded-control px-3 py-2 text-left text-ui text-muted hover:bg-sunken hover:text-ink"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
+}
+
+function getInitials(identity: string) {
+  const words = identity.trim().split(/\s+/).filter(Boolean);
+  if (words.length > 1)
+    return `${words[0][0]}${words.at(-1)?.[0]}`.toUpperCase();
+  return identity.slice(0, 2).toUpperCase();
+}
+
+function getAvatarColor(identity: string) {
+  const normalized = identity
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  let hash = 0;
+  for (const character of normalized)
+    hash = (hash * 31 + character.charCodeAt(0)) | 0;
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue} 58% 42%)`;
 }
