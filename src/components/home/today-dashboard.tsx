@@ -96,7 +96,7 @@ export async function TodayDashboard({
       )}
 
       {top.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-[repeat(3,minmax(0,1fr))]">
           <TaskSection
             title="Vencidas"
             tasks={overdue}
@@ -127,7 +127,7 @@ function TopTasks({ tasks }: { tasks: OverviewTask[] }) {
   const ranked = tasks.length > 1;
 
   return (
-    <section className="flex flex-col gap-2">
+    <section className="flex min-w-0 flex-col gap-2">
       <p className="text-meta font-medium text-accent">
         {ranked ? "Prioridades de hoy" : "Siguiente tarea"}
       </p>
@@ -152,7 +152,7 @@ function PriorityTask({ task, rank }: { task: OverviewTask; rank?: number }) {
   return (
     <Link
       href={`/projects/${task.projectId}`}
-      className="flex items-start gap-3 px-5 py-4 pl-6 transition-colors hover:bg-sunken md:py-5 md:pl-7"
+      className="flex min-w-0 items-start gap-3 px-5 py-4 pl-6 transition-colors hover:bg-sunken md:py-5 md:pl-7"
     >
       {rank && <RankBadge rank={rank} emphasis={rank === 1} />}
       <div className="min-w-0 flex-1">
@@ -211,7 +211,7 @@ function MetricsBar({
   };
 }) {
   return (
-    <div className="grid grid-cols-3 divide-x divide-line overflow-hidden rounded-panel border border-line bg-raised shadow-panel">
+    <div className="grid min-w-0 grid-cols-3 divide-x divide-line overflow-hidden rounded-panel border border-line bg-raised shadow-panel">
       <MetricStat
         label="Hoy"
         value={metrics.completedToday}
@@ -241,7 +241,7 @@ function MetricStat({
   suffix: string;
 }) {
   return (
-    <div className="flex flex-col gap-0.5 px-4 py-3">
+    <div className="min-w-0 flex flex-col gap-0.5 px-3 py-3 sm:px-4">
       <p className="text-meta text-muted">{label}</p>
       <p className="tabular">
         <span className="text-[22px] font-semibold tracking-tight">
@@ -272,7 +272,7 @@ function TaskSection({
         : "text-muted";
 
   return (
-    <section className="flex flex-col gap-2">
+    <section className="flex min-w-0 flex-col gap-2">
       <h2 className="flex items-baseline gap-2 font-semibold">
         {title}
         <span
@@ -283,7 +283,7 @@ function TaskSection({
           {tasks.length}
         </span>
       </h2>
-      <Panel>
+      <Panel className="min-w-0 w-full overflow-hidden">
         {tasks.length === 0 ? (
           empty && <p className="px-4 py-3 text-muted">{empty}</p>
         ) : (
@@ -292,7 +292,7 @@ function TaskSection({
               <li key={task.id}>
                 <Link
                   href={`/projects/${task.projectId}`}
-                  className="flex items-center gap-2.5 px-4 py-2.5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken sm:gap-3"
+                  className="flex min-w-0 items-center gap-2.5 px-4 py-2.5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken sm:gap-3"
                 >
                   <StatusDot status={task.status} />
                   <span className="min-w-0 flex-1 truncate font-medium">
@@ -386,7 +386,7 @@ function ActivityTaskRow({
   return (
     <Link
       href={`/projects/${projectId}`}
-      className="flex flex-col gap-2 px-4 py-3 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken"
+      className="flex min-w-0 flex-col gap-2 px-4 py-3 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken"
     >
       <div className="flex items-baseline justify-between gap-2">
         <p className="truncate font-medium">{task.taskTitle}</p>

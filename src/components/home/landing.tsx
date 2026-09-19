@@ -38,7 +38,7 @@ const SAMPLE = [
 
 export function Landing() {
   return (
-    <div className="flex min-h-dvh flex-1 flex-col">
+    <div className="flex min-w-0 min-h-dvh flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-[1120px] items-center justify-between gap-4 px-4 py-5 md:px-8">
         <Brand />
         <nav className="flex items-center gap-2">
@@ -51,7 +51,7 @@ export function Landing() {
         </nav>
       </header>
 
-      <main className="mx-auto grid w-full max-w-[1120px] flex-1 items-center gap-12 px-4 pt-8 pb-16 md:px-8 lg:grid-cols-[1fr_1.05fr] lg:gap-16">
+      <main className="mx-auto grid min-w-0 w-full max-w-[1120px] flex-1 items-center gap-12 px-4 pt-8 pb-16 md:px-8 lg:grid-cols-[1fr_1.05fr] lg:gap-16">
         <div className="flex max-w-[34rem] flex-col items-start gap-6">
           <h1 className="text-display font-semibold">
             Sabe siempre qué hacer ahora.
@@ -74,7 +74,7 @@ export function Landing() {
           </div>
         </div>
 
-        <figure aria-label="Ejemplo del panel Hoy" className="w-full">
+        <figure aria-label="Ejemplo del panel Hoy" className="min-w-0 w-full">
           <div className="rounded-panel border border-line bg-raised p-2 shadow-[0_24px_60px_-30px_rgba(26,35,50,0.3)]">
             <div className="flex items-center justify-between px-3 pt-2 pb-3">
               <span className="font-semibold">Hoy</span>

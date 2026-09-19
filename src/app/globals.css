@@ -89,6 +89,7 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    overflow-x: clip;
   }
 
   body {
@@ -96,6 +97,7 @@
     color: var(--ink);
     font-size: 14px;
     line-height: 20px;
+    overflow-x: clip;
   }
 
   :focus-visible {

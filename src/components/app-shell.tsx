@@ -82,7 +82,7 @@ export function AppShell({
   const displayName = user.name ?? user.email;
 
   return (
-    <div className="flex min-h-dvh flex-1">
+    <div className="flex min-w-0 min-h-dvh flex-1">
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-[232px] shrink-0 flex-col border-r border-line bg-raised px-3 py-4 md:flex">
         <Link href="/" className="mb-6 w-fit rounded-control px-2 py-1">
@@ -123,7 +123,7 @@ export function AppShell({
           <SignOutButton />
         </header>
 
-        <main className="mx-auto flex w-full max-w-[880px] flex-1 flex-col gap-8 px-4 pt-6 pb-28 md:px-10 md:pt-10 md:pb-16">
+        <main className="mx-auto flex min-w-0 w-full max-w-[880px] flex-1 flex-col gap-8 px-4 pt-6 pb-28 md:px-10 md:pt-10 md:pb-16">
           {children}
         </main>
       </div>
