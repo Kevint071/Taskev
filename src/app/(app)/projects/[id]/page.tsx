@@ -504,9 +504,7 @@ export default function ProjectDetailPage() {
                     e.key,
                     newTaskOverflowRef,
                     () =>
-                      showToast(
-                        `Máximo: ${MAX_TASK_TITLE_LENGTH} caracteres.`,
-                      ),
+                      showToast(`Máximo: ${MAX_TASK_TITLE_LENGTH} caracteres.`),
                   )
                 }
                 maxLength={MAX_TASK_TITLE_LENGTH}
@@ -739,7 +737,8 @@ function TaskRow({
     if (!editingTitle || !el) return;
     el.focus();
     const caret = titleCaretRef.current;
-    const pos = caret == null ? el.value.length : Math.min(caret, el.value.length);
+    const pos =
+      caret == null ? el.value.length : Math.min(caret, el.value.length);
     el.setSelectionRange(pos, pos);
   }, [editingTitle]);
 
@@ -748,7 +747,7 @@ function TaskRow({
     if (!editingTitle || !el) return;
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
-  }, [editingTitle, titleDraft]);
+  }, [editingTitle]);
 
   function startEditingTitle(e: React.MouseEvent) {
     if (!expanded) return;
