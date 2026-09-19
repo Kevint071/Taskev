@@ -4,7 +4,7 @@ import Image from "next/image";
 export function Brand({ className = "" }: { className?: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-2 text-body font-semibold tracking-tight ${className}`}
+      className={`inline-flex items-center gap-2 leading-none text-body font-semibold tracking-tight ${className}`}
     >
       <Image
         src="/icon.svg"
