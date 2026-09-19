@@ -113,6 +113,22 @@
     -webkit-appearance: none;
     margin: 0;
   }
+
+  /* The <select> popup is native chrome: color-scheme alone doesn't
+     reliably reach it, so its colors are set explicitly here instead of
+     just inherited from :root/.dark. */
+  select {
+    color-scheme: light;
+  }
+
+  .dark select {
+    color-scheme: dark;
+  }
+
+  option {
+    background-color: var(--raised);
+    color: var(--ink);
+  }
 }
 
 @utility tabular {

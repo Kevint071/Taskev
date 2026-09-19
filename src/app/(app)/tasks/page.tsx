@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { GlobalTask } from "@/components/project-types";
+import { type GlobalTask, STATUS_LABELS } from "@/components/project-types";
 import { ButtonLink } from "@/components/ui/button";
 import {
   EmptyState,
@@ -11,7 +11,7 @@ import {
   Panel,
 } from "@/components/ui/panel";
 import { ProgressChip } from "@/components/ui/progress-chip";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { StatusDot } from "@/components/ui/status-badge";
 import { handleUnauthenticated } from "@/lib/api-client";
 import { formatDueDate, isOverdue } from "@/lib/format";
 
@@ -84,7 +84,7 @@ function TaskList({
             <li key={task.id}>
               <Link
                 href={`/projects/${task.projectId}`}
-                className={`flex items-center gap-3 px-4 py-3 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken ${
+                className={`flex items-center gap-3 px-4 py-2.5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken ${
                   task.blocked
                     ? "shadow-[inset_3px_0_0_var(--status-blocked)]"
                     : ""
@@ -95,28 +95,28 @@ function TaskList({
                     {index + 1}
                   </span>
                 )}
-                <div className="min-w-0 flex-1">
-                  <p
-                    className={`truncate font-medium ${done ? "line-through decoration-line-strong" : ""}`}
+                <span
+                  className={`min-w-0 flex-1 truncate font-medium text-body sm:text-ui ${done ? "line-through decoration-line-strong" : ""}`}
+                >
+                  {task.title}
+                </span>
+                <span className="shrink-0 text-meta text-muted/60">·</span>
+                <span className="shrink-0 truncate max-w-[8rem] text-meta text-muted">
+                  {task.projectName}
+                </span>
+                <span className="shrink-0" title={STATUS_LABELS[task.status]}>
+                  <StatusDot status={task.status} />
+                </span>
+                <span className="shrink-0 hidden sm:inline tabular text-meta text-muted">
+                  P{Number(task.priority)}
+                </span>
+                {task.dueDate && (
+                  <span
+                    className={`shrink-0 tabular text-meta ${overdue ? "font-medium text-danger" : "text-muted"}`}
                   >
-                    {task.title}
-                  </p>
-                  <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-meta text-muted">
-                    <span className="truncate">{task.projectName}</span>
-                    <StatusBadge status={task.status} />
-                    <span className="tabular">
-                      Prioridad {Number(task.priority)}
-                    </span>
-                    {task.dueDate && (
-                      <span
-                        className={`tabular ${overdue ? "font-medium text-danger" : ""}`}
-                      >
-                        {overdue ? "Venció" : "Vence"}{" "}
-                        {formatDueDate(task.dueDate)}
-                      </span>
-                    )}
-                  </p>
-                </div>
+                    {formatDueDate(task.dueDate)}
+                  </span>
+                )}
                 <ProgressChip value={task.progressPct} />
               </Link>
             </li>
