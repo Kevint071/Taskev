@@ -5,7 +5,6 @@ import { ButtonLink } from "@/components/ui/button";
 import { CalendarIcon, CheckIcon, FlameIcon } from "@/components/ui/icons";
 import { EmptyState, Panel } from "@/components/ui/panel";
 import { StatusDot } from "@/components/ui/status-badge";
-import { STATUS_LABELS } from "@/components/project-types";
 import {
   groupRecentCommentsByProject,
   type ProjectActivityGroup,
@@ -19,6 +18,13 @@ import { buildTodayMetrics, buildTodaySections } from "@/lib/today";
 const IN_PROGRESS_LIMIT = 3;
 const UNPLANNED_PREVIEW_LIMIT = 3;
 const ACTIVITY_LIMIT = 5;
+const STATUS_COLOR: Record<OverviewTask["status"], string> = {
+  disponible: "var(--status-open)",
+  en_curso: "var(--status-progress)",
+  bloqueada: "var(--status-blocked)",
+  pausada: "var(--status-paused)",
+  completada: "var(--status-done)",
+};
 
 export async function TodayDashboard({
   userId,
@@ -157,10 +163,6 @@ function HeroTile({ task }: { task: OverviewTask }) {
         className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full bg-accent opacity-20 blur-2xl dark:opacity-30"
       />
       <div className="relative flex flex-col gap-3">
-        <span className="inline-flex items-center gap-1.5 pr-12 text-[11px] font-semibold uppercase tracking-wide text-accent">
-          <span className="size-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_0_3px_rgba(53,83,199,0.15)] dark:shadow-[0_0_0_3px_rgba(143,164,245,0.2)]" />
-          Foco de hoy
-        </span>
         <span
           role="progressbar"
           aria-label={`Avance de ${task.title}`}
@@ -169,7 +171,7 @@ function HeroTile({ task }: { task: OverviewTask }) {
           aria-valuemax={100}
           className="absolute right-0 top-0 flex size-9 shrink-0 items-center justify-center rounded-full"
           style={{
-            background: `conic-gradient(var(--accent) ${task.progressPct}%, var(--line-strong) 0)`,
+            background: `conic-gradient(${STATUS_COLOR[task.status]} ${task.progressPct}%, var(--line-strong) 0)`,
           }}
         >
           <span className="flex size-[26px] items-center justify-center rounded-full bg-[#f4f2ee] text-[9.5px] font-bold text-ink dark:bg-[#13151b] dark:text-white">
@@ -181,18 +183,9 @@ function HeroTile({ task }: { task: OverviewTask }) {
         </p>
         <div className="flex min-w-0 items-center gap-2 text-[12px] leading-[18px] text-muted dark:text-white/60">
           <span className="truncate">{task.projectName}</span>
-          <span aria-hidden="true" className="text-line-strong dark:text-white/25">
-            ·
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <StatusDot status={task.status} />
-            {STATUS_LABELS[task.status]}
-          </span>
           {task.dueDate && (
             <>
-              <span aria-hidden="true" className="text-line-strong dark:text-white/25">
-                ·
-              </span>
+              <span aria-hidden="true" className="text-line-strong dark:text-white/25">·</span>
               <span className="shrink-0 tabular">
                 vence {formatDueDate(task.dueDate)}
               </span>
@@ -284,7 +277,7 @@ function MetricCell({
   tint: string;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-3 rounded-panel bg-sunken p-3">
+    <div className="flex min-w-0 items-center gap-3 rounded-panel bg-sunken p-3 dark:bg-[#1a1e26]">
       <span
         className="flex size-9 shrink-0 items-center justify-center rounded-full"
         style={{ backgroundColor: tint }}
