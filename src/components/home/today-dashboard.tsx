@@ -223,79 +223,59 @@ function MetricsBar({
   };
 }) {
   return (
-    <div className="grid grid-cols-3 gap-1 sm:gap-0 sm:divide-x sm:divide-line">
-      <MetricStat
-        label="Hoy"
-        value={metrics.completedToday}
-        suffix="completadas"
-        icon={<CheckIcon className="text-status-done" />}
-        mobileIcon={<CheckIcon className="size-5 text-status-done" />}
-      />
-      <MetricStat
-        label="Esta semana"
-        value={metrics.completedThisWeek}
-        suffix="completadas"
-        icon={<CalendarIcon className="size-4 text-accent" />}
-        mobileIcon={<CalendarIcon className="size-5 text-accent" />}
-      />
-      <MetricStat
-        label="Racha"
-        value={metrics.streak}
-        suffix={metrics.streak === 1 ? "día" : "días"}
-        icon={<FlameIcon />}
-        mobileIcon={<FlameIcon className="size-7" />}
-        mobileTint="rgba(249, 115, 22, 0.16)"
-      />
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <p className="text-meta font-medium text-muted">Tu progreso</p>
+        {metrics.streak > 0 && (
+          <span className="tabular inline-flex items-center gap-1.5 rounded-full bg-sunken py-1.5 pl-2 pr-3 text-[13px] font-bold">
+            <FlameIcon className="size-[18px]" />
+            {metrics.streak}
+          </span>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <MetricCell
+          label="completadas hoy"
+          value={metrics.completedToday}
+          tint="rgba(111, 197, 154, 0.16)"
+          icon={<CheckIcon className="size-[17px] text-status-done" />}
+        />
+        <MetricCell
+          label="esta semana"
+          value={metrics.completedThisWeek}
+          tint="rgba(143, 164, 245, 0.16)"
+          icon={<CalendarIcon className="size-[17px] text-accent" />}
+        />
+      </div>
     </div>
   );
 }
 
-function MetricStat({
+function MetricCell({
   label,
   value,
-  suffix,
   icon,
-  mobileIcon,
-  mobileTint,
+  tint,
 }: {
   label: string;
   value: number;
-  suffix: string;
-  icon?: ReactNode;
-  mobileIcon?: ReactNode;
-  mobileTint?: string;
+  icon: ReactNode;
+  tint: string;
 }) {
   return (
-    <div className="min-w-0">
-      {/* Mobile: compact stat card, icon riding on top of the number. */}
-      <div className="flex flex-col items-center gap-1.5 py-1 text-center sm:hidden">
-        <span
-          className="flex size-11 shrink-0 items-center justify-center rounded-full"
-          style={{ backgroundColor: mobileTint ?? "var(--sunken)" }}
-        >
-          {mobileIcon ?? icon}
-        </span>
-        <span className="tabular text-[20px] font-semibold leading-none tracking-tight">
+    <div className="flex min-w-0 items-center gap-3 rounded-panel bg-sunken p-3">
+      <span
+        className="flex size-9 shrink-0 items-center justify-center rounded-full"
+        style={{ backgroundColor: tint }}
+      >
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="tabular text-[19px] font-semibold leading-tight tracking-tight">
           {value}
-        </span>
-        <span className="text-[11px] leading-tight text-muted">
+        </p>
+        <p className="truncate text-[11px] leading-tight text-muted">
           {label}
-          <br />
-          {suffix}
-        </span>
-      </div>
-
-      {/* Desktop: label on top, icon beside the number. */}
-      <div className="hidden sm:flex sm:flex-col sm:gap-2 sm:px-5 sm:py-4">
-        <p className="text-meta text-muted">{label}</p>
-        <p className="flex items-center gap-2 tabular">
-          {icon}
-          <span className="flex items-baseline gap-1.5">
-            <span className="text-[24px] font-semibold leading-none tracking-tight">
-              {value}
-            </span>
-            <span className="text-meta font-medium text-muted">{suffix}</span>
-          </span>
         </p>
       </div>
     </div>
