@@ -108,7 +108,7 @@ export function AppShell({
         <header className="sticky top-0 z-20 flex h-14 items-center justify-end border-b border-line bg-surface/90 px-4 backdrop-blur md:px-10">
           <Link
             href="/"
-            className="absolute left-4 top-1/2 -translate-y-1/2 rounded-control md:hidden"
+            className="absolute left-4 top-1/2 flex h-7 -translate-y-1/2 items-center rounded-control md:hidden"
           >
             <Brand />
           </Link>
