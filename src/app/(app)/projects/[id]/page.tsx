@@ -70,7 +70,6 @@ export default function ProjectDetailPage() {
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
   const [dropTargetKey, setDropTargetKey] = useState<string | null>(null);
-  const [sortMode, setSortMode] = useState<"auto" | "manual">("auto");
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -247,12 +246,58 @@ export default function ProjectDetailPage() {
     });
   }
 
-  function handleDrop(targetKey: string) {
-    setDropTargetKey(null);
-    const movedKey = draggedKey;
-    setDraggedKey(null);
-    if (!movedKey || movedKey === targetKey) return;
+  const dragRef = useRef<{
+    movedKey: string;
+    overKey: string | null;
+    pointerId: number;
+  } | null>(null);
 
+  function handlePointerDownOnHandle(
+    key: string,
+    e: React.PointerEvent<HTMLElement>,
+  ) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (dragRef.current) return;
+    e.preventDefault();
+    dragRef.current = { movedKey: key, overKey: null, pointerId: e.pointerId };
+    setDraggedKey(key);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function handlePointerMoveOnHandle(e: React.PointerEvent<HTMLElement>) {
+    const drag = dragRef.current;
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const row = el?.closest<HTMLElement>("[data-task-key]");
+    const key = row?.dataset.taskKey;
+    const overKey = key && key !== drag.movedKey ? key : null;
+    if (overKey !== drag.overKey) {
+      drag.overKey = overKey;
+      setDropTargetKey(overKey);
+    }
+  }
+
+  function endDrag(reorder: boolean) {
+    const drag = dragRef.current;
+    dragRef.current = null;
+    setDraggedKey(null);
+    setDropTargetKey(null);
+    if (reorder && drag?.overKey) {
+      handleReorder(drag.movedKey, drag.overKey);
+    }
+  }
+
+  function handlePointerUpOnHandle(e: React.PointerEvent<HTMLElement>) {
+    if (dragRef.current?.pointerId !== e.pointerId) return;
+    endDrag(true);
+  }
+
+  function handlePointerCancelOnHandle(e: React.PointerEvent<HTMLElement>) {
+    if (dragRef.current?.pointerId !== e.pointerId) return;
+    endDrag(false);
+  }
+
+  function handleReorder(movedKey: string, targetKey: string) {
     const next = [...tasks];
     const [dragged] = next.splice(
       next.findIndex((t) => t.key === movedKey),
@@ -278,6 +323,50 @@ export default function ProjectDetailPage() {
         beforeTaskId,
         afterTaskId,
       });
+    });
+  }
+
+  function applyAutomaticSort() {
+    const now = new Date();
+    const sortedIncomplete = tasks
+      .filter((t) => t.status !== "completada")
+      .sort(
+        (a, b) =>
+          computeRelevance(
+            Number(b.priority),
+            b.dueDate ? new Date(b.dueDate) : null,
+            now,
+            b.progressPct,
+          ) -
+          computeRelevance(
+            Number(a.priority),
+            a.dueDate ? new Date(a.dueDate) : null,
+            now,
+            a.progressPct,
+          ),
+      );
+    const sortedCompleted = tasks
+      .filter((t) => t.status === "completada")
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      );
+    const next = [...sortedIncomplete, ...sortedCompleted];
+    setTasks(next);
+
+    queue.run("auto-sort", async () => {
+      const taskIds = await Promise.all(next.map((t) => queue.idFor(t.key)));
+      const updated = await sendJson<{ id: string; position: number }[]>(
+        `/api/projects/${id}/tasks/reorder`,
+        "POST",
+        { taskIds },
+      );
+      setTasks((prev) =>
+        prev.map((t) => {
+          const match = updated.find((u) => u.id === t.id);
+          return match ? { ...t, position: match.position } : t;
+        }),
+      );
     });
   }
 
@@ -312,52 +401,22 @@ export default function ProjectDetailPage() {
   const completedTasks = tasks.filter((t) => t.status === "completada");
   const openCount = incompleteTasks.length;
 
-  if (sortMode === "auto") {
-    const now = new Date();
-    incompleteTasks.sort(
-      (a, b) =>
-        computeRelevance(
-          Number(b.priority),
-          b.dueDate ? new Date(b.dueDate) : null,
-          now,
-          b.progressPct,
-        ) -
-        computeRelevance(
-          Number(a.priority),
-          a.dueDate ? new Date(a.dueDate) : null,
-          now,
-          a.progressPct,
-        ),
-    );
-    completedTasks.sort(
-      (a, b) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-    );
-  }
-
   function renderTaskRow(task: LocalTask) {
     return (
       <TaskRow
         key={task.key}
         task={task}
         queue={queue}
-        sortable={sortMode === "manual"}
         expanded={expandedKey === task.key}
         dragging={draggedKey === task.key}
         dropTarget={dropTargetKey === task.key && draggedKey !== task.key}
         onToggleExpand={() =>
           setExpandedKey(expandedKey === task.key ? null : task.key)
         }
-        onDragStart={() => setDraggedKey(task.key)}
-        onDragEnd={() => {
-          setDraggedKey(null);
-          setDropTargetKey(null);
-        }}
-        onDragOver={(e) => {
-          e.preventDefault();
-          if (dropTargetKey !== task.key) setDropTargetKey(task.key);
-        }}
-        onDrop={() => handleDrop(task.key)}
+        onHandlePointerDown={(e) => handlePointerDownOnHandle(task.key, e)}
+        onHandlePointerMove={handlePointerMoveOnHandle}
+        onHandlePointerUp={handlePointerUpOnHandle}
+        onHandlePointerCancel={handlePointerCancelOnHandle}
         onUpdate={(updates) => updateTask(task.key, updates)}
         onLocalChange={(updates) => applyLocal(task.key, updates)}
         onRemoteSave={(updates) => saveRemote(task.key, updates)}
@@ -503,7 +562,13 @@ export default function ProjectDetailPage() {
                 <h2 className="text-meta font-medium text-muted">
                   Tareas incompletas
                 </h2>
-                <SortModeToggle mode={sortMode} onChange={setSortMode} />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={applyAutomaticSort}
+                >
+                  Ordenar automáticamente
+                </Button>
               </div>
               <Panel>
                 <ul className="divide-y divide-line">
@@ -575,40 +640,6 @@ function SyncStatus({ state }: { state: SyncState }) {
   );
 }
 
-function SortModeToggle({
-  mode,
-  onChange,
-}: {
-  mode: "auto" | "manual";
-  onChange: (mode: "auto" | "manual") => void;
-}) {
-  return (
-    <fieldset className="flex shrink-0 rounded-control border border-line-strong p-0.5">
-      <legend className="sr-only">Orden de las tareas</legend>
-      {(
-        [
-          { value: "auto", label: "Automático" },
-          { value: "manual", label: "Manual" },
-        ] as const
-      ).map(({ value, label }) => (
-        <button
-          key={value}
-          type="button"
-          onClick={() => onChange(value)}
-          aria-pressed={mode === value}
-          className={`rounded-[4px] px-2.5 py-1 text-meta font-medium transition-colors ${
-            mode === value
-              ? "bg-accent text-accent-ink"
-              : "text-muted hover:text-ink"
-          }`}
-        >
-          {label}
-        </button>
-      ))}
-    </fieldset>
-  );
-}
-
 function BackLink() {
   return (
     <Link
@@ -662,15 +693,14 @@ function trackTitleOverflowAttempt(
 function TaskRow({
   task,
   queue,
-  sortable,
   expanded,
   dragging,
   dropTarget,
   onToggleExpand,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
-  onDrop,
+  onHandlePointerDown,
+  onHandlePointerMove,
+  onHandlePointerUp,
+  onHandlePointerCancel,
   onUpdate,
   onLocalChange,
   onRemoteSave,
@@ -679,15 +709,14 @@ function TaskRow({
 }: {
   task: LocalTask;
   queue: SyncQueue;
-  sortable: boolean;
   expanded: boolean;
   dragging: boolean;
   dropTarget: boolean;
   onToggleExpand: () => void;
-  onDragStart: () => void;
-  onDragEnd: () => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDrop: () => void;
+  onHandlePointerDown: (e: React.PointerEvent<HTMLElement>) => void;
+  onHandlePointerMove: (e: React.PointerEvent<HTMLElement>) => void;
+  onHandlePointerUp: (e: React.PointerEvent<HTMLElement>) => void;
+  onHandlePointerCancel: (e: React.PointerEvent<HTMLElement>) => void;
   onUpdate: (updates: TaskUpdates) => void;
   onLocalChange: (updates: TaskUpdates) => void;
   onRemoteSave: (updates: TaskUpdates) => void;
@@ -767,11 +796,7 @@ function TaskRow({
 
   return (
     <li
-      draggable={sortable}
-      onDragStart={sortable ? onDragStart : undefined}
-      onDragEnd={sortable ? onDragEnd : undefined}
-      onDragOver={sortable ? onDragOver : undefined}
-      onDrop={sortable ? onDrop : undefined}
+      data-task-key={task.key}
       className={`transition-opacity ${dragging ? "opacity-40" : ""} ${
         dropTarget ? "shadow-[inset_0_2px_0_var(--accent)]" : ""
       } ${expanded ? "bg-sunken/40" : ""}`}
@@ -789,21 +814,18 @@ function TaskRow({
           }
         }}
         aria-expanded={expanded}
-        className="flex flex-wrap items-center gap-x-3 gap-y-2.5 px-3 py-3 cursor-pointer sm:flex-nowrap sm:py-2.5"
+        className="flex items-center gap-x-2 px-3 py-2.5 cursor-pointer sm:gap-x-3 sm:py-2.5"
       >
-        <span className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="flex min-w-0 flex-1 items-center gap-2">
           <span
-            className={`hidden select-none sm:inline ${
-              sortable
-                ? "cursor-grab text-muted active:cursor-grabbing"
-                : "text-line-strong"
-            }`}
-            title={
-              sortable
-                ? "Arrastra para reordenar"
-                : "Cambia a orden manual para arrastrar"
-            }
+            className="cursor-grab select-none touch-none rounded-[4px] p-1 -m-1 text-muted active:cursor-grabbing"
+            title="Arrastra para reordenar"
             aria-hidden="true"
+            onPointerDown={onHandlePointerDown}
+            onPointerMove={onHandlePointerMove}
+            onPointerUp={onHandlePointerUp}
+            onPointerCancel={onHandlePointerCancel}
+            onClick={(e) => e.stopPropagation()}
           >
             ⠿
           </span>
@@ -870,6 +892,78 @@ function TaskRow({
             )}
           </span>
         </span>
+        {task.dueDate && (
+          <span
+            className={`hidden shrink-0 tabular text-meta sm:inline ${overdue ? "font-medium text-danger" : "text-muted"}`}
+            title={overdue ? "Vencida" : "Fecha límite"}
+          >
+            {formatDueDate(task.dueDate)}
+          </span>
+        )}
+        <ProgressChip value={task.progressPct} />
+        <span
+          title={STATUS_LABELS[task.status]}
+          aria-hidden="true"
+          className={`size-2.5 shrink-0 rounded-full ${STATUS_DOT[task.status]} sm:hidden`}
+        />
+        <Popover
+          open={completePromptOpen}
+          onClose={() => setCompletePromptOpen(false)}
+        >
+          {/* biome-ignore lint/a11y/noLabelWithoutControl: wraps the Select component */}
+          <label className="relative hidden shrink-0 items-center sm:flex">
+            <span className="sr-only">Estado</span>
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none absolute left-2.5 size-2 rounded-full ${STATUS_DOT[task.status]}`}
+            />
+            <Select
+              value={task.status}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) =>
+                handleStatusChange(e.target.value as Task["status"])
+              }
+              className="h-8 w-auto min-w-0 border-transparent bg-transparent pr-5 pl-6 text-meta sm:w-32 sm:min-w-[6.5rem] sm:border-line-strong sm:bg-raised sm:pr-7"
+            >
+              {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              className="pointer-events-none absolute right-2 size-3 text-muted"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5.5 8l4.5 4.5L14.5 8" />
+            </svg>
+          </label>
+          {completePromptOpen && (
+            // biome-ignore lint/a11y/noStaticElementInteractions: event boundary only, stops the row's own click-to-expand handler; the panel's own buttons are the real interactive elements
+            <div
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              className="absolute right-0 top-full z-20 mt-1.5"
+            >
+              <p className="mb-1.5 px-1 text-meta font-medium text-muted">
+                Fecha de finalización
+              </p>
+              <CalendarPanel
+                selected={todayUtcMidnight()}
+                shortcuts={[
+                  { key: "today", label: "Hoy", date: todayUtcMidnight() },
+                ]}
+                onSelect={confirmComplete}
+              />
+            </div>
+          )}
+        </Popover>
         <button
           type="button"
           onClick={(e) => {
@@ -878,7 +972,7 @@ function TaskRow({
           }}
           aria-label={`Eliminar la tarea ${task.title}`}
           title="Eliminar tarea"
-          className="order-none flex size-9 shrink-0 items-center justify-center rounded-control text-muted active:bg-danger/10 active:text-danger sm:order-1 sm:size-8 sm:hover:bg-danger/10 sm:hover:text-danger"
+          className="flex size-9 shrink-0 items-center justify-center rounded-control text-muted active:bg-danger/10 active:text-danger sm:size-8 sm:hover:bg-danger/10 sm:hover:text-danger"
         >
           <svg
             viewBox="0 0 20 20"
@@ -892,75 +986,6 @@ function TaskRow({
             <path d="M4 6h12M8 6V4.5h4V6M6 6l.7 9.5h6.6L14 6" />
           </svg>
         </button>
-        <div className="flex basis-full flex-wrap items-center gap-x-4 gap-y-1.5 sm:basis-auto sm:flex-nowrap sm:gap-3">
-          {task.dueDate && (
-            <span
-              className={`order-1 mr-2.5 ml-auto tabular text-meta sm:order-none sm:mr-0 sm:ml-0 ${overdue ? "font-medium text-danger" : "text-muted"}`}
-              title={overdue ? "Vencida" : "Fecha límite"}
-            >
-              {formatDueDate(task.dueDate)}
-            </span>
-          )}
-          <ProgressChip value={task.progressPct} />
-          <Popover
-            open={completePromptOpen}
-            onClose={() => setCompletePromptOpen(false)}
-          >
-            {/* biome-ignore lint/a11y/noLabelWithoutControl: wraps the Select component */}
-            <label className="relative flex items-center">
-              <span className="sr-only">Estado</span>
-              <span
-                aria-hidden="true"
-                className={`pointer-events-none absolute left-2.5 size-2 rounded-full ${STATUS_DOT[task.status]}`}
-              />
-              <Select
-                value={task.status}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) =>
-                  handleStatusChange(e.target.value as Task["status"])
-                }
-                className="h-8 w-auto min-w-[6.5rem] border-transparent bg-transparent pr-7 pl-6 text-meta sm:w-32 sm:border-line-strong sm:bg-raised"
-              >
-                {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 20 20"
-                className="pointer-events-none absolute right-2.5 size-3 text-muted"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5.5 8l4.5 4.5L14.5 8" />
-              </svg>
-            </label>
-            {completePromptOpen && (
-              // biome-ignore lint/a11y/noStaticElementInteractions: event boundary only, stops the row's own click-to-expand handler; the panel's own buttons are the real interactive elements
-              <div
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => e.stopPropagation()}
-                className="absolute right-0 top-full z-20 mt-1.5"
-              >
-                <p className="mb-1.5 px-1 text-meta font-medium text-muted">
-                  Fecha de finalización
-                </p>
-                <CalendarPanel
-                  selected={todayUtcMidnight()}
-                  shortcuts={[
-                    { key: "today", label: "Hoy", date: todayUtcMidnight() },
-                  ]}
-                  onSelect={confirmComplete}
-                />
-              </div>
-            )}
-          </Popover>
-        </div>
       </div>
 
       {expanded && (
@@ -970,6 +995,7 @@ function TaskRow({
           onUpdate={onUpdate}
           onLocalChange={onLocalChange}
           onRemoteSave={onRemoteSave}
+          onBlocked={onBlocked}
         />
       )}
     </li>
@@ -982,12 +1008,14 @@ function TaskDetails({
   onUpdate,
   onLocalChange,
   onRemoteSave,
+  onBlocked,
 }: {
   task: LocalTask;
   queue: SyncQueue;
   onUpdate: (updates: TaskUpdates) => void;
   onLocalChange: (updates: TaskUpdates) => void;
   onRemoteSave: (updates: TaskUpdates) => void;
+  onBlocked: (message: string) => void;
 }) {
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -1049,9 +1077,55 @@ function TaskDetails({
     });
   }
 
+  function handleDetailsStatusChange(next: Task["status"]) {
+    if (next === "completada") {
+      if (!canCompleteAtProgress(task.progressPct)) {
+        onBlocked("Sube el avance al 100% para poder completar la tarea.");
+        return;
+      }
+      setBannerCompleteOpen(true);
+      return;
+    }
+    if (next === "disponible") {
+      const blocked = blockedFromDisponible(task.progressPct, task.completedAt);
+      if (blocked === "progress") {
+        onBlocked("Baja el avance a 0% antes de pasarla a disponible.");
+        return;
+      }
+      if (blocked === "completedAt") {
+        onBlocked(
+          "Esta tarea todavía tiene fecha de finalización. Cambia antes a otro estado.",
+        );
+        return;
+      }
+    }
+    onUpdate({ status: next, completedAt: null });
+  }
+
   return (
     <div className="animate-reveal flex flex-col gap-5 px-4 py-4 sm:pl-10">
       <div className="flex flex-wrap items-end gap-4">
+        <Field label="Estado" className="w-36">
+          <div className="relative flex items-center">
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none absolute left-2.5 size-2 rounded-full ${STATUS_DOT[task.status]}`}
+            />
+            <Select
+              value={task.status}
+              onChange={(e) =>
+                handleDetailsStatusChange(e.target.value as Task["status"])
+              }
+              className="w-full pl-7"
+            >
+              {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </Field>
         <ProgressInput
           value={task.progressPct}
           onChange={(progressPct) => onLocalChange({ progressPct })}
