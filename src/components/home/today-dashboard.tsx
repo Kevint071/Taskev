@@ -131,7 +131,7 @@ function TopTasks({ tasks }: { tasks: OverviewTask[] }) {
 
   return (
     <section className="flex min-w-0 flex-col gap-2">
-      <p className="text-meta font-medium text-accent">
+      <p className="text-meta font-medium text-accent dark:text-white">
         {tasks.length > 1 ? "Prioridades de hoy" : "Siguiente tarea"}
       </p>
       <HeroTask task={hero} />
@@ -236,7 +236,7 @@ function MetricsBar({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <p className="text-meta font-medium text-muted">Tu progreso</p>
+        <p className="text-meta font-medium text-muted dark:text-white">Tu progreso</p>
         {metrics.streak > 0 && (
           <span className="tabular inline-flex items-center gap-1.5 rounded-full bg-sunken py-1.5 pl-2 pr-3 text-[13px] font-bold">
             <FlameIcon className="size-[18px]" />
