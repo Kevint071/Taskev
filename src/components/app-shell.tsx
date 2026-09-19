@@ -58,6 +58,17 @@ const NAV: NavItem[] = [
     ),
   },
   {
+    href: "/agenda",
+    label: "Agenda",
+    match: (p) => p.startsWith("/agenda"),
+    icon: (
+      <svg {...iconProps} aria-hidden="true">
+        <rect x="3" y="4" width="14" height="13" rx="2" />
+        <path d="M3 8h14M6.5 2.5v3M13.5 2.5v3M6.5 11.5h1M9.5 11.5h1M12.5 11.5h1" />
+      </svg>
+    ),
+  },
+  {
     href: "/settings",
     label: "Ajustes",
     match: (p) => p.startsWith("/settings"),
@@ -88,7 +99,7 @@ export function AppShell({
           <Brand />
         </Link>
         <nav aria-label="Principal" className="flex flex-col gap-0.5">
-          {NAV.slice(0, 3).map((item) => (
+          {NAV.slice(0, 4).map((item) => (
             <SideLink
               key={item.href}
               item={item}
@@ -98,7 +109,7 @@ export function AppShell({
         </nav>
         <div className="mt-auto flex flex-col gap-3">
           <div className="border-t border-line pt-3">
-            <SideLink item={NAV[3]} active={NAV[3].match(pathname)} />
+            <SideLink item={NAV[4]} active={NAV[4].match(pathname)} />
           </div>
           <ThemeToggle compact className="w-full" />
         </div>
@@ -123,7 +134,7 @@ export function AppShell({
       {/* Mobile tab bar */}
       <nav
         aria-label="Principal"
-        className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-4 border-t border-line bg-raised/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t border-line bg-raised/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       >
         {NAV.map((item) => {
           const active = item.match(pathname);

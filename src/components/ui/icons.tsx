@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { useId } from "react";
 
 export function PlusIcon() {
@@ -47,6 +48,82 @@ export function CalendarIcon({ className }: { className?: string }) {
     >
       <rect x="3" y="4.5" width="14" height="12" rx="2" />
       <path d="M3 8h14M6.5 3v3M13.5 3v3" />
+    </svg>
+  );
+}
+
+export function TriangleAlertIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M10 2.5 18 17H2Z" />
+      <path d="M10 8v3.5" />
+      <circle cx="10" cy="14" r="0.9" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function LockIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="4" y="9" width="12" height="8" rx="1.5" />
+      <path d="M6.5 9V6a3.5 3.5 0 0 1 7 0" />
+    </svg>
+  );
+}
+
+export function RefreshIcon({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 9.5A6 6 0 0 1 15.3 6.8M16 3.5v3.3h-3.3" />
+      <path d="M16 10.5A6 6 0 0 1 4.7 13.2M4 16.5v-3.3h3.3" />
     </svg>
   );
 }

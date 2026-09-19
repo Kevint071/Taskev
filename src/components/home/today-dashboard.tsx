@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { LocalDate } from "@/components/local-date";
+import { TaskSection } from "@/components/task-section";
 import { ButtonLink } from "@/components/ui/button";
 import { CalendarIcon, CheckIcon, FlameIcon } from "@/components/ui/icons";
 import { EmptyState, Panel } from "@/components/ui/panel";
@@ -15,7 +16,6 @@ import { getUserTaskOverview, type OverviewTask } from "@/lib/data/overview";
 import { formatDueDate, formatRelativeTime, truncateWords } from "@/lib/format";
 import { buildTodayMetrics, buildTodaySections } from "@/lib/today";
 
-const IN_PROGRESS_LIMIT = 3;
 const UNPLANNED_PREVIEW_LIMIT = 3;
 const ACTIVITY_LIMIT = 5;
 const STATUS_COLOR: Record<OverviewTask["status"], string> = {
@@ -38,15 +38,11 @@ export async function TodayDashboard({
     getUserTaskOverview(userId, now),
     getRecentComments(userId, ACTIVITY_LIMIT),
   ]);
-  const { top, overdue, dueToday, thisWeek } = buildTodaySections(tasks, now);
+  const { top, dueToday } = buildTodaySections(tasks, now);
   const activity = groupRecentCommentsByProject(comments);
   const firstName = name?.split(" ")[0];
 
   const openTasks = tasks.filter((t) => t.status !== "completada");
-  const blocked = openTasks.filter((t) => t.status === "bloqueada");
-  const inProgress = openTasks
-    .filter((t) => t.status === "en_curso")
-    .slice(0, IN_PROGRESS_LIMIT);
   const unplanned = openTasks.filter(
     (t) => !t.dueDate && Number(t.priority) === 0,
   );
@@ -95,34 +91,13 @@ export async function TodayDashboard({
         />
       )}
 
-      {blocked.length > 0 && (
-        <TaskSection
-          title="Bloqueadas"
-          tasks={blocked}
-          empty=""
-          tone="blocked"
-        />
-      )}
-
       {top.length > 0 && (
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-[repeat(3,minmax(0,1fr))]">
-          <TaskSection
-            title="Vencidas"
-            tasks={overdue}
-            empty="Nada vencido. Bien."
-            tone="danger"
-          />
-          <TaskSection title="Hoy" tasks={dueToday} empty="Nada vence hoy." />
-          <TaskSection
-            title="Próximos 7 días"
-            tasks={thisWeek}
-            empty="Nada vence esta semana."
-          />
-        </div>
-      )}
-
-      {inProgress.length > 0 && (
-        <TaskSection title="En curso" tasks={inProgress} empty="" />
+        <TaskSection
+          title="Hoy"
+          tasks={dueToday}
+          empty="Nada vence hoy."
+          tone="accent"
+        />
       )}
 
       {unplanned.length > 0 && <UnplannedNotice tasks={unplanned} />}
@@ -293,73 +268,6 @@ function MetricCell({
         </p>
       </div>
     </div>
-  );
-}
-
-function TaskSection({
-  title,
-  tasks,
-  empty,
-  tone,
-}: {
-  title: string;
-  tasks: OverviewTask[];
-  empty: string;
-  tone?: "danger" | "blocked";
-}) {
-  const toneClass =
-    tone === "danger"
-      ? "text-danger"
-      : tone === "blocked"
-        ? "text-status-blocked"
-        : "text-muted";
-
-  return (
-    <section className="flex min-w-0 flex-col gap-2">
-      <h2 className="flex items-baseline gap-2 font-semibold">
-        {title}
-        <span
-          className={`tabular text-meta font-medium ${
-            tasks.length > 0 ? toneClass : "text-muted"
-          }`}
-        >
-          {tasks.length}
-        </span>
-      </h2>
-      <Panel className="min-w-0 w-full overflow-hidden">
-        {tasks.length === 0 ? (
-          empty && <p className="px-4 py-3 text-muted">{empty}</p>
-        ) : (
-          <ul className="divide-y divide-line">
-            {tasks.map((task) => (
-              <li key={task.id}>
-                <Link
-                  href={`/projects/${task.projectId}`}
-                  className="flex min-w-0 items-center gap-2.5 px-4 py-2.5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken sm:gap-3"
-                >
-                  <StatusDot status={task.status} />
-                  <span className="min-w-0 flex-1 truncate font-medium">
-                    {task.title}
-                  </span>
-                  <span className="shrink-0 truncate max-w-[7rem] text-meta text-muted">
-                    {task.projectName}
-                  </span>
-                  {task.dueDate && (
-                    <span
-                      className={`tabular shrink-0 text-meta ${
-                        tone === "danger" ? "text-danger" : "text-muted"
-                      }`}
-                    >
-                      {formatDueDate(task.dueDate)}
-                    </span>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Panel>
-    </section>
   );
 }
 
