@@ -244,9 +244,19 @@ export function TaskDetailView({
   useEffect(() => setTitleDraft(task.title), [task.title]);
   useEffect(() => setDescription(task.description ?? ""), [task.description]);
   useEffect(() => setProgressDraft(task.progressPct), [task.progressPct]);
+  // Re-fit whenever the text changes or the width does (fonts loading,
+  // rotation, resizing), otherwise a stale height clips the last lines.
   useEffect(() => {
     autosize(titleRef.current);
+  }, [titleDraft]);
+  useEffect(() => {
     autosize(descriptionRef.current);
+  }, [description]);
+  useEffect(() => {
+    const els = [titleRef.current, descriptionRef.current];
+    const observer = new ResizeObserver(() => els.forEach(autosize));
+    for (const el of els) if (el) observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   // A task still being created has no comments on the server yet.
