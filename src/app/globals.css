@@ -183,6 +183,22 @@
   animation: toast-in 200ms ease-out;
 }
 
+/* Brief border highlight on a field right after its change is confirmed saved. */
+@keyframes saved-flash {
+  from {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  to {
+    border-color: var(--line-strong);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@utility animate-saved-flash {
+  animation: saved-flash 900ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

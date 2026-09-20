@@ -52,6 +52,25 @@ export function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
+export function ProgressGaugeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`size-4 shrink-0 ${className ?? "text-muted"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 14.5A7 7 0 0 1 17 14.5" />
+      <path d="M10 14.5V8" />
+      <path d="M10 8l3-2" />
+    </svg>
+  );
+}
+
 export function TriangleAlertIcon({
   className,
   style,

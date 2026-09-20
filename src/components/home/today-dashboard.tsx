@@ -115,9 +115,7 @@ function TopTasks({ tasks }: { tasks: OverviewTask[] }) {
       <p className="text-meta font-medium text-accent dark:text-white">
         {tasks.length > 1 ? "Prioridades de hoy" : "Siguiente tarea"}
       </p>
-      <div
-        className="grid min-w-0 grid-cols-2 gap-2.5 max-[360px]:grid-cols-1"
-      >
+      <div className="grid min-w-0 grid-cols-2 gap-2.5 max-[360px]:grid-cols-1">
         <HeroTile task={hero} />
         {rest.map((task, i) => (
           <SecondaryTile key={task.id} task={task} rank={i + 2} />
@@ -130,7 +128,7 @@ function TopTasks({ tasks }: { tasks: OverviewTask[] }) {
 function HeroTile({ task }: { task: OverviewTask }) {
   return (
     <Link
-      href={`/projects/${task.projectId}`}
+      href={`/projects/${task.projectId}/tasks/${task.id}`}
       className="group relative col-span-full block overflow-hidden rounded-panel border border-line bg-accent-soft p-5 transition-colors dark:border-black/10 dark:bg-[#13151b] md:p-6"
     >
       <span
@@ -160,7 +158,12 @@ function HeroTile({ task }: { task: OverviewTask }) {
           <span className="truncate">{task.projectName}</span>
           {task.dueDate && (
             <>
-              <span aria-hidden="true" className="text-line-strong dark:text-white/25">·</span>
+              <span
+                aria-hidden="true"
+                className="text-line-strong dark:text-white/25"
+              >
+                ·
+              </span>
               <span className="shrink-0 tabular">
                 vence {formatDueDate(task.dueDate)}
               </span>
@@ -175,7 +178,7 @@ function HeroTile({ task }: { task: OverviewTask }) {
 function SecondaryTile({ task, rank }: { task: OverviewTask; rank: number }) {
   return (
     <Link
-      href={`/projects/${task.projectId}`}
+      href={`/projects/${task.projectId}/tasks/${task.id}`}
       className="relative flex min-w-0 flex-col gap-3 rounded-panel border border-line bg-raised p-3.5 transition-colors hover:bg-sunken dark:border-white/10 dark:bg-[#14171d]"
     >
       <div className="flex min-w-0 items-start gap-2">
@@ -214,7 +217,9 @@ function MetricsBar({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <p className="text-meta font-medium text-muted dark:text-white">Tu progreso</p>
+        <p className="text-meta font-medium text-muted dark:text-white">
+          Tu progreso
+        </p>
         {metrics.streak > 0 && (
           <span className="tabular inline-flex items-center gap-1.5 rounded-full bg-sunken py-1.5 pl-2 pr-3 text-[13px] font-bold">
             <FlameIcon className="size-[18px]" />
@@ -263,9 +268,7 @@ function MetricCell({
         <p className="tabular text-[19px] font-semibold leading-tight tracking-tight">
           {value}
         </p>
-        <p className="truncate text-[11px] leading-tight text-muted">
-          {label}
-        </p>
+        <p className="truncate text-[11px] leading-tight text-muted">{label}</p>
       </div>
     </div>
   );
@@ -285,7 +288,7 @@ function UnplannedNotice({ tasks }: { tasks: OverviewTask[] }) {
       {preview.map((task, i) => (
         <span key={task.id} className="text-muted">
           <Link
-            href={`/projects/${task.projectId}`}
+            href={`/projects/${task.projectId}/tasks/${task.id}`}
             className="text-ink hover:text-accent"
           >
             {task.title}
@@ -336,7 +339,7 @@ function ActivityTaskRow({
 }) {
   return (
     <Link
-      href={`/projects/${projectId}`}
+      href={`/projects/${projectId}/tasks/${task.taskId}`}
       className="flex min-w-0 flex-col gap-2 px-4 py-3 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken"
     >
       <div className="flex items-baseline justify-between gap-2">

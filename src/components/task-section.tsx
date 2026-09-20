@@ -109,7 +109,7 @@ export function TaskSection({
                   style={{ backgroundColor: cfg.barColor }}
                 />
                 <Link
-                  href={`/projects/${task.projectId}`}
+                  href={`/projects/${task.projectId}/tasks/${task.id}`}
                   className="flex min-w-0 items-center gap-2.5 px-4 py-2.5 pl-5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken sm:gap-3"
                 >
                   <span className="min-w-0 flex-1 truncate font-medium">

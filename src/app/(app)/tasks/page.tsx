@@ -83,7 +83,7 @@ function TaskList({
           return (
             <li key={task.id}>
               <Link
-                href={`/projects/${task.projectId}`}
+                href={`/projects/${task.projectId}/tasks/${task.id}`}
                 className={`flex items-center gap-3 px-4 py-2.5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken ${
                   task.blocked
                     ? "shadow-[inset_3px_0_0_var(--status-blocked)]"
