@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Task } from "@/components/project-types";
 import { getCurrentUser } from "@/lib/auth-guard";
@@ -36,14 +35,11 @@ export default async function TaskDetailPage({
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <Link
-        href={`/projects/${project.id}`}
-        className="w-fit text-meta text-muted hover:text-ink"
-      >
-        ← {project.name}
-      </Link>
-      <TaskDetailPageClient initialTask={task} />
+    <div className="flex flex-1 flex-col">
+      <TaskDetailPageClient
+        initialTask={task}
+        back={{ href: `/projects/${project.id}`, label: project.name }}
+      />
     </div>
   );
 }

@@ -8,6 +8,15 @@ export const STATUS_DOT: Record<Task["status"], string> = {
   completada: "bg-status-done",
 };
 
+/** CSS color of each status, for tinting a surface with `color-mix`. */
+export const STATUS_TONE: Record<Task["status"], string> = {
+  disponible: "var(--status-open)",
+  en_curso: "var(--status-progress)",
+  bloqueada: "var(--status-blocked)",
+  pausada: "var(--status-paused)",
+  completada: "var(--status-done)",
+};
+
 export function StatusDot({ status }: { status: Task["status"] }) {
   return (
     <span

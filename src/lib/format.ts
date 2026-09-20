@@ -16,6 +16,11 @@ const dateTime = new Intl.DateTimeFormat("es", {
   minute: "2-digit",
 });
 
+const timeOnly = new Intl.DateTimeFormat("es", {
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
 /** "18 sept". Due dates are stored as UTC midnight, so format in UTC. */
 export function formatDueDate(iso: string | Date): string {
   const date = typeof iso === "string" ? new Date(iso) : iso;
@@ -28,12 +33,45 @@ export function formatDueDate(iso: string | Date): string {
     .replace(".", "");
 }
 
+/** "Jue 24 sep". Due dates are stored as UTC midnight, so format in UTC. */
+export function formatDueDateWithWeekday(iso: string | Date): string {
+  const date = typeof iso === "string" ? new Date(iso) : iso;
+  const label = new Intl.DateTimeFormat("es", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  })
+    .format(date)
+    .replace(/[.,]/g, "");
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/** "2,5" — the decimal comma the rest of the UI uses. */
+export function formatPriority(value: number | string): string {
+  return String(Number(value)).replace(".", ",");
+}
+
+/** "hoy", "mañana", "en 5 días", "ayer", "hace 2 días" for a day offset from today. */
+export function formatDayOffset(days: number): string {
+  if (days === 0) return "hoy";
+  if (days === 1) return "mañana";
+  if (days > 1) return `en ${days} días`;
+  if (days === -1) return "ayer";
+  return `hace ${-days} días`;
+}
+
 export function formatShortDate(date: Date): string {
   return shortDate.format(date).replace(".", "");
 }
 
 export function formatLongDate(date: Date): string {
   return longDate.format(date);
+}
+
+/** "14:32" — for entries already grouped under their day. */
+export function formatTime(iso: string): string {
+  return timeOnly.format(new Date(iso));
 }
 
 export function formatDateTime(iso: string): string {

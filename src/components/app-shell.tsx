@@ -90,6 +90,9 @@ export function AppShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  // A single task is a focus screen: it pins its own composer to the bottom
+  // edge, so the phone tab bar steps aside.
+  const focusScreen = /^\/projects\/[^/]+\/tasks\/[^/]+/.test(pathname);
 
   return (
     <div className="flex min-w-0 min-h-dvh flex-1">
@@ -126,7 +129,11 @@ export function AppShell({
           <UserMenu user={user} />
         </header>
 
-        <main className="mx-auto flex min-w-0 w-full max-w-[880px] flex-1 flex-col gap-8 px-4 pt-6 pb-28 md:px-10 md:pt-10 md:pb-16">
+        <main
+          className={`mx-auto flex min-w-0 w-full max-w-[880px] flex-1 flex-col gap-8 px-4 md:px-10 md:pt-10 ${
+            focusScreen ? "pt-3 pb-0" : "pt-6 pb-28 md:pb-16"
+          }`}
+        >
           {children}
         </main>
       </div>
@@ -134,7 +141,9 @@ export function AppShell({
       {/* Mobile tab bar */}
       <nav
         aria-label="Principal"
-        className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t border-line bg-raised/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className={`fixed inset-x-0 bottom-0 z-10 grid-cols-5 border-t border-line bg-raised/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden ${
+          focusScreen ? "hidden" : "grid"
+        }`}
       >
         {NAV.map((item) => {
           const active = item.match(pathname);

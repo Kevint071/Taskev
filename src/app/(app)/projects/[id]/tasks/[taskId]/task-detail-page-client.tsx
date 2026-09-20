@@ -16,7 +16,13 @@ import {
 } from "@/lib/sync-queue";
 
 /** Client-side editing shell for a single task: sync queue + optimistic updates. */
-export function TaskDetailPageClient({ initialTask }: { initialTask: Task }) {
+export function TaskDetailPageClient({
+  initialTask,
+  back,
+}: {
+  initialTask: Task;
+  back: { href: string; label: string };
+}) {
   const router = useRouter();
   const [task, setTask] = useState(initialTask);
   const [toast, setToast] = useState<ToastState>(null);
@@ -81,9 +87,8 @@ export function TaskDetailPageClient({ initialTask }: { initialTask: Task }) {
       <TaskDetailView
         task={{ ...task, key: task.id }}
         queue={queue}
+        back={back}
         onUpdate={updateTask}
-        onLocalChange={applyLocal}
-        onRemoteSave={saveRemote}
         onBlocked={showToast}
         onDelete={handleDelete}
       />

@@ -1,11 +1,11 @@
 import type { CSSProperties } from "react";
 import { useId } from "react";
 
-export function PlusIcon() {
+export function PlusIcon({ className }: { className?: string } = {}) {
   return (
     <svg
       viewBox="0 0 20 20"
-      className="size-4"
+      className={className ?? "size-4"}
       fill="none"
       stroke="currentColor"
       strokeWidth="1.6"
@@ -192,6 +192,88 @@ export function FlameIcon({ className }: { className?: string } = {}) {
         fill={`url(#${innerId})`}
         d="M15.75 14.25a3.75 3.75 0 1 1-7.313-1.172c.628.465 1.35.81 2.135.998a5.982 5.982 0 0 1-.443-2.058c0-1.834 1.153-3.404 2.774-4.023a3.752 3.752 0 0 1 2.847 6.255Z"
       />
+    </svg>
+  );
+}
+
+export function MinusIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={className ?? "size-4"}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M4.5 10h11" />
+    </svg>
+  );
+}
+
+export function BackIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-5"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="m12.5 4-6 6 6 6" />
+    </svg>
+  );
+}
+
+export function MoreIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-5"}`}
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <circle cx="4.5" cy="10" r="1.5" />
+      <circle cx="10" cy="10" r="1.5" />
+      <circle cx="15.5" cy="10" r="1.5" />
+    </svg>
+  );
+}
+
+export function SendIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-5"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M10 16V4.5M5 9.5l5-5 5 5" />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`size-4 shrink-0 ${className ?? ""}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="m5.5 8 4.5 4.5L14.5 8" />
     </svg>
   );
 }

@@ -4,7 +4,9 @@ import {
   addDaysUtc,
   addMonths,
   buildMonthGrid,
+  daysBetweenUtc,
   isSameUtcDay,
+  nextMondayUtc,
   utcMidnight,
 } from "./calendar";
 
@@ -41,4 +43,36 @@ test("isSameUtcDay compares calendar day, not time", () => {
 test("addDaysUtc adds calendar days across month boundaries", () => {
   const result = addDaysUtc(utcMidnight(2026, 8, 29), 3);
   assert.equal(isSameUtcDay(result, utcMidnight(2026, 9, 2)), true);
+});
+
+test("daysBetweenUtc counts whole calendar days, signed", () => {
+  const from = utcMidnight(2026, 8, 19);
+  assert.equal(daysBetweenUtc(utcMidnight(2026, 8, 24), from), 5);
+  assert.equal(daysBetweenUtc(from, from), 0);
+  assert.equal(daysBetweenUtc(utcMidnight(2026, 8, 17), from), -2);
+});
+
+test("nextMondayUtc is always strictly after the given day", () => {
+  // Sat 19 Sep 2026 -> Mon 21 Sep; Mon 21 -> Mon 28; Sun 20 -> Mon 21
+  assert.equal(
+    isSameUtcDay(
+      nextMondayUtc(utcMidnight(2026, 8, 19)),
+      utcMidnight(2026, 8, 21),
+    ),
+    true,
+  );
+  assert.equal(
+    isSameUtcDay(
+      nextMondayUtc(utcMidnight(2026, 8, 21)),
+      utcMidnight(2026, 8, 28),
+    ),
+    true,
+  );
+  assert.equal(
+    isSameUtcDay(
+      nextMondayUtc(utcMidnight(2026, 8, 20)),
+      utcMidnight(2026, 8, 21),
+    ),
+    true,
+  );
 });

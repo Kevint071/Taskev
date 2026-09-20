@@ -25,12 +25,18 @@ export function CalendarPanel({
   onClear,
   shortcuts,
   className = "",
+  bodyClassName = "w-60",
+  flat = false,
 }: {
   selected: Date | null;
   onSelect: (date: Date) => void;
   onClear?: () => void;
   shortcuts?: CalendarShortcut[];
   className?: string;
+  /** Width of the month grid; `w-full` lets it fill a sheet. */
+  bodyClassName?: string;
+  /** Drops the floating shadow, for a panel that sits inline in the page. */
+  flat?: boolean;
 }) {
   const today = todayUtcMidnight();
   const initial = selected ?? today;
@@ -43,7 +49,7 @@ export function CalendarPanel({
 
   return (
     <div
-      className={`flex overflow-hidden rounded-panel border border-line bg-raised shadow-2xl shadow-black/10 ${className}`}
+      className={`flex overflow-hidden rounded-panel border border-line bg-raised ${flat ? "" : "shadow-2xl shadow-black/10"} ${className}`}
     >
       {shortcuts && shortcuts.length > 0 && (
         <div className="flex w-28 shrink-0 flex-col gap-0.5 border-r border-line bg-surface p-2">
@@ -66,7 +72,7 @@ export function CalendarPanel({
           })}
         </div>
       )}
-      <div className="w-60 p-3">
+      <div className={`${bodyClassName} p-3`}>
         <div className="mb-2.5 flex items-center justify-between">
           <button
             type="button"

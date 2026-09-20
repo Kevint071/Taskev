@@ -64,6 +64,22 @@ export function addDaysUtc(date: Date, days: number): Date {
   return next;
 }
 
+const MS_PER_DAY = 86_400_000;
+
+/** Whole calendar days from `from` to `date` (negative when `date` is earlier). */
+export function daysBetweenUtc(
+  date: Date,
+  from: Date = todayUtcMidnight(),
+): number {
+  return Math.round((date.getTime() - from.getTime()) / MS_PER_DAY);
+}
+
+/** First Monday strictly after `date`. */
+export function nextMondayUtc(date: Date): Date {
+  const weekday = (date.getUTCDay() + 6) % 7; // Monday = 0
+  return addDaysUtc(date, 7 - weekday);
+}
+
 const monthYearFormat = new Intl.DateTimeFormat("es", {
   month: "long",
   year: "numeric",
