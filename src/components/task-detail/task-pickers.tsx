@@ -3,7 +3,7 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { STATUS_LABELS, type Task } from "@/components/project-types";
 import { CalendarPanel } from "@/components/ui/calendar-panel";
-import { MinusIcon, PlusIcon } from "@/components/ui/icons";
+import { CheckIcon, MinusIcon, PlusIcon } from "@/components/ui/icons";
 import { STATUS_TONE, StatusDot } from "@/components/ui/status-badge";
 import {
   addDaysUtc,
@@ -17,6 +17,7 @@ import {
   blockedFromDisponible,
   canCompleteAtProgress,
   PROGRESS_MAX,
+  PROGRESS_MIN,
   PROGRESS_STEP,
 } from "@/lib/progress";
 
@@ -33,47 +34,26 @@ const weekdayFormat = new Intl.DateTimeFormat("es", {
 
 /* ---------------------------------------------------------------- Avance */
 
-/**
- * Ten thin segments, one per progress step, filled in the task's status tone.
- * Tap a segment to jump there; tapping the last filled one steps back.
- */
-export function ProgressRuler({
+/** Drag or tap along the track; it snaps to each progress step, tinted by the status. */
+export function ProgressSlider({
   value,
   onChange,
 }: {
   value: number;
   onChange: (value: number) => void;
 }) {
-  const filled = Math.floor(value / PROGRESS_STEP);
   return (
-    <fieldset className="grid min-w-0 grid-cols-10 gap-[3px]">
-      <legend className="sr-only">Avance</legend>
-      {Array.from({ length: 10 }, (_, i) => {
-        const target = (i + 1) * PROGRESS_STEP;
-        const on = i < filled;
-        const current = i === filled - 1;
-        return (
-          <button
-            // biome-ignore lint/suspicious/noArrayIndexKey: fixed ten segments
-            key={i}
-            type="button"
-            aria-label={`Fijar el avance en ${target} %`}
-            aria-pressed={on}
-            onClick={() => onChange(current ? i * PROGRESS_STEP : target)}
-            className="group/seg flex h-7 items-center"
-          >
-            <span
-              style={{ "--d": `${i * 14}ms` } as CSSProperties}
-              className={`block w-full rounded-full transition-[background-color,height] motion-safe:[transition-delay:var(--d)] motion-safe:group-hover/seg:[transition-delay:0ms] ${
-                on
-                  ? "bg-(--tone)"
-                  : "bg-line-strong/60 group-hover/seg:bg-line-strong"
-              } ${current ? "h-2" : "h-1.5"}`}
-            />
-          </button>
-        );
-      })}
-    </fieldset>
+    <input
+      type="range"
+      aria-label="Avance"
+      min={PROGRESS_MIN}
+      max={PROGRESS_MAX}
+      step={PROGRESS_STEP}
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      style={{ "--p": value / PROGRESS_MAX } as CSSProperties}
+      className="progress-slider"
+    />
   );
 }
 
@@ -103,25 +83,23 @@ function lockReason(
 }
 
 /**
- * All five statuses, always visible. Only the current one is filled; the rest
- * stay quiet. A status that can't be picked yet is dimmed and explains why
- * when tapped, instead of carrying permanent hint text.
+ * The five statuses as a single-choice list. A status that can't be picked yet
+ * stays dimmed and says why right under its name, since the sheet covers the toasts.
  */
-export function StatusPicker({
+export function StatusOptions({
   status,
   progressPct,
   completedAt,
   onPick,
-  onLocked,
 }: {
   status: Task["status"];
   progressPct: number;
   completedAt: string | null;
   onPick: (status: Task["status"]) => void;
-  onLocked: (reason: string) => void;
 }) {
   return (
-    <div className="-mx-2.5 flex flex-wrap gap-x-0.5 gap-y-1">
+    <fieldset className="m-0 flex min-w-0 flex-col gap-0.5 border-0 p-0">
+      <legend className="sr-only">Estado</legend>
       {STATUS_ORDER.map((s) => {
         const current = status === s;
         const reason = current ? null : lockReason(s, progressPct, completedAt);
@@ -130,24 +108,35 @@ export function StatusPicker({
             key={s}
             type="button"
             aria-pressed={current}
-            aria-disabled={reason !== null}
-            title={reason ?? undefined}
-            onClick={() => (reason ? onLocked(reason) : onPick(s))}
+            disabled={reason !== null}
+            onClick={() => onPick(s)}
             style={{ "--tone": STATUS_TONE[s] } as CSSProperties}
-            className={`inline-flex h-9 items-center gap-2 rounded-full border px-3 text-ui font-medium transition-colors ${
+            className={`flex min-h-13 items-center gap-3 rounded-2xl px-3 py-2 text-left transition-colors ${
               current
-                ? "border-(--tone) bg-[color-mix(in_srgb,var(--tone)_13%,var(--raised))] text-ink"
-                : reason
-                  ? "cursor-not-allowed border-transparent text-muted/60"
-                  : "border-transparent text-muted hover:bg-sunken hover:text-ink"
-            }`}
+                ? "bg-[color-mix(in_srgb,var(--tone)_13%,var(--raised))]"
+                : "enabled:hover:bg-sunken"
+            } ${reason ? "cursor-not-allowed" : ""}`}
           >
-            <StatusDot status={s} />
-            {STATUS_LABELS[s]}
+            <span className={reason ? "opacity-50" : ""}>
+              <StatusDot status={s} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span
+                className={`block text-[15px] leading-6 ${
+                  current ? "font-semibold" : "font-medium"
+                } ${reason ? "text-muted/70" : ""}`}
+              >
+                {STATUS_LABELS[s]}
+              </span>
+              {reason && (
+                <span className="block text-meta text-muted">{reason}</span>
+              )}
+            </span>
+            {current && <CheckIcon className="text-(--tone)" />}
           </button>
         );
       })}
-    </div>
+    </fieldset>
   );
 }
 
@@ -388,27 +377,15 @@ export function PriorityStepper({
 export function CompletionPicker({
   value,
   onPick,
-  onCancel,
 }: {
   value: string | null;
   onPick: (date: Date) => void;
-  onCancel: () => void;
 }) {
   const today = todayUtcMidnight();
   const selected = value ? new Date(value) : today;
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-ui font-semibold">¿Cuándo se completó?</p>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="h-8 rounded-control px-2 text-meta font-medium text-muted hover:bg-raised hover:text-ink"
-        >
-          Cancelar
-        </button>
-      </div>
       <div className="flex gap-2">
         <button
           type="button"
