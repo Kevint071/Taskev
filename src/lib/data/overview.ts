@@ -1,7 +1,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { projects, tasks } from "@/lib/db/schema";
-import { computeRelevance } from "@/lib/relevance";
+import { compareByRelevance, computeRelevance } from "@/lib/relevance";
 
 export type OverviewTask = typeof tasks.$inferSelect & {
   projectName: string;
@@ -35,7 +35,7 @@ export async function getUserTaskOverview(userId: string, now: Date) {
       blocked: r.task.status === "bloqueada",
       relevance: computeRelevance(Number(r.task.priority), r.task.dueDate, now),
     }))
-    .sort((a, b) => (b.relevance ?? 0) - (a.relevance ?? 0));
+    .sort(compareByRelevance);
 
   const completed: OverviewTask[] = rows
     .filter((r) => r.task.status === "completada")

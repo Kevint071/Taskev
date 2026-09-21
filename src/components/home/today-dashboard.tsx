@@ -43,6 +43,8 @@ export async function TodayDashboard({
   const firstName = name?.split(" ")[0];
 
   const openTasks = tasks.filter((t) => t.status !== "completada");
+  // Open tasks exist, but none is workable, so the top 3 came out empty.
+  const allStalled = top.length === 0 && openTasks.length > 0;
   const unplanned = openTasks.filter(
     (t) => !t.dueDate && Number(t.priority) === 0,
   );
@@ -76,16 +78,27 @@ export async function TodayDashboard({
           title={
             projectCount === 0
               ? "Empieza creando un proyecto"
-              : "No tienes tareas abiertas"
+              : allStalled
+                ? "Nada listo para trabajar"
+                : "No tienes tareas abiertas"
           }
           description={
             projectCount === 0
               ? "Un proyecto agrupa tareas con un mismo objetivo. Después añade tareas y Taskev te dirá cuál va primero."
-              : "Añade una tarea a cualquier proyecto y aparecerá aquí según su prioridad y fecha límite."
+              : allStalled
+                ? "Tus tareas abiertas están bloqueadas o en pausa. Desbloquea o reanuda alguna y aparecerá aquí."
+                : "Añade una tarea a cualquier proyecto y aparecerá aquí según su prioridad y fecha límite."
           }
           action={
-            <ButtonLink href="/projects" variant="primary">
-              {projectCount === 0 ? "Crear un proyecto" : "Ir a proyectos"}
+            <ButtonLink
+              href={allStalled ? "/tasks" : "/projects"}
+              variant="primary"
+            >
+              {projectCount === 0
+                ? "Crear un proyecto"
+                : allStalled
+                  ? "Ver tareas"
+                  : "Ir a proyectos"}
             </ButtonLink>
           }
         />

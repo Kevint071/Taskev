@@ -24,6 +24,7 @@ function task(
     dueDate: due ? `${due}T00:00:00.000Z` : null,
     completedAt: null,
     relevance: 0,
+    progressPct: 0,
     ...rest,
   };
 }
@@ -100,6 +101,23 @@ test("undated tasks sort by relevance, highest first", () => {
     groups[0].tasks.map((t) => t.id),
     ["high", "mid", "low"],
   );
+});
+
+test("equal relevance is broken by progress, in dated and undated groups", () => {
+  const groups = buildTaskGroups(
+    [
+      task("dated-fresh", { due: "2026-09-18", relevance: 50, progressPct: 5 }),
+      task("dated-far", { due: "2026-09-18", relevance: 50, progressPct: 80 }),
+      task("free-fresh", { relevance: 30, progressPct: 0 }),
+      task("free-far", { relevance: 30, progressPct: 60 }),
+    ],
+    now,
+  );
+  const byKey = Object.fromEntries(
+    groups.map((g) => [g.key, g.tasks.map((t) => t.id)]),
+  );
+  assert.deepEqual(byKey.semana, ["dated-far", "dated-fresh"]);
+  assert.deepEqual(byKey.sinFecha, ["free-far", "free-fresh"]);
 });
 
 test("completed tasks ignore their due date and sort by completion, newest first", () => {

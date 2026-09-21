@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { computeRelevance, computeUrgency } from "./relevance";
+import {
+  compareByRelevance,
+  computeRelevance,
+  computeUrgency,
+} from "./relevance";
 
 const NOW = new Date("2026-01-15T00:00:00Z");
 const day = (n: number) => new Date(NOW.getTime() + n * 24 * 60 * 60 * 1000);
@@ -45,14 +49,46 @@ test("computeRelevance: high enough priority without a due date can outrank an u
   assert.ok(highPriorityNoDate > lowPriorityUrgent);
 });
 
-test("computeRelevance: more progress outranks less progress at equal priority and due date", () => {
-  const almostDone = computeRelevance(1, day(5), NOW, 90);
-  const barelyStarted = computeRelevance(1, day(5), NOW, 10);
-  assert.ok(almostDone > barelyStarted);
+test("computeRelevance: score is priority weight plus urgency, nothing else", () => {
+  assert.equal(
+    computeRelevance(2, day(5), NOW),
+    2 * 20 + computeUrgency(day(5), NOW),
+  );
 });
 
-test("computeRelevance: progress defaults to zero when omitted", () => {
-  const withoutProgress = computeRelevance(1, day(5), NOW);
-  const withZeroProgress = computeRelevance(1, day(5), NOW, 0);
-  assert.equal(withoutProgress, withZeroProgress);
+test("compareByRelevance: higher relevance goes first, whatever the progress", () => {
+  const hot = { relevance: 90, progressPct: 0 };
+  const cold = { relevance: 40, progressPct: 100 };
+  assert.ok(compareByRelevance(hot, cold) < 0);
+  assert.ok(compareByRelevance(cold, hot) > 0);
+});
+
+test("compareByRelevance: equal relevance is broken by more progress first", () => {
+  const started = { relevance: 60, progressPct: 70 };
+  const untouched = { relevance: 60, progressPct: 10 };
+  assert.ok(compareByRelevance(started, untouched) < 0);
+  assert.ok(compareByRelevance(untouched, started) > 0);
+});
+
+test("compareByRelevance: equal relevance and progress is a tie", () => {
+  const a = { relevance: 60, progressPct: 30 };
+  assert.equal(compareByRelevance(a, { ...a }), 0);
+});
+
+test("compareByRelevance: a missing relevance counts as zero", () => {
+  const scored = { relevance: 1, progressPct: 0 };
+  const unscored = { relevance: null, progressPct: 0 };
+  assert.ok(compareByRelevance(scored, unscored) < 0);
+});
+
+test("compareByRelevance: sorting a list applies both rules in order", () => {
+  const list = [
+    { id: "low-progress-tie", relevance: 60, progressPct: 10 },
+    { id: "top", relevance: 90, progressPct: 0 },
+    { id: "high-progress-tie", relevance: 60, progressPct: 80 },
+  ];
+  assert.deepEqual(
+    list.sort(compareByRelevance).map((t) => t.id),
+    ["top", "high-progress-tie", "low-progress-tie"],
+  );
 });

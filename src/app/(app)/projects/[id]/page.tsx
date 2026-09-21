@@ -28,7 +28,7 @@ import { todayUtcMidnight } from "@/lib/calendar";
 import { MAX_TASK_TITLE_LENGTH } from "@/lib/constraints";
 import { formatDueDate, isOverdue } from "@/lib/format";
 import { blockedFromDisponible, canCompleteAtProgress } from "@/lib/progress";
-import { computeRelevance } from "@/lib/relevance";
+import { compareByRelevance, computeRelevance } from "@/lib/relevance";
 import {
   ApiError,
   createSyncQueue,
@@ -312,21 +312,17 @@ export default function ProjectDetailPage() {
     const now = new Date();
     const sortedIncomplete = tasks
       .filter((t) => t.status !== "completada")
-      .sort(
-        (a, b) =>
-          computeRelevance(
-            Number(b.priority),
-            b.dueDate ? new Date(b.dueDate) : null,
-            now,
-            b.progressPct,
-          ) -
-          computeRelevance(
-            Number(a.priority),
-            a.dueDate ? new Date(a.dueDate) : null,
-            now,
-            a.progressPct,
-          ),
-      );
+      .map((task) => ({
+        task,
+        relevance: computeRelevance(
+          Number(task.priority),
+          task.dueDate ? new Date(task.dueDate) : null,
+          now,
+        ),
+        progressPct: task.progressPct,
+      }))
+      .sort(compareByRelevance)
+      .map(({ task }) => task);
     const sortedCompleted = tasks
       .filter((t) => t.status === "completada")
       .sort(

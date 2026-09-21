@@ -7,13 +7,19 @@ const now = new Date(2026, 8, 16, 12, 0, 0);
 
 function task(
   id: string,
-  opts: { due?: string; relevance?: number; status?: string } = {},
+  opts: {
+    due?: string;
+    relevance?: number;
+    status?: string;
+    progress?: number;
+  } = {},
 ): TodayTask {
   return {
     id,
     status: opts.status ?? "disponible",
     dueDate: opts.due ? new Date(`${opts.due}T00:00:00Z`) : null,
     relevance: opts.relevance ?? 0,
+    progressPct: opts.progress ?? 0,
   };
 }
 
@@ -57,6 +63,80 @@ test("top is capped at 3 tasks by default", () => {
   assert.deepEqual(
     result.top.map((t) => t.id),
     ["b", "d", "c"],
+  );
+});
+
+test("top breaks equal relevance by progress, most advanced first", () => {
+  const result = buildTodaySections(
+    [
+      task("fresh", { relevance: 60, progress: 0 }),
+      task("half", { relevance: 60, progress: 50 }),
+      task("almost", { relevance: 60, progress: 90 }),
+    ],
+    now,
+  );
+  assert.deepEqual(
+    result.top.map((t) => t.id),
+    ["almost", "half", "fresh"],
+  );
+});
+
+test("progress never outranks a higher relevance", () => {
+  const result = buildTodaySections(
+    [
+      task("advanced", { relevance: 40, progress: 95 }),
+      task("urgent", { relevance: 80, progress: 0 }),
+    ],
+    now,
+  );
+  assert.deepEqual(
+    result.top.map((t) => t.id),
+    ["urgent", "advanced"],
+  );
+});
+
+test("blocked and paused tasks never make the top", () => {
+  const result = buildTodaySections(
+    [
+      task("blocked", { relevance: 100, status: "bloqueada" }),
+      task("paused", { relevance: 90, status: "pausada" }),
+      task("ready", { relevance: 10 }),
+      task("going", { relevance: 5, status: "en_curso" }),
+    ],
+    now,
+  );
+  assert.deepEqual(
+    result.top.map((t) => t.id),
+    ["ready", "going"],
+  );
+});
+
+test("top is empty when every open task is blocked or paused", () => {
+  const result = buildTodaySections(
+    [
+      task("blocked", { relevance: 100, status: "bloqueada" }),
+      task("paused", { relevance: 90, status: "pausada" }),
+    ],
+    now,
+  );
+  assert.deepEqual(result.top, []);
+});
+
+test("blocked and paused tasks still show in the due-date sections", () => {
+  const result = buildTodaySections(
+    [
+      task("blocked", { due: "2026-09-15", status: "bloqueada" }),
+      task("paused", { due: "2026-09-16", status: "pausada" }),
+    ],
+    now,
+  );
+  assert.deepEqual(
+    result.overdue.map((t) => t.id),
+    ["blocked"],
+  );
+  assert.deepEqual(
+    result.dueToday.map((t) => t.id),
+    ["paused"],
   );
 });
 

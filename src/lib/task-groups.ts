@@ -1,3 +1,4 @@
+import { compareByRelevance } from "./relevance";
 import { startOfDayKey, WEEK_WINDOW_DAYS } from "./today";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -28,6 +29,7 @@ export type GroupableTask = {
   dueDate: string | null;
   completedAt: string | null;
   relevance: number | null;
+  progressPct: number;
 };
 
 export type TaskGroup<T> = { key: TaskGroupKey; tasks: T[] };
@@ -53,12 +55,8 @@ function dueTime(task: GroupableTask): number {
   return task.dueDate ? Date.parse(task.dueDate) : 0;
 }
 
-function byRelevance(a: GroupableTask, b: GroupableTask): number {
-  return (b.relevance ?? 0) - (a.relevance ?? 0);
-}
-
 function byDueThenRelevance(a: GroupableTask, b: GroupableTask): number {
-  return dueTime(a) - dueTime(b) || byRelevance(a, b);
+  return dueTime(a) - dueTime(b) || compareByRelevance(a, b);
 }
 
 function byCompletedDesc(a: GroupableTask, b: GroupableTask): number {
@@ -106,7 +104,7 @@ export function buildTaskGroups<T extends GroupableTask>(
   buckets.hoy.sort(byDueThenRelevance);
   buckets.semana.sort(byDueThenRelevance);
   buckets.despues.sort(byDueThenRelevance);
-  buckets.sinFecha.sort(byRelevance);
+  buckets.sinFecha.sort(compareByRelevance);
   buckets.completadas.sort(byCompletedDesc);
 
   return GROUP_ORDER.filter((key) => buckets[key].length > 0).map((key) => ({

@@ -1,11 +1,17 @@
+import { compareByRelevance } from "./relevance";
+
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 export const WEEK_WINDOW_DAYS = 7;
+
+/** Open tasks you can't work on right now; they never make the top. */
+const NOT_ACTIONABLE = new Set(["bloqueada", "pausada"]);
 
 export type TodayTask = {
   id: string;
   status: string;
   dueDate: Date | null;
   relevance: number | null;
+  progressPct: number;
 };
 
 export type TodaySections<T extends TodayTask> = {
@@ -26,10 +32,11 @@ export function startOfDayKey(now: Date): number {
 }
 
 /**
- * Splits tasks into the "Hoy" sections. `top` holds the open tasks with the
- * highest relevance (up to `topLimit`), shown separately as today's featured
- * priorities; they also appear in the lists below if their due date
- * qualifies, so those lists always reflect every matching task. `dueToday`
+ * Splits tasks into the "Hoy" sections. `top` holds the workable open tasks
+ * (not blocked or paused) with the highest relevance, up to `topLimit`, ties
+ * broken by progress; shown separately as today's featured priorities. They
+ * also appear in the lists below if their due date qualifies, and those lists
+ * do include blocked and paused tasks, so they reflect every matching task. `dueToday`
  * is kept separate from `thisWeek` so today's agenda doesn't get lost in the
  * week's noise. Overdue wins over due-today, which wins over this week;
  * completed tasks are ignored. Lists are sorted by due date, earliest first.
@@ -41,8 +48,9 @@ export function buildTodaySections<T extends TodayTask>(
 ): TodaySections<T> {
   const open = tasks.filter((t) => t.status !== "completada");
 
-  const top = [...open]
-    .sort((a, b) => (b.relevance ?? 0) - (a.relevance ?? 0))
+  const top = open
+    .filter((t) => !NOT_ACTIONABLE.has(t.status))
+    .sort(compareByRelevance)
     .slice(0, topLimit);
 
   const today = startOfDayKey(now);
