@@ -1,22 +1,39 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { type GlobalTask, STATUS_LABELS } from "@/components/project-types";
-import { ButtonLink } from "@/components/ui/button";
-import {
-  EmptyState,
-  LoadingRows,
-  PageHeader,
-  Panel,
-} from "@/components/ui/panel";
-import { ProgressChip } from "@/components/ui/progress-chip";
-import { StatusDot } from "@/components/ui/status-badge";
+import { useCallback, useEffect, useState } from "react";
+import type { GlobalTask } from "@/components/project-types";
+import { TaskGroupSection } from "@/components/tasks/task-group-section";
+import { TaskToolbar } from "@/components/tasks/task-toolbar";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { EmptyState, LoadingRows, PageHeader } from "@/components/ui/panel";
+import { Toast, type ToastState } from "@/components/ui/toast";
 import { handleUnauthenticated } from "@/lib/api-client";
-import { formatDueDate, isOverdue } from "@/lib/format";
+import { todayUtcMidnight } from "@/lib/calendar";
+import {
+  ALL_PROJECTS,
+  buildTaskGroups,
+  countByStatus,
+  filterTasks,
+  type TaskFilters,
+} from "@/lib/task-groups";
+
+const NO_FILTERS: TaskFilters = {
+  query: "",
+  status: "todas",
+  projectId: ALL_PROJECTS,
+};
+
+type TaskPatch = Partial<
+  Pick<GlobalTask, "status" | "progressPct" | "completedAt">
+>;
 
 export default function GlobalTasksPage() {
   const [tasks, setTasks] = useState<GlobalTask[] | null>(null);
+  const [filters, setFilters] = useState<TaskFilters>(NO_FILTERS);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const [toast, setToast] = useState<ToastState>(null);
+  const [now] = useState(() => new Date());
+  const dismissToast = useCallback(() => setToast(null), []);
 
   useEffect(() => {
     fetch("/api/tasks").then(async (res) => {
@@ -25,14 +42,66 @@ export default function GlobalTasksPage() {
     });
   }, []);
 
-  const active = tasks?.filter((t) => t.status !== "completada") ?? [];
-  const completed = tasks?.filter((t) => t.status === "completada") ?? [];
+  function replaceTask(id: string, apply: (task: GlobalTask) => GlobalTask) {
+    setTasks(
+      (current) => current?.map((t) => (t.id === id ? apply(t) : t)) ?? null,
+    );
+  }
+
+  async function toggleDone(task: GlobalTask) {
+    const completing = task.status !== "completada";
+    const patch: TaskPatch = completing
+      ? {
+          status: "completada",
+          progressPct: 100,
+          completedAt: todayUtcMidnight().toISOString(),
+        }
+      : { status: "en_curso", completedAt: null };
+
+    setPendingIds((ids) => new Set(ids).add(task.id));
+    replaceTask(task.id, (t) => ({
+      ...t,
+      ...patch,
+      blocked: false,
+      relevance: completing ? null : t.relevance,
+    }));
+
+    try {
+      const res = await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      if (handleUnauthenticated(res)) return;
+      if (!res.ok) throw new Error(`PATCH ${res.status}`);
+    } catch {
+      replaceTask(task.id, () => task);
+      setToast({ id: Date.now(), message: "No se pudo actualizar la tarea" });
+    } finally {
+      setPendingIds((ids) => {
+        const next = new Set(ids);
+        next.delete(task.id);
+        return next;
+      });
+    }
+  }
+
+  const scoped = tasks
+    ? filterTasks(tasks, { ...filters, status: "todas" })
+    : [];
+  const groups = buildTaskGroups(tasks ? filterTasks(tasks, filters) : [], now);
+  const projects = tasks
+    ? [...new Map(tasks.map((t) => [t.projectId, t.projectName]))]
+        .map(([id, name]) => ({ id, name }))
+        .sort((a, b) => a.name.localeCompare(b.name, "es"))
+    : [];
+  const searching = filters.query.trim() !== "";
 
   return (
     <>
       <PageHeader
         title="Tareas"
-        description="Todas tus tareas activas, ordenadas por relevancia: prioridad más urgencia por fecha límite."
+        description="Todo lo que tienes entre manos, agrupado por urgencia."
       />
 
       {tasks === null ? (
@@ -49,92 +118,45 @@ export default function GlobalTasksPage() {
         />
       ) : (
         <>
-          {active.length > 0 && <TaskList tasks={active} ranked />}
-          {completed.length > 0 && (
-            <section className="flex flex-col gap-2">
-              <h2 className="text-meta font-medium text-muted">
-                Completadas{" "}
-                <span className="tabular">({completed.length})</span>
-              </h2>
-              <div className="opacity-70">
-                <TaskList tasks={completed} />
-              </div>
-            </section>
+          <TaskToolbar
+            filters={filters}
+            onChange={setFilters}
+            projects={projects}
+            counts={countByStatus(scoped)}
+            total={scoped.length}
+          />
+          {groups.length === 0 ? (
+            <EmptyState
+              title="Ninguna tarea coincide"
+              description="Prueba con otra búsqueda o quita algún filtro."
+              action={
+                <Button
+                  variant="secondary"
+                  onClick={() => setFilters(NO_FILTERS)}
+                >
+                  Limpiar filtros
+                </Button>
+              }
+            />
+          ) : (
+            <div className="flex flex-col gap-6">
+              {groups.map((group) => (
+                <TaskGroupSection
+                  key={group.key}
+                  groupKey={group.key}
+                  tasks={group.tasks}
+                  now={now}
+                  pendingIds={pendingIds}
+                  onToggle={toggleDone}
+                  forceOpen={searching}
+                />
+              ))}
+            </div>
           )}
         </>
       )}
-    </>
-  );
-}
 
-function TaskList({
-  tasks,
-  ranked = false,
-}: {
-  tasks: GlobalTask[];
-  ranked?: boolean;
-}) {
-  return (
-    <Panel>
-      <ol className="divide-y divide-line">
-        {tasks.map((task, index) => {
-          const done = task.status === "completada";
-          const overdue = !done && task.dueDate && isOverdue(task.dueDate);
-          return (
-            <li key={task.id}>
-              <Link
-                href={`/projects/${task.projectId}/tasks/${task.id}`}
-                className={`flex items-center gap-3 px-4 py-3 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken ${
-                  task.blocked
-                    ? "shadow-[inset_3px_0_0_var(--status-blocked)]"
-                    : ""
-                }`}
-              >
-                {ranked && (
-                  <span className="tabular w-5 shrink-0 text-right text-meta text-muted">
-                    {index + 1}
-                  </span>
-                )}
-                {/* Title gets its own line (up to 2) so the metadata below
-                    never competes with it for horizontal space. */}
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span
-                    title={task.title}
-                    className={`line-clamp-2 break-words font-medium text-body sm:text-ui ${done ? "line-through decoration-line-strong" : ""}`}
-                  >
-                    {task.title}
-                  </span>
-                  <span className="flex min-w-0 items-center gap-2 text-meta text-muted">
-                    <span
-                      className="flex shrink-0 items-center gap-1.5"
-                      title={STATUS_LABELS[task.status]}
-                    >
-                      <StatusDot status={task.status} />
-                      <span className="sr-only">
-                        {STATUS_LABELS[task.status]}
-                      </span>
-                    </span>
-                    <span className="min-w-0 flex-1 truncate">
-                      {task.projectName}
-                    </span>
-                    <span className="hidden shrink-0 tabular sm:inline">
-                      P{Number(task.priority)}
-                    </span>
-                    {task.dueDate && (
-                      <span
-                        className={`shrink-0 tabular ${overdue ? "font-medium text-danger" : ""}`}
-                      >
-                        {formatDueDate(task.dueDate)}
-                      </span>
-                    )}
-                  </span>
-                </div>
-                <ProgressChip value={task.progressPct} />
-              </Link>
-            </li>
-          );
-        })}
-      </ol>
-    </Panel>
+      <Toast toast={toast} onDismiss={dismissToast} />
+    </>
   );
 }

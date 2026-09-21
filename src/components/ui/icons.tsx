@@ -345,3 +345,21 @@ export function ChevronDownIcon({ className }: { className?: string } = {}) {
     </svg>
   );
 }
+
+export function SearchIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="9" cy="9" r="5.5" />
+      <path d="m13.2 13.2 3.3 3.3" />
+    </svg>
+  );
+}

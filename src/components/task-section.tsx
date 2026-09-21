@@ -148,19 +148,30 @@ export function TaskSection({
   );
 }
 
-function ProgressRing({ pct, color }: { pct: number; color: string }) {
+export function ProgressRing({
+  pct,
+  color,
+  size = "sm",
+}: {
+  pct: number;
+  color: string;
+  size?: "sm" | "md";
+}) {
+  const md = size === "md";
   return (
     <span
       role="progressbar"
       aria-valuenow={pct}
       aria-valuemin={0}
       aria-valuemax={100}
-      className="flex size-6 shrink-0 items-center justify-center rounded-full"
+      className={`flex shrink-0 items-center justify-center rounded-full ${md ? "size-8" : "size-6"}`}
       style={{
         background: `conic-gradient(${color} ${pct}%, var(--line-strong) 0)`,
       }}
     >
-      <span className="tabular flex size-[18px] items-center justify-center rounded-full bg-raised text-[8px] font-bold text-ink">
+      <span
+        className={`tabular flex items-center justify-center rounded-full bg-raised font-bold text-ink ${md ? "size-6 text-[9px]" : "size-[18px] text-[8px]"}`}
+      >
         {pct}
       </span>
     </span>

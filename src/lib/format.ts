@@ -1,3 +1,5 @@
+import { daysBetweenUtc, todayUtcMidnight } from "./calendar";
+
 const shortDate = new Intl.DateTimeFormat("es", {
   day: "numeric",
   month: "short",
@@ -59,6 +61,21 @@ export function formatDayOffset(days: number): string {
   if (days > 1) return `en ${days} días`;
   if (days === -1) return "ayer";
   return `hace ${-days} días`;
+}
+
+const RELATIVE_DUE_DAYS = 7;
+
+/** "hoy", "mañana", "hace 2 días" within a week of today; "18 sept" beyond. */
+export function formatDueRelative(
+  iso: string | Date,
+  now = new Date(),
+): string {
+  const days = daysBetweenUtc(
+    typeof iso === "string" ? new Date(iso) : iso,
+    todayUtcMidnight(now),
+  );
+  if (Math.abs(days) <= RELATIVE_DUE_DAYS) return formatDayOffset(days);
+  return formatDueDate(iso);
 }
 
 export function formatShortDate(date: Date): string {
