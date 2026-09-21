@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ComponentType, CSSProperties } from "react";
 import { Brand } from "@/components/brand";
 import { STATUS_LABELS, type Task } from "@/components/project-types";
@@ -10,6 +9,7 @@ import {
   TriangleAlertIcon,
 } from "@/components/ui/icons";
 import { StatusDot } from "@/components/ui/status-badge";
+import { CtaLink, SecondaryLink } from "./cta-link";
 import { TaskFlow } from "./task-flow";
 
 const container = "mx-auto w-full max-w-[1120px] px-4 md:px-8";
@@ -98,6 +98,22 @@ const EXTRAS = [
   },
 ];
 
+/** The 1-2-3 badges of the demo below, so the sentence and the animation read as one. */
+function TopThree() {
+  return (
+    <span aria-hidden="true" className="inline-flex gap-1 align-[-0.25em]">
+      {[1, 2, 3].map((n) => (
+        <span
+          key={n}
+          className="tabular inline-flex size-[22px] items-center justify-center rounded-full bg-accent-soft text-[12px] font-bold text-accent"
+        >
+          {n}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export function Landing() {
   return (
     <div className="flex min-h-dvh min-w-0 flex-1 flex-col pt-16">
@@ -119,33 +135,22 @@ export function Landing() {
 
       <main className="flex-1">
         <section
-          className={`${container} grid items-start gap-10 pt-6 pb-12 md:pt-12 md:pb-24 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)] lg:gap-12 lg:items-center`}
+          className={`${container} grid items-start gap-8 pt-12 pb-12 sm:gap-12 md:pt-16 md:pb-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-12 lg:items-center`}
         >
-          <div className="flex w-full max-w-[34rem] flex-col items-start gap-5 md:gap-6">
-            <h1 className="text-hero font-semibold text-balance">
-              Abre la app y ya sabes qué tarea sigue.
+          <div className="mx-auto flex w-full max-w-[34rem] flex-col items-start gap-6 sm:max-w-[40rem] sm:items-center sm:text-center md:gap-7 lg:mx-0 lg:max-w-[34rem] lg:items-start lg:text-left">
+            <h1 className="text-[2.5rem] leading-[1.02] font-semibold tracking-[-0.04em] text-balance md:text-hero">
+              Un gestor de tareas que te dice cuál hacer primero.
             </h1>
-            <p className="text-body text-muted md:text-[18px] md:leading-[1.6]">
-              Taskev junta las tareas de todos tus proyectos en una sola lista y
-              las ordena por la prioridad que les das y su fecha límite. Las
-              tres primeras son tu día.
+            <p className="text-[17px] leading-[1.55] text-muted md:text-[18px] md:leading-[1.6]">
+              Organiza tus tareas por proyecto y ponles prioridad y fecha
+              límite. Taskev las junta en una sola lista ordenada: las tres de{" "}
+              <span className="whitespace-nowrap">
+                arriba <TopThree /> son tu día.
+              </span>
             </p>
-            <div className="flex w-full flex-col gap-3 sm:w-auto">
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <ButtonLink
-                  href="/register"
-                  variant="primary"
-                  className="h-12 px-5 sm:h-11"
-                >
-                  Crear mi cuenta
-                </ButtonLink>
-                <ButtonLink href="/login" className="h-12 px-5 sm:h-11">
-                  Ya tengo cuenta
-                </ButtonLink>
-              </div>
-              <p className="text-center text-meta text-muted sm:text-left">
-                Solo necesitas un correo y una contraseña.
-              </p>
+            <div className="flex flex-wrap items-center gap-2.5 pt-1 sm:justify-center sm:gap-3 md:pt-2 lg:justify-start">
+              <CtaLink href="/register">Crear mi cuenta</CtaLink>
+              <SecondaryLink href="#como-funciona">Cómo funciona</SecondaryLink>
             </div>
           </div>
 
@@ -159,7 +164,7 @@ export function Landing() {
           <div className={`${container} py-12 md:py-24`}>
             <h2
               id="como-funciona"
-              className="max-w-[28rem] text-headline font-semibold text-balance"
+              className="max-w-[28rem] scroll-mt-24 text-headline font-semibold text-balance"
             >
               Cómo funciona
             </h2>
@@ -281,19 +286,10 @@ export function Landing() {
                 Añade unas tareas, abre Hoy y la siguiente ya estará marcada.
               </p>
             </div>
-            <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-x-5">
-              <Link
-                href="/register"
-                className="inline-flex h-12 items-center sm:h-11 justify-center rounded-control bg-accent-ink px-5 font-medium whitespace-nowrap text-accent transition-opacity hover:opacity-90 focus-visible:outline-accent-ink"
-              >
+            <div className="md:shrink-0">
+              <CtaLink href="/register" inverse>
                 Crear mi cuenta
-              </Link>
-              <Link
-                href="/login"
-                className="py-2 text-center font-medium underline underline-offset-4 focus-visible:outline-accent-ink"
-              >
-                Ya tengo cuenta
-              </Link>
+              </CtaLink>
             </div>
           </div>
         </section>
