@@ -84,7 +84,7 @@ function TaskList({
             <li key={task.id}>
               <Link
                 href={`/projects/${task.projectId}/tasks/${task.id}`}
-                className={`flex items-center gap-3 px-4 py-2.5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken ${
+                className={`flex items-center gap-3 px-4 py-3 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken ${
                   task.blocked
                     ? "shadow-[inset_3px_0_0_var(--status-blocked)]"
                     : ""
@@ -95,28 +95,40 @@ function TaskList({
                     {index + 1}
                   </span>
                 )}
-                <span
-                  className={`min-w-0 flex-1 truncate font-medium text-body sm:text-ui ${done ? "line-through decoration-line-strong" : ""}`}
-                >
-                  {task.title}
-                </span>
-                <span className="shrink-0 text-meta text-muted/60">·</span>
-                <span className="shrink-0 truncate max-w-[8rem] text-meta text-muted">
-                  {task.projectName}
-                </span>
-                <span className="shrink-0" title={STATUS_LABELS[task.status]}>
-                  <StatusDot status={task.status} />
-                </span>
-                <span className="shrink-0 hidden sm:inline tabular text-meta text-muted">
-                  P{Number(task.priority)}
-                </span>
-                {task.dueDate && (
+                {/* Title gets its own line (up to 2) so the metadata below
+                    never competes with it for horizontal space. */}
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span
-                    className={`shrink-0 tabular text-meta ${overdue ? "font-medium text-danger" : "text-muted"}`}
+                    title={task.title}
+                    className={`line-clamp-2 break-words font-medium text-body sm:text-ui ${done ? "line-through decoration-line-strong" : ""}`}
                   >
-                    {formatDueDate(task.dueDate)}
+                    {task.title}
                   </span>
-                )}
+                  <span className="flex min-w-0 items-center gap-2 text-meta text-muted">
+                    <span
+                      className="flex shrink-0 items-center gap-1.5"
+                      title={STATUS_LABELS[task.status]}
+                    >
+                      <StatusDot status={task.status} />
+                      <span className="sr-only">
+                        {STATUS_LABELS[task.status]}
+                      </span>
+                    </span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {task.projectName}
+                    </span>
+                    <span className="hidden shrink-0 tabular sm:inline">
+                      P{Number(task.priority)}
+                    </span>
+                    {task.dueDate && (
+                      <span
+                        className={`shrink-0 tabular ${overdue ? "font-medium text-danger" : ""}`}
+                      >
+                        {formatDueDate(task.dueDate)}
+                      </span>
+                    )}
+                  </span>
+                </div>
                 <ProgressChip value={task.progressPct} />
               </Link>
             </li>
