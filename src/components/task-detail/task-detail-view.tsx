@@ -160,71 +160,6 @@ function FlashWrap({
   );
 }
 
-/**
- * The task's own checkbox: a ring that fills with the progress and turns into a
- * solid check once completed. It is also the main action of the screen.
- */
-function CompletionRing({
-  pct,
-  done,
-  ready,
-  onClick,
-}: {
-  pct: number;
-  done: boolean;
-  /** Progress is full but the task is not marked completed yet. */
-  ready: boolean;
-  onClick: () => void;
-}) {
-  const radius = 11;
-  const circumference = 2 * Math.PI * radius;
-  return (
-    <button
-      type="button"
-      aria-label={done ? "Reabrir la tarea" : "Completar la tarea"}
-      onClick={onClick}
-      className="group/ring relative mt-0.5 size-7 shrink-0 rounded-full after:absolute after:-inset-2.5 after:content-['']"
-    >
-      <svg viewBox="0 0 28 28" className="size-7 -rotate-90" aria-hidden="true">
-        <circle
-          cx="14"
-          cy="14"
-          r={radius}
-          fill={done ? "var(--tone)" : "none"}
-          stroke="color-mix(in srgb, var(--tone) 24%, transparent)"
-          strokeWidth="2.5"
-          className="transition-[fill] duration-300"
-        />
-        {!done && pct > 0 && (
-          <circle
-            cx="14"
-            cy="14"
-            r={radius}
-            fill="none"
-            stroke="var(--tone)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={circumference * (1 - pct / PROGRESS_MAX)}
-            className="transition-[stroke-dashoffset] duration-300"
-          />
-        )}
-      </svg>
-      <CheckIcon
-        className={`absolute inset-0 m-auto transition-opacity ${
-          done
-            ? "size-4 text-accent-ink"
-            : `size-3.5 text-(--tone) ${
-                ready
-                  ? "opacity-80"
-                  : "opacity-0 group-hover/ring:opacity-40 group-focus-visible/ring:opacity-40"
-              }`
-        }`}
-      />
-    </button>
-  );
-}
-
 /** One property of the task: reads as a sentence, and opens its sheet when tapped. */
 function PropertyButton({
   icon,
@@ -586,14 +521,7 @@ export function TaskDetailView({
       </div>
 
       <div className="flex flex-col gap-9 pt-4 pb-10">
-        <header className="grid grid-cols-[28px_1fr] gap-x-3 gap-y-3">
-          <CompletionRing
-            pct={progressDraft}
-            done={done}
-            ready={readyToComplete}
-            onClick={() => pickStatus(done ? "en_curso" : "completada")}
-          />
-
+        <header className="flex flex-col gap-3">
           <FlashWrap tick={flash.title}>
             <label className="block">
               <span className="sr-only">Título de la tarea</span>
@@ -622,7 +550,7 @@ export function TaskDetailView({
             </label>
           </FlashWrap>
 
-          <div className="col-start-2 flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <FlashWrap
               tick={flash.status}
               className="w-fit rounded-full border-transparent"
@@ -651,7 +579,7 @@ export function TaskDetailView({
             )}
           </div>
 
-          <div className="col-start-2">
+          <div>
             <FlashWrap
               tick={flash.description}
               className="rounded-xl border-transparent"

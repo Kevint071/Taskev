@@ -10,8 +10,7 @@ import {
   TriangleAlertIcon,
 } from "@/components/ui/icons";
 import { StatusDot } from "@/components/ui/status-badge";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { TodayPreview } from "./today-preview";
+import { TaskFlow } from "./task-flow";
 
 const container = "mx-auto w-full max-w-[1120px] px-4 md:px-8";
 
@@ -95,32 +94,34 @@ const EXTRAS = [
   },
   {
     title: "Claro y oscuro",
-    text: "Elige un tema o deja que siga el de tu dispositivo.",
+    text: "Elige un tema en Ajustes o deja que siga el de tu dispositivo.",
   },
 ];
 
 export function Landing() {
   return (
-    <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
-      <header
-        className={`${container} flex items-center justify-between gap-4 py-4 md:py-5`}
-      >
-        <Brand />
-        <nav aria-label="Cuenta" className="flex items-center gap-1 sm:gap-2">
-          <ButtonLink href="/login" variant="ghost">
-            Entrar
-          </ButtonLink>
-          <ButtonLink href="/register" variant="primary">
-            Crear cuenta
-          </ButtonLink>
-        </nav>
+    <div className="flex min-h-dvh min-w-0 flex-1 flex-col pt-16">
+      <header className="fixed inset-x-0 top-0 z-40 border-b border-line bg-surface/85 backdrop-blur-md">
+        <div
+          className={`${container} flex h-16 items-center justify-between gap-4`}
+        >
+          <Brand />
+          <nav aria-label="Cuenta" className="flex items-center gap-1 sm:gap-2">
+            <ButtonLink href="/login" variant="ghost">
+              Entrar
+            </ButtonLink>
+            <ButtonLink href="/register" variant="primary">
+              Crear cuenta
+            </ButtonLink>
+          </nav>
+        </div>
       </header>
 
       <main className="flex-1">
         <section
-          className={`${container} grid items-start gap-10 pt-8 pb-16 md:pt-12 md:pb-24 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)] lg:gap-12 lg:items-center`}
+          className={`${container} grid items-start gap-10 pt-6 pb-12 md:pt-12 md:pb-24 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)] lg:gap-12 lg:items-center`}
         >
-          <div className="flex max-w-[34rem] flex-col items-start gap-6">
+          <div className="flex w-full max-w-[34rem] flex-col items-start gap-5 md:gap-6">
             <h1 className="text-hero font-semibold text-balance">
               Abre la app y ya sabes qué tarea sigue.
             </h1>
@@ -129,40 +130,40 @@ export function Landing() {
               las ordena por la prioridad que les das y su fecha límite. Las
               tres primeras son tu día.
             </p>
-            <div className="flex flex-col items-start gap-3">
-              <div className="flex flex-wrap gap-3">
+            <div className="flex w-full flex-col gap-3 sm:w-auto">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <ButtonLink
                   href="/register"
                   variant="primary"
-                  className="h-11 px-5"
+                  className="h-12 px-5 sm:h-11"
                 >
                   Crear mi cuenta
                 </ButtonLink>
-                <ButtonLink href="/login" className="h-11 px-5">
+                <ButtonLink href="/login" className="h-12 px-5 sm:h-11">
                   Ya tengo cuenta
                 </ButtonLink>
               </div>
-              <p className="text-meta text-muted">
+              <p className="text-center text-meta text-muted sm:text-left">
                 Solo necesitas un correo y una contraseña.
               </p>
             </div>
           </div>
 
-          <TodayPreview />
+          <TaskFlow />
         </section>
 
         <section
           aria-labelledby="como-funciona"
           className="border-t border-line"
         >
-          <div className={`${container} py-16 md:py-24`}>
+          <div className={`${container} py-12 md:py-24`}>
             <h2
               id="como-funciona"
               className="max-w-[28rem] text-headline font-semibold text-balance"
             >
               Cómo funciona
             </h2>
-            <ol className="mt-10 grid gap-8 md:grid-cols-3 md:gap-10">
+            <ol className="mt-8 grid gap-7 md:mt-10 md:grid-cols-3 md:gap-10">
               {STEPS.map((step, i) => (
                 <li
                   key={step.title}
@@ -185,7 +186,7 @@ export function Landing() {
           aria-labelledby="por-dentro"
           className="border-y border-line bg-raised"
         >
-          <div className={`${container} py-16 md:py-24`}>
+          <div className={`${container} py-12 md:py-24`}>
             <h2
               id="por-dentro"
               className="max-w-[32rem] text-headline font-semibold text-balance"
@@ -193,7 +194,7 @@ export function Landing() {
               Distingue lo que puedes hacer de lo que está esperando
             </h2>
 
-            <div className="mt-10 grid gap-12 lg:grid-cols-2 lg:gap-16">
+            <div className="mt-8 grid gap-10 md:mt-10 lg:grid-cols-2 lg:gap-16">
               <div>
                 <h3 className="text-section font-semibold">
                   Cada tarea dice en qué punto está
@@ -251,9 +252,9 @@ export function Landing() {
               </div>
             </div>
 
-            <dl className="mt-16 grid gap-x-10 gap-y-8 border-t border-line pt-10 sm:grid-cols-2 lg:grid-cols-4">
+            <dl className="mt-12 grid gap-x-10 divide-y divide-line border-t border-line sm:grid-cols-2 sm:gap-y-8 sm:divide-y-0 sm:pt-10 md:mt-16 lg:grid-cols-4">
               {EXTRAS.map((extra) => (
-                <div key={extra.title}>
+                <div key={extra.title} className="py-4 sm:py-0">
                   <dt className="font-semibold">{extra.title}</dt>
                   <dd className="mt-1 text-muted">{extra.text}</dd>
                 </div>
@@ -267,7 +268,7 @@ export function Landing() {
           className="bg-accent text-accent-ink"
         >
           <div
-            className={`${container} flex flex-col items-start gap-6 py-16 md:flex-row md:items-center md:justify-between md:py-20`}
+            className={`${container} flex flex-col items-start gap-6 py-12 md:flex-row md:items-center md:justify-between md:py-20`}
           >
             <div className="max-w-[34rem]">
               <h2
@@ -280,16 +281,16 @@ export function Landing() {
                 Añade unas tareas, abre Hoy y la siguiente ya estará marcada.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-x-5">
               <Link
                 href="/register"
-                className="inline-flex h-11 items-center justify-center rounded-control bg-accent-ink px-5 font-medium whitespace-nowrap text-accent transition-opacity hover:opacity-90 focus-visible:outline-accent-ink"
+                className="inline-flex h-12 items-center sm:h-11 justify-center rounded-control bg-accent-ink px-5 font-medium whitespace-nowrap text-accent transition-opacity hover:opacity-90 focus-visible:outline-accent-ink"
               >
                 Crear mi cuenta
               </Link>
               <Link
                 href="/login"
-                className="font-medium underline underline-offset-4 focus-visible:outline-accent-ink"
+                className="py-2 text-center font-medium underline underline-offset-4 focus-visible:outline-accent-ink"
               >
                 Ya tengo cuenta
               </Link>
@@ -297,18 +298,6 @@ export function Landing() {
           </div>
         </section>
       </main>
-
-      <footer
-        className={`${container} flex flex-wrap items-center justify-between gap-4 py-5 text-meta text-muted`}
-      >
-        <Brand className="text-ui" />
-        <div className="flex items-center gap-4">
-          <Link href="/login" className="whitespace-nowrap hover:text-ink">
-            Iniciar sesión
-          </Link>
-          <ThemeToggle compact />
-        </div>
-      </footer>
     </div>
   );
 }
