@@ -28,16 +28,37 @@ export function computeRelevance(
 
 /**
  * Sort comparator, most relevant first. Equal relevance (same priority and
- * same due date) is broken by progress: the task further along goes first, so
- * you finish what you started.
+ * same due date) is broken first by `positionRank` — where the task sits in
+ * its project's manual order, as a 0 (first) to 1 (last) percentile, so a
+ * task you dragged up wins a tie before one you didn't — then by progress:
+ * the task further along goes first, so you finish what you started.
  */
 export function compareByRelevance(
-  a: { relevance: number | null; progressPct: number },
-  b: { relevance: number | null; progressPct: number },
+  a: {
+    relevance: number | null;
+    progressPct: number;
+    positionRank?: number | null;
+  },
+  b: {
+    relevance: number | null;
+    progressPct: number;
+    positionRank?: number | null;
+  },
 ): number {
   return (
-    (b.relevance ?? 0) - (a.relevance ?? 0) || b.progressPct - a.progressPct
+    (b.relevance ?? 0) - (a.relevance ?? 0) ||
+    (a.positionRank ?? 1) - (b.positionRank ?? 1) ||
+    b.progressPct - a.progressPct
   );
+}
+
+/**
+ * Percentile position within a same-project, manually ordered group: 0 for
+ * the first item, 1 for the last, 0 when there's nothing to rank against.
+ * Feeds `compareByRelevance`'s `positionRank` tie-break.
+ */
+export function positionRank(index: number, count: number): number {
+  return count > 1 ? index / (count - 1) : 0;
 }
 
 /** Open tasks you can't work on right now; they never make the "Hoy" top. */

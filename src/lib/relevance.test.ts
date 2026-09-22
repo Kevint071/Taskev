@@ -6,6 +6,7 @@ import {
   computeRelevance,
   computeUrgency,
   isActionable,
+  positionRank,
 } from "./relevance";
 
 const NOW = new Date("2026-01-15T00:00:00Z");
@@ -81,6 +82,36 @@ test("compareByRelevance: a missing relevance counts as zero", () => {
   const scored = { relevance: 1, progressPct: 0 };
   const unscored = { relevance: null, progressPct: 0 };
   assert.ok(compareByRelevance(scored, unscored) < 0);
+});
+
+test("compareByRelevance: equal relevance is broken by position before progress", () => {
+  const draggedUp = { relevance: 60, progressPct: 0, positionRank: 0 };
+  const draggedDown = { relevance: 60, progressPct: 100, positionRank: 1 };
+  assert.ok(compareByRelevance(draggedUp, draggedDown) < 0);
+  assert.ok(compareByRelevance(draggedDown, draggedUp) > 0);
+});
+
+test("compareByRelevance: relevance still outranks position", () => {
+  const higherRelevance = { relevance: 90, progressPct: 0, positionRank: 1 };
+  const higherPosition = { relevance: 40, progressPct: 0, positionRank: 0 };
+  assert.ok(compareByRelevance(higherRelevance, higherPosition) < 0);
+});
+
+test("compareByRelevance: a missing position counts as last", () => {
+  const ranked = { relevance: 60, progressPct: 0, positionRank: 0 };
+  const unranked = { relevance: 60, progressPct: 0 };
+  assert.ok(compareByRelevance(ranked, unranked) < 0);
+});
+
+test("positionRank: first of many is 0, last is 1", () => {
+  assert.equal(positionRank(0, 4), 0);
+  assert.equal(positionRank(3, 4), 1);
+  assert.equal(positionRank(1, 4), 1 / 3);
+});
+
+test("positionRank: a single task, or none, ranks as 0", () => {
+  assert.equal(positionRank(0, 1), 0);
+  assert.equal(positionRank(0, 0), 0);
 });
 
 test("compareByRelevance: sorting a list applies both rules in order", () => {
