@@ -1,10 +1,7 @@
-import { compareByRelevance } from "./relevance";
+import { compareByRelevance, isActionable } from "./relevance";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 export const WEEK_WINDOW_DAYS = 7;
-
-/** Open tasks you can't work on right now; they never make the top. */
-const NOT_ACTIONABLE = new Set(["bloqueada", "pausada"]);
 
 export type TodayTask = {
   id: string;
@@ -49,7 +46,7 @@ export function buildTodaySections<T extends TodayTask>(
   const open = tasks.filter((t) => t.status !== "completada");
 
   const top = open
-    .filter((t) => !NOT_ACTIONABLE.has(t.status))
+    .filter((t) => isActionable(t.status))
     .sort(compareByRelevance)
     .slice(0, topLimit);
 

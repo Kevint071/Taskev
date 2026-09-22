@@ -29,7 +29,7 @@ import { todayUtcMidnight } from "@/lib/calendar";
 import { MAX_TASK_TITLE_LENGTH } from "@/lib/constraints";
 import { formatDueDate, isOverdue } from "@/lib/format";
 import { blockedFromDisponible, canCompleteAtProgress } from "@/lib/progress";
-import { compareByRelevance, computeRelevance } from "@/lib/relevance";
+import { compareForProjectOrder, computeRelevance } from "@/lib/relevance";
 import {
   ApiError,
   createSyncQueue,
@@ -319,8 +319,9 @@ export default function ProjectDetailPage() {
           now,
         ),
         progressPct: task.progressPct,
+        status: task.status,
       }))
-      .sort(compareByRelevance)
+      .sort(compareForProjectOrder)
       .map(({ task }) => task);
     const sortedCompleted = tasks
       .filter((t) => t.status === "completada")

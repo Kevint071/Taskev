@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   compareByRelevance,
+  compareForProjectOrder,
   computeRelevance,
   computeUrgency,
+  isActionable,
 } from "./relevance";
 
 const NOW = new Date("2026-01-15T00:00:00Z");
@@ -90,5 +92,30 @@ test("compareByRelevance: sorting a list applies both rules in order", () => {
   assert.deepEqual(
     list.sort(compareByRelevance).map((t) => t.id),
     ["top", "high-progress-tie", "low-progress-tie"],
+  );
+});
+
+test("isActionable: blocked and paused tasks are not, the rest are", () => {
+  assert.equal(isActionable("bloqueada"), false);
+  assert.equal(isActionable("pausada"), false);
+  assert.equal(isActionable("disponible"), true);
+  assert.equal(isActionable("en_curso"), true);
+});
+
+test("compareForProjectOrder: workable tasks go before blocked or paused ones, even with lower relevance", () => {
+  const list = [
+    { id: "blocked-hot", status: "bloqueada", relevance: 120, progressPct: 0 },
+    { id: "paused-warm", status: "pausada", relevance: 80, progressPct: 50 },
+    {
+      id: "workable-cold",
+      status: "disponible",
+      relevance: 20,
+      progressPct: 0,
+    },
+    { id: "workable-hot", status: "en_curso", relevance: 90, progressPct: 0 },
+  ];
+  assert.deepEqual(
+    list.sort(compareForProjectOrder).map((t) => t.id),
+    ["workable-hot", "workable-cold", "blocked-hot", "paused-warm"],
   );
 });

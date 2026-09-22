@@ -39,3 +39,24 @@ export function compareByRelevance(
     (b.relevance ?? 0) - (a.relevance ?? 0) || b.progressPct - a.progressPct
   );
 }
+
+/** Open tasks you can't work on right now; they never make the "Hoy" top. */
+const NOT_ACTIONABLE = new Set(["bloqueada", "pausada"]);
+
+export function isActionable(status: string): boolean {
+  return !NOT_ACTIONABLE.has(status);
+}
+
+/**
+ * Sort comparator for a project's automatic order: workable tasks first by
+ * relevance, then blocked and paused ones (also by relevance) at the end.
+ */
+export function compareForProjectOrder(
+  a: { status: string; relevance: number | null; progressPct: number },
+  b: { status: string; relevance: number | null; progressPct: number },
+): number {
+  return (
+    Number(!isActionable(a.status)) - Number(!isActionable(b.status)) ||
+    compareByRelevance(a, b)
+  );
+}
