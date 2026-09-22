@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { type GlobalTask, STATUS_LABELS } from "@/components/project-types";
-import { ProgressRing } from "@/components/task-section";
 import { CalendarIcon, FlagIcon } from "@/components/ui/icons";
 import { STATUS_TONE, StatusDot } from "@/components/ui/status-badge";
 import { type BackSource, taskHref } from "@/lib/back-navigation";
@@ -18,7 +17,7 @@ const CHIP =
 
 /**
  * One task: title, then a status-dot/project/due-date line, on the left,
- * with the priority flag stacked directly above the progress ring
+ * with the priority flag stacked directly above a short progress bar
  * (vertically, same x-position) on the right, at every breakpoint.
  *
  * The whole row is clickable through the title link's stretched `::after`.
@@ -61,7 +60,7 @@ export function TaskRow({
           className="block after:absolute after:inset-0"
         >
           <span
-            className={`line-clamp-2 break-words text-body font-medium lg:text-ui ${
+            className={`block truncate text-body font-medium lg:text-ui ${
               done ? "text-muted line-through decoration-line-strong" : ""
             }`}
           >
@@ -98,11 +97,21 @@ export function TaskRow({
             {formatPriority(priority)}
           </span>
         ) : null}
-        <ProgressRing
-          pct={task.progressPct}
-          color={STATUS_TONE[task.status]}
-          size="md"
-        />
+        <span
+          role="progressbar"
+          aria-valuenow={task.progressPct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          className="h-1.5 w-6 shrink-0 overflow-hidden rounded-full bg-line-strong"
+        >
+          <span
+            className="block h-full rounded-full"
+            style={{
+              width: `${task.progressPct}%`,
+              backgroundColor: STATUS_TONE[task.status],
+            }}
+          />
+        </span>
       </div>
     </li>
   );
