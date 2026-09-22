@@ -37,6 +37,10 @@ export default function GlobalTasksPage() {
     ? filterTasks(tasks, { ...filters, status: "todas" })
     : [];
   const groups = buildTaskGroups(tasks ? filterTasks(tasks, filters) : [], now);
+  const overdueCount = tasks
+    ? (buildTaskGroups(tasks, now).find((g) => g.key === "vencidas")?.tasks
+        .length ?? 0)
+    : 0;
   const projects = tasks
     ? [...new Map(tasks.map((t) => [t.projectId, t.projectName]))]
         .map(([id, name]) => ({ id, name }))
@@ -48,7 +52,15 @@ export default function GlobalTasksPage() {
     <>
       <PageHeader
         title="Tareas"
-        description="Todo lo que tienes entre manos, agrupado por urgencia."
+        description={
+          tasks
+            ? `${tasks.length} tarea${tasks.length === 1 ? "" : "s"}${
+                overdueCount > 0
+                  ? ` · ${overdueCount} vencida${overdueCount === 1 ? "" : "s"}`
+                  : ""
+              }`
+            : undefined
+        }
       />
 
       {tasks === null ? (
