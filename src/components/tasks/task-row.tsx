@@ -1,24 +1,24 @@
 import Link from "next/link";
-import { type GlobalTask, STATUS_LABELS } from "@/components/project-types";
+import { type GlobalTask } from "@/components/project-types";
 import { CalendarIcon, FlagIcon } from "@/components/ui/icons";
-import { STATUS_TONE, StatusDot } from "@/components/ui/status-badge";
+import { STATUS_TONE } from "@/components/ui/status-badge";
 import { type BackSource, taskHref } from "@/lib/back-navigation";
 import { daysBetweenUtc, todayUtcMidnight } from "@/lib/calendar";
 import { formatDueRelative, formatPriority } from "@/lib/format";
 
 const DUE_CHIP_TONE = {
-  danger: "bg-danger/10 text-danger",
-  accent: "bg-accent-soft text-accent",
-  muted: "bg-sunken text-muted",
+  danger: "text-danger",
+  accent: "text-accent",
+  muted: "text-muted",
 } as const;
 
 const CHIP =
   "inline-flex h-6 items-center gap-1 whitespace-nowrap rounded-full px-2 text-meta font-medium tabular";
 
 /**
- * One task: title, then a status-dot/project/due-date line, on the left,
- * with the priority flag stacked directly above a short progress bar
- * (vertically, same x-position) on the right, at every breakpoint.
+ * One task: title, then a project/due-date line, on the left,
+ * with the priority flag on the right. `showProgress` also renders a short
+ * progress bar below the flag (used outside the global Tareas screen).
  *
  * The whole row is clickable through the title link's stretched `::after`.
  */
@@ -26,10 +26,12 @@ export function TaskRow({
   task,
   now,
   from,
+  showProgress = true,
 }: {
   task: GlobalTask;
   now: Date;
   from?: BackSource;
+  showProgress?: boolean;
 }) {
   const done = task.status === "completada";
   const days = task.dueDate
@@ -68,11 +70,6 @@ export function TaskRow({
           </span>
         </Link>
         <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-meta text-muted">
-          <StatusDot
-            status={task.status}
-            title={STATUS_LABELS[task.status]}
-            className="size-2.5 shadow-sm"
-          />
           <span className="truncate">{task.projectName}</span>
           {task.dueDate ? (
             <span className={`${CHIP} shrink-0 ${DUE_CHIP_TONE[dueTone]}`}>
@@ -85,7 +82,11 @@ export function TaskRow({
 
       <div
         className={`col-start-2 row-start-1 flex h-full flex-col items-center gap-1 self-stretch ${
-          hasPriority ? "justify-between" : "justify-end"
+          showProgress
+            ? hasPriority
+              ? "justify-between"
+              : "justify-end"
+            : "justify-center"
         }`}
       >
         {hasPriority ? (
@@ -97,21 +98,23 @@ export function TaskRow({
             {formatPriority(priority)}
           </span>
         ) : null}
-        <span
-          role="progressbar"
-          aria-valuenow={task.progressPct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          className="h-1.5 w-6 shrink-0 overflow-hidden rounded-full bg-line-strong"
-        >
+        {showProgress ? (
           <span
-            className="block h-full rounded-full"
-            style={{
-              width: `${task.progressPct}%`,
-              backgroundColor: STATUS_TONE[task.status],
-            }}
-          />
-        </span>
+            role="progressbar"
+            aria-valuenow={task.progressPct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            className="h-1.5 w-6 shrink-0 overflow-hidden rounded-full bg-line-strong"
+          >
+            <span
+              className="block h-full rounded-full"
+              style={{
+                width: `${task.progressPct}%`,
+                backgroundColor: STATUS_TONE[task.status],
+              }}
+            />
+          </span>
+        ) : null}
       </div>
     </li>
   );
