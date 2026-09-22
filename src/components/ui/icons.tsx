@@ -407,3 +407,20 @@ export function SearchIcon({ className }: { className?: string } = {}) {
     </svg>
   );
 }
+
+export function FilterIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 5h14M6 10h8M8.5 15h3" />
+    </svg>
+  );
+}

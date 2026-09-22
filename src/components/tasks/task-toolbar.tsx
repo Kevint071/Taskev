@@ -1,7 +1,11 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { type ReactNode, useState } from "react";
 import { STATUS_LABELS } from "@/components/project-types";
-import { ChevronDownIcon, SearchIcon } from "@/components/ui/icons";
-import { Input, Select } from "@/components/ui/input";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { Button } from "@/components/ui/button";
+import { CheckIcon, FilterIcon, SearchIcon } from "@/components/ui/icons";
+import { Input } from "@/components/ui/input";
 import { StatusDot } from "@/components/ui/status-badge";
 import {
   ALL_PROJECTS,
@@ -23,71 +27,100 @@ export function TaskToolbar({
   counts: Record<OpenStatus, number>;
   total: number;
 }) {
+  const [open, setOpen] = useState(false);
+  const filtered =
+    filters.status !== "todas" || filters.projectId !== ALL_PROJECTS;
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex gap-2">
-        <div className="relative min-w-0 flex-1">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
-          <Input
-            type="search"
-            aria-label="Buscar tareas"
-            placeholder="Buscar tarea o proyecto"
-            value={filters.query}
-            onChange={(e) => onChange({ ...filters, query: e.target.value })}
-            className="w-full pl-9"
+    <div className="flex gap-2">
+      <div className="relative min-w-0 flex-1">
+        <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
+        <Input
+          type="search"
+          aria-label="Buscar tareas"
+          placeholder="Buscar tarea o proyecto"
+          value={filters.query}
+          onChange={(e) => onChange({ ...filters, query: e.target.value })}
+          className="w-full pl-9"
+        />
+      </div>
+
+      <div className="relative shrink-0">
+        <Button variant="secondary" onClick={() => setOpen(true)}>
+          <FilterIcon />
+          Filtrar
+        </Button>
+        {filtered && (
+          <span
+            aria-hidden="true"
+            className="absolute -top-1 -right-1 size-2.5 rounded-full bg-accent"
           />
-        </div>
-        {projects.length > 1 && (
-          <div className="relative w-36 shrink-0 sm:w-52">
-            <Select
-              aria-label="Filtrar por proyecto"
-              value={filters.projectId}
-              onChange={(e) =>
-                onChange({ ...filters, projectId: e.target.value })
-              }
-              className="w-full truncate"
-            >
-              <option value={ALL_PROJECTS}>Todos los proyectos</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </Select>
-            <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-muted" />
-          </div>
         )}
       </div>
 
-      <fieldset aria-label="Filtrar por estado" className="m-0 min-w-0 p-0">
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden">
-          <Chip
-            active={filters.status === "todas"}
-            onClick={() => onChange({ ...filters, status: "todas" })}
-            count={total}
-          >
-            Todas
-          </Chip>
-          {OPEN_STATUSES.filter(
-            (status) => counts[status] > 0 || filters.status === status,
-          ).map((status) => (
-            <Chip
-              key={status}
-              active={filters.status === status}
-              onClick={() => onChange({ ...filters, status })}
-              count={counts[status]}
+      <BottomSheet
+        open={open}
+        title="Filtrar tareas"
+        onClose={() => setOpen(false)}
+      >
+        <div className="flex flex-col gap-5 pb-2">
+          <fieldset className="m-0 flex min-w-0 flex-col gap-0.5 border-0 p-0">
+            <legend className="px-1 pb-1 text-meta font-semibold text-muted uppercase tracking-wide">
+              Estado
+            </legend>
+            <FilterOption
+              active={filters.status === "todas"}
+              onClick={() => onChange({ ...filters, status: "todas" })}
+              count={total}
             >
-              <StatusDot status={status} />
-              {STATUS_LABELS[status]}
-            </Chip>
-          ))}
+              Todas
+            </FilterOption>
+            {OPEN_STATUSES.map((status) => (
+              <FilterOption
+                key={status}
+                active={filters.status === status}
+                onClick={() => onChange({ ...filters, status })}
+                count={counts[status]}
+              >
+                <StatusDot status={status} />
+                {STATUS_LABELS[status]}
+              </FilterOption>
+            ))}
+          </fieldset>
+
+          {projects.length > 1 && (
+            <fieldset className="m-0 flex min-w-0 flex-col gap-0.5 border-0 p-0">
+              <legend className="px-1 pb-1 text-meta font-semibold text-muted uppercase tracking-wide">
+                Proyecto
+              </legend>
+              <FilterOption
+                active={filters.projectId === ALL_PROJECTS}
+                onClick={() =>
+                  onChange({ ...filters, projectId: ALL_PROJECTS })
+                }
+              >
+                Todos
+              </FilterOption>
+              {projects.map((project) => (
+                <FilterOption
+                  key={project.id}
+                  active={filters.projectId === project.id}
+                  onClick={() =>
+                    onChange({ ...filters, projectId: project.id })
+                  }
+                >
+                  {project.name}
+                </FilterOption>
+              ))}
+            </fieldset>
+          )}
         </div>
-      </fieldset>
+      </BottomSheet>
     </div>
   );
 }
 
-function Chip({
+function FilterOption({
   active,
   onClick,
   count,
@@ -95,7 +128,7 @@ function Chip({
 }: {
   active: boolean;
   onClick: () => void;
-  count: number;
+  count?: number;
   children: ReactNode;
 }) {
   return (
@@ -103,14 +136,17 @@ function Chip({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-ui font-medium transition-colors ${
-        active
-          ? "border-accent bg-accent-soft text-accent"
-          : "border-line-strong bg-raised text-muted hover:border-ink/30 hover:text-ink"
+      className={`flex min-h-11 items-center gap-2.5 rounded-2xl px-3 text-left transition-colors ${
+        active ? "bg-accent-soft text-accent" : "hover:bg-sunken"
       }`}
     >
-      {children}
-      <span className="tabular text-meta opacity-80">{count}</span>
+      <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-[15px] font-medium">
+        {children}
+      </span>
+      {count !== undefined && (
+        <span className="tabular text-meta opacity-80">{count}</span>
+      )}
+      {active && <CheckIcon className="shrink-0" />}
     </button>
   );
 }
