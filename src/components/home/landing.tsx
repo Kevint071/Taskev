@@ -1,11 +1,10 @@
-import type { ComponentType, CSSProperties } from "react";
+import type { ComponentType } from "react";
 import { Brand } from "@/components/brand";
 import { STATUS_LABELS, type Task } from "@/components/project-types";
 import { ButtonLink } from "@/components/ui/button";
 import {
   CalendarIcon,
-  LockIcon,
-  RefreshIcon,
+  CheckIcon,
   TriangleAlertIcon,
 } from "@/components/ui/icons";
 import { StatusDot } from "@/components/ui/status-badge";
@@ -40,22 +39,15 @@ const STATES: { status: Task["status"]; meaning: string }[] = [
   },
 ];
 
-type AgendaIcon = ComponentType<{ className?: string; style?: CSSProperties }>;
+type GroupIcon = ComponentType<{ className?: string }>;
 
-const AGENDA: {
+const TASK_GROUPS: {
   group: string;
   color: string;
-  icon: AgendaIcon;
+  icon: GroupIcon;
   task: string;
   detail: string;
 }[] = [
-  {
-    group: "Bloqueadas",
-    color: "var(--status-paused)",
-    icon: LockIcon,
-    task: "Firmar contrato con el proveedor",
-    detail: "Casa",
-  },
   {
     group: "Vencidas",
     color: "var(--danger)",
@@ -64,18 +56,25 @@ const AGENDA: {
     detail: "venció ayer",
   },
   {
-    group: "Próximos 7 días",
+    group: "Hoy",
     color: "var(--accent)",
+    icon: CalendarIcon,
+    task: "Enviar propuesta al cliente",
+    detail: "hoy",
+  },
+  {
+    group: "Próximas",
+    color: "var(--muted)",
     icon: CalendarIcon,
     task: "Revisar contrato de alquiler",
     detail: "en 5 días",
   },
   {
-    group: "En curso",
-    color: "var(--status-progress)",
-    icon: RefreshIcon,
-    task: "Enviar propuesta al cliente",
-    detail: "60 %",
+    group: "Completadas",
+    color: "var(--status-done)",
+    icon: CheckIcon,
+    task: "Preparar factura de agosto",
+    detail: "ayer",
   },
 ];
 
@@ -222,11 +221,11 @@ export function Landing() {
 
               <div>
                 <h3 className="text-section font-semibold">
-                  La Agenda reúne lo que pide seguimiento
+                  Tareas las agrupa por vencimiento
                 </h3>
                 <div className="mt-4 overflow-hidden rounded-panel border border-line bg-surface">
                   <ul className="divide-y divide-line">
-                    {AGENDA.map(
+                    {TASK_GROUPS.map(
                       ({ group, color, icon: Icon, task, detail }) => (
                         <li
                           key={group}
@@ -236,9 +235,10 @@ export function Landing() {
                             className="flex size-9 shrink-0 items-center justify-center rounded-control"
                             style={{
                               backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`,
+                              color,
                             }}
                           >
-                            <Icon className="size-[18px]" style={{ color }} />
+                            <Icon className="size-[18px]" />
                           </span>
                           <div className="min-w-0 flex-1">
                             <p className="font-medium">{group}</p>
