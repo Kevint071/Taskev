@@ -36,6 +36,13 @@
       "when": 1789658382479,
       "tag": "0004_workable_vector",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790043814316,
+      "tag": "0005_thin_hairball",
+      "breakpoints": true
     }
   ]
 }

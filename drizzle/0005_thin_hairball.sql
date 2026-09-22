@@ -1,0 +1,1 @@
+ALTER TABLE "tasks" ADD COLUMN "pinned_today" boolean DEFAULT false NOT NULL;

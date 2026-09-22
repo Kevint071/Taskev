@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   doublePrecision,
   integer,
@@ -59,6 +60,8 @@ export const tasks = pgTable(
     dueDate: timestamp("due_date", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     position: doublePrecision("position").notNull(),
+    /** Forced into "Hoy" regardless of relevance; the user's explicit override. */
+    pinnedToday: boolean("pinned_today").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
