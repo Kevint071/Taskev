@@ -209,7 +209,12 @@ export function TaskRow({
       </div>
 
       {showProgress ? (
-        <ProgressRing pct={task.progressPct} color={STATUS_TONE[task.status]} />
+        <span className="self-start">
+          <ProgressRing
+            pct={task.progressPct}
+            color={STATUS_TONE[task.status]}
+          />
+        </span>
       ) : null}
 
       {editable && (
