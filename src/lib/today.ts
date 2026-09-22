@@ -9,6 +9,8 @@ export type TodayTask = {
   dueDate: Date | null;
   relevance: number | null;
   progressPct: number;
+  /** Forced into `top` ahead of every non-pinned task, still by relevance among themselves. */
+  pinnedToday: boolean;
 };
 
 export type TodaySections<T extends TodayTask> = {
@@ -31,8 +33,11 @@ export function startOfDayKey(now: Date): number {
 /**
  * Splits tasks into the "Hoy" sections. `top` holds the workable open tasks
  * (not blocked or paused) with the highest relevance, up to `topLimit`, ties
- * broken by progress; shown separately as today's featured priorities. They
- * also appear in the lists below if their due date qualifies, and those lists
+ * broken by progress; shown separately as today's featured priorities. Tasks
+ * pinned for today (`pinnedToday`) always fill those slots first, ahead of
+ * relevance, so an explicit "fijar" always wins a spot — among themselves,
+ * and among the rest once pinned slots run out, relevance still decides.
+ * They also appear in the lists below if their due date qualifies, and those lists
  * do include blocked and paused tasks, so they reflect every matching task. `dueToday`
  * is kept separate from `thisWeek` so today's agenda doesn't get lost in the
  * week's noise. Overdue wins over due-today, which wins over this week;
@@ -45,10 +50,10 @@ export function buildTodaySections<T extends TodayTask>(
 ): TodaySections<T> {
   const open = tasks.filter((t) => t.status !== "completada");
 
-  const top = open
-    .filter((t) => isActionable(t.status))
-    .sort(compareByRelevance)
-    .slice(0, topLimit);
+  const workable = open.filter((t) => isActionable(t.status));
+  const pinned = workable.filter((t) => t.pinnedToday).sort(compareByRelevance);
+  const rest = workable.filter((t) => !t.pinnedToday).sort(compareByRelevance);
+  const top = [...pinned, ...rest].slice(0, topLimit);
 
   const today = startOfDayKey(now);
   const weekEnd = today + WEEK_WINDOW_DAYS * MS_PER_DAY;

@@ -12,6 +12,7 @@ function task(
     relevance?: number;
     status?: string;
     progress?: number;
+    pinned?: boolean;
   } = {},
 ): TodayTask {
   return {
@@ -20,6 +21,7 @@ function task(
     dueDate: opts.due ? new Date(`${opts.due}T00:00:00Z`) : null,
     relevance: opts.relevance ?? 0,
     progressPct: opts.progress ?? 0,
+    pinnedToday: opts.pinned ?? false,
   };
 }
 
@@ -92,6 +94,68 @@ test("progress never outranks a higher relevance", () => {
   assert.deepEqual(
     result.top.map((t) => t.id),
     ["urgent", "advanced"],
+  );
+});
+
+test("a pinned task outranks a more relevant one for the top spots", () => {
+  const result = buildTodaySections(
+    [
+      task("hot", { relevance: 90 }),
+      task("pinned", { relevance: 5, pinned: true }),
+    ],
+    now,
+  );
+  assert.deepEqual(
+    result.top.map((t) => t.id),
+    ["pinned", "hot"],
+  );
+});
+
+test("pinned tasks are still ranked by relevance among themselves", () => {
+  const result = buildTodaySections(
+    [
+      task("pinned-cold", { relevance: 5, pinned: true }),
+      task("pinned-hot", { relevance: 50, pinned: true }),
+    ],
+    now,
+  );
+  assert.deepEqual(
+    result.top.map((t) => t.id),
+    ["pinned-hot", "pinned-cold"],
+  );
+});
+
+test("pinned tasks fill the limit first, leaving no room for the rest", () => {
+  const result = buildTodaySections(
+    [
+      task("pinned-1", { relevance: 1, pinned: true }),
+      task("pinned-2", { relevance: 1, pinned: true }),
+      task("pinned-3", { relevance: 1, pinned: true }),
+      task("unpinned-hot", { relevance: 99 }),
+    ],
+    now,
+  );
+  assert.deepEqual(
+    result.top.map((t) => t.id),
+    ["pinned-1", "pinned-2", "pinned-3"],
+  );
+});
+
+test("a pinned but blocked or paused task still never makes the top", () => {
+  const result = buildTodaySections(
+    [
+      task("pinned-blocked", {
+        relevance: 100,
+        status: "bloqueada",
+        pinned: true,
+      }),
+      task("ready", { relevance: 1 }),
+    ],
+    now,
+  );
+  assert.deepEqual(
+    result.top.map((t) => t.id),
+    ["ready"],
   );
 });
 
