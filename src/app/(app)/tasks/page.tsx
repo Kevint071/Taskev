@@ -1,14 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { GlobalTask } from "@/components/project-types";
 import { TaskGroupSection } from "@/components/tasks/task-group-section";
 import { TaskToolbar } from "@/components/tasks/task-toolbar";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { EmptyState, LoadingRows, PageHeader } from "@/components/ui/panel";
-import { Toast, type ToastState } from "@/components/ui/toast";
 import { handleUnauthenticated } from "@/lib/api-client";
-import { todayUtcMidnight } from "@/lib/calendar";
 import {
   ALL_PROJECTS,
   buildTaskGroups,
@@ -23,17 +21,10 @@ const NO_FILTERS: TaskFilters = {
   projectId: ALL_PROJECTS,
 };
 
-type TaskPatch = Partial<
-  Pick<GlobalTask, "status" | "progressPct" | "completedAt">
->;
-
 export default function GlobalTasksPage() {
   const [tasks, setTasks] = useState<GlobalTask[] | null>(null);
   const [filters, setFilters] = useState<TaskFilters>(NO_FILTERS);
-  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
-  const [toast, setToast] = useState<ToastState>(null);
   const [now] = useState(() => new Date());
-  const dismissToast = useCallback(() => setToast(null), []);
 
   useEffect(() => {
     fetch("/api/tasks").then(async (res) => {
@@ -41,50 +32,6 @@ export default function GlobalTasksPage() {
       setTasks(await res.json());
     });
   }, []);
-
-  function replaceTask(id: string, apply: (task: GlobalTask) => GlobalTask) {
-    setTasks(
-      (current) => current?.map((t) => (t.id === id ? apply(t) : t)) ?? null,
-    );
-  }
-
-  async function toggleDone(task: GlobalTask) {
-    const completing = task.status !== "completada";
-    const patch: TaskPatch = completing
-      ? {
-          status: "completada",
-          progressPct: 100,
-          completedAt: todayUtcMidnight().toISOString(),
-        }
-      : { status: "en_curso", completedAt: null };
-
-    setPendingIds((ids) => new Set(ids).add(task.id));
-    replaceTask(task.id, (t) => ({
-      ...t,
-      ...patch,
-      blocked: false,
-      relevance: completing ? null : t.relevance,
-    }));
-
-    try {
-      const res = await fetch(`/api/tasks/${task.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
-      });
-      if (handleUnauthenticated(res)) return;
-      if (!res.ok) throw new Error(`PATCH ${res.status}`);
-    } catch {
-      replaceTask(task.id, () => task);
-      setToast({ id: Date.now(), message: "No se pudo actualizar la tarea" });
-    } finally {
-      setPendingIds((ids) => {
-        const next = new Set(ids);
-        next.delete(task.id);
-        return next;
-      });
-    }
-  }
 
   const scoped = tasks
     ? filterTasks(tasks, { ...filters, status: "todas" })
@@ -146,8 +93,6 @@ export default function GlobalTasksPage() {
                   groupKey={group.key}
                   tasks={group.tasks}
                   now={now}
-                  pendingIds={pendingIds}
-                  onToggle={toggleDone}
                   forceOpen={searching}
                   from="tasks"
                 />
@@ -156,8 +101,6 @@ export default function GlobalTasksPage() {
           )}
         </>
       )}
-
-      <Toast toast={toast} onDismiss={dismissToast} />
     </>
   );
 }

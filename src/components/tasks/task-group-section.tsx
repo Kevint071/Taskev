@@ -47,16 +47,12 @@ export function TaskGroupSection({
   groupKey,
   tasks,
   now,
-  pendingIds,
-  onToggle,
   forceOpen = false,
   from,
 }: {
   groupKey: TaskGroupKey;
   tasks: GlobalTask[];
   now: Date;
-  pendingIds: Set<string>;
-  onToggle: (task: GlobalTask) => void;
   /** Keeps a collapsible group open, e.g. while a search is active. */
   forceOpen?: boolean;
   from?: BackSource;
@@ -111,14 +107,7 @@ export function TaskGroupSection({
         <Panel className="min-w-0 w-full overflow-hidden">
           <ul className="divide-y divide-line">
             {tasks.map((task) => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                now={now}
-                pending={pendingIds.has(task.id)}
-                onToggle={onToggle}
-                from={from}
-              />
+              <TaskRow key={task.id} task={task} now={now} from={from} />
             ))}
           </ul>
         </Panel>

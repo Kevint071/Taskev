@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { type GlobalTask, STATUS_LABELS } from "@/components/project-types";
 import { ProgressRing } from "@/components/task-section";
-import { CalendarIcon, CheckIcon, FlagIcon } from "@/components/ui/icons";
+import { CalendarIcon, FlagIcon } from "@/components/ui/icons";
 import { STATUS_TONE, StatusDot } from "@/components/ui/status-badge";
 import { type BackSource, taskHref } from "@/lib/back-navigation";
 import { daysBetweenUtc, todayUtcMidnight } from "@/lib/calendar";
@@ -18,24 +18,19 @@ const CHIP =
 
 /**
  * One task. Below `lg` it is a card: title, a status/project line and a row of
- * chips, with the check on the left and the progress ring on the right. From
- * `lg` the chips wrapper dissolves (`contents`) so priority, due date and ring
- * become aligned grid columns and each task fits on a single line.
+ * chips, with the progress ring on the right. From `lg` the chips wrapper
+ * dissolves (`contents`) so priority, due date and ring become aligned grid
+ * columns and each task fits on a single line.
  *
- * The whole row is clickable through the title link's stretched `::after`;
- * the check button sits above it (`z-10`) so it stays its own tap target.
+ * The whole row is clickable through the title link's stretched `::after`.
  */
 export function TaskRow({
   task,
   now,
-  pending,
-  onToggle,
   from,
 }: {
   task: GlobalTask;
   now: Date;
-  pending: boolean;
-  onToggle: (task: GlobalTask) => void;
   from?: BackSource;
 }) {
   const done = task.status === "completada";
@@ -54,34 +49,14 @@ export function TaskRow({
   const hasChips = hasPriority || task.dueDate !== null;
 
   return (
-    <li className="relative grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-x-2 py-3 pr-4 pl-3 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken lg:grid-cols-[2.75rem_minmax(0,1fr)_3.75rem_7rem_2rem] lg:gap-x-3">
+    <li className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 py-3 pr-4 pl-3.5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken lg:grid-cols-[minmax(0,1fr)_3.75rem_7rem_2rem] lg:gap-x-3">
       <span
         aria-hidden="true"
         className="absolute inset-y-2 left-0 w-[3px] rounded-full"
         style={{ backgroundColor: STATUS_TONE[task.status] }}
       />
 
-      <button
-        type="button"
-        onClick={() => onToggle(task)}
-        disabled={pending}
-        aria-label={
-          done ? `Reabrir «${task.title}»` : `Completar «${task.title}»`
-        }
-        className="group/check relative z-10 col-start-1 row-span-2 row-start-1 flex size-11 items-center justify-center disabled:opacity-50 lg:col-auto lg:row-auto"
-      >
-        <span
-          className={`flex size-[22px] items-center justify-center rounded-full border-2 transition-colors ${
-            done
-              ? "border-status-done bg-status-done text-raised"
-              : "border-line-strong text-transparent group-hover/check:border-status-done group-hover/check:text-status-done"
-          }`}
-        >
-          <CheckIcon className="size-3.5" />
-        </span>
-      </button>
-
-      <div className="col-start-2 row-start-1 min-w-0 lg:col-auto lg:row-auto">
+      <div className="col-start-1 row-start-1 min-w-0 lg:col-auto lg:row-auto">
         <Link
           href={taskHref(task.projectId, task.id, from)}
           title={task.title}
@@ -104,7 +79,7 @@ export function TaskRow({
       </div>
 
       <div
-        className={`${hasChips ? "flex" : "hidden"} col-start-2 row-start-2 mt-2 flex-wrap gap-2 lg:contents`}
+        className={`${hasChips ? "flex" : "hidden"} col-start-1 row-start-2 mt-2 flex-wrap gap-2 lg:contents`}
       >
         {hasPriority ? (
           <span
@@ -127,7 +102,7 @@ export function TaskRow({
         )}
       </div>
 
-      <div className="col-start-3 row-span-2 row-start-1 lg:col-auto lg:row-auto">
+      <div className="col-start-2 row-span-2 row-start-1 lg:col-auto lg:row-auto">
         <ProgressRing
           pct={task.progressPct}
           color={STATUS_TONE[task.status]}
