@@ -5,11 +5,9 @@ import { useState } from "react";
 import type { GlobalTask } from "@/components/project-types";
 import { TaskRow } from "@/components/tasks/task-row";
 import {
-  ArrowRightIcon,
   CalendarIcon,
   CheckIcon,
   ChevronDownIcon,
-  MinusIcon,
   TriangleAlertIcon,
 } from "@/components/ui/icons";
 import { Panel } from "@/components/ui/panel";
@@ -29,13 +27,7 @@ const GROUPS: Record<TaskGroupKey, GroupConfig> = {
     color: "var(--danger)",
   },
   hoy: { title: "Hoy", icon: CalendarIcon, color: "var(--accent)" },
-  semana: { title: "Esta semana", icon: CalendarIcon, color: "var(--muted)" },
-  despues: {
-    title: "Más adelante",
-    icon: ArrowRightIcon,
-    color: "var(--muted)",
-  },
-  sinFecha: { title: "Sin fecha", icon: MinusIcon, color: "var(--muted)" },
+  proximas: { title: "Próximas", icon: CalendarIcon, color: "var(--muted)" },
   completadas: {
     title: "Completadas",
     icon: CheckIcon,

@@ -1,7 +1,5 @@
 import { compareByRelevance } from "./relevance";
-import { startOfDayKey, WEEK_WINDOW_DAYS } from "./today";
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
+import { startOfDayKey } from "./today";
 
 export const OPEN_STATUSES = [
   "disponible",
@@ -11,13 +9,7 @@ export const OPEN_STATUSES = [
 ] as const;
 export type OpenStatus = (typeof OPEN_STATUSES)[number];
 
-export type TaskGroupKey =
-  | "vencidas"
-  | "hoy"
-  | "semana"
-  | "despues"
-  | "sinFecha"
-  | "completadas";
+export type TaskGroupKey = "vencidas" | "hoy" | "proximas" | "completadas";
 
 export type GroupableTask = {
   id: string;
@@ -45,9 +37,7 @@ export const ALL_PROJECTS = "todos";
 const GROUP_ORDER: TaskGroupKey[] = [
   "vencidas",
   "hoy",
-  "semana",
-  "despues",
-  "sinFecha",
+  "proximas",
   "completadas",
 ];
 
@@ -65,24 +55,28 @@ function byCompletedDesc(a: GroupableTask, b: GroupableTask): number {
   return bt - at;
 }
 
+/** Dated tasks first (by due date, ties by relevance), then undated ones by relevance. */
+function byProximasOrder(a: GroupableTask, b: GroupableTask): number {
+  if (!!a.dueDate !== !!b.dueDate) return a.dueDate ? -1 : 1;
+  return a.dueDate ? byDueThenRelevance(a, b) : compareByRelevance(a, b);
+}
+
 /**
- * Splits tasks into urgency groups: overdue, today, this week, later and
- * undated, then completed ones apart. Groups come out in that order with the
- * empty ones omitted. Dated groups sort by due date (ties by relevance);
- * undated ones by relevance; completed by most recently finished.
+ * Splits tasks into urgency groups: overdue, today, upcoming (everything
+ * dated beyond today plus undated tasks), then completed ones apart. Groups
+ * come out in that order with the empty ones omitted. Overdue/today sort by
+ * due date (ties by relevance); upcoming puts dated tasks first by due date
+ * then undated ones by relevance; completed sorts by most recently finished.
  */
 export function buildTaskGroups<T extends GroupableTask>(
   tasks: T[],
   now: Date,
 ): TaskGroup<T>[] {
   const today = startOfDayKey(now);
-  const weekEnd = today + WEEK_WINDOW_DAYS * MS_PER_DAY;
   const buckets: Record<TaskGroupKey, T[]> = {
     vencidas: [],
     hoy: [],
-    semana: [],
-    despues: [],
-    sinFecha: [],
+    proximas: [],
     completadas: [],
   };
 
@@ -90,21 +84,18 @@ export function buildTaskGroups<T extends GroupableTask>(
     if (task.status === "completada") {
       buckets.completadas.push(task);
     } else if (!task.dueDate) {
-      buckets.sinFecha.push(task);
+      buckets.proximas.push(task);
     } else {
       const due = dueTime(task);
       if (due < today) buckets.vencidas.push(task);
       else if (due === today) buckets.hoy.push(task);
-      else if (due <= weekEnd) buckets.semana.push(task);
-      else buckets.despues.push(task);
+      else buckets.proximas.push(task);
     }
   }
 
   buckets.vencidas.sort(byDueThenRelevance);
   buckets.hoy.sort(byDueThenRelevance);
-  buckets.semana.sort(byDueThenRelevance);
-  buckets.despues.sort(byDueThenRelevance);
-  buckets.sinFecha.sort(compareByRelevance);
+  buckets.proximas.sort(byProximasOrder);
   buckets.completadas.sort(byCompletedDesc);
 
   return GROUP_ORDER.filter((key) => buckets[key].length > 0).map((key) => ({

@@ -37,13 +37,12 @@ test("empty list yields no groups", () => {
   assert.deepEqual(buildTaskGroups([], now), []);
 });
 
-test("open tasks fall into overdue / today / week / later / undated", () => {
+test("open tasks fall into overdue / today / upcoming", () => {
   const groups = buildTaskGroups(
     [
       task("late", { due: "2026-09-10" }),
       task("today", { due: "2026-09-16" }),
       task("soon", { due: "2026-09-20" }),
-      task("edge", { due: "2026-09-23" }),
       task("far", { due: "2026-09-24" }),
       task("none"),
     ],
@@ -55,9 +54,7 @@ test("open tasks fall into overdue / today / week / later / undated", () => {
   assert.deepEqual(byKey, {
     vencidas: ["late"],
     hoy: ["today"],
-    semana: ["soon", "edge"],
-    despues: ["far"],
-    sinFecha: ["none"],
+    proximas: ["soon", "far", "none"],
   });
 });
 
@@ -69,7 +66,7 @@ test("groups come out in urgency order and empty ones are omitted", () => {
       task("late", { due: "2026-09-01" }),
       task("done", { status: "completada" }),
     ]),
-    ["vencidas", "despues", "sinFecha", "completadas"],
+    ["vencidas", "proximas", "completadas"],
   );
 });
 
@@ -103,21 +100,20 @@ test("undated tasks sort by relevance, highest first", () => {
   );
 });
 
-test("equal relevance is broken by progress, in dated and undated groups", () => {
+test("equal relevance is broken by progress, and dated tasks sort before undated ones", () => {
   const groups = buildTaskGroups(
     [
-      task("dated-fresh", { due: "2026-09-18", relevance: 50, progressPct: 5 }),
-      task("dated-far", { due: "2026-09-18", relevance: 50, progressPct: 80 }),
       task("free-fresh", { relevance: 30, progressPct: 0 }),
       task("free-far", { relevance: 30, progressPct: 60 }),
+      task("dated-fresh", { due: "2026-09-18", relevance: 50, progressPct: 5 }),
+      task("dated-far", { due: "2026-09-18", relevance: 50, progressPct: 80 }),
     ],
     now,
   );
-  const byKey = Object.fromEntries(
-    groups.map((g) => [g.key, g.tasks.map((t) => t.id)]),
+  assert.deepEqual(
+    groups[0].tasks.map((t) => t.id),
+    ["dated-far", "dated-fresh", "free-far", "free-fresh"],
   );
-  assert.deepEqual(byKey.semana, ["dated-far", "dated-fresh"]);
-  assert.deepEqual(byKey.sinFecha, ["free-far", "free-fresh"]);
 });
 
 test("completed tasks ignore their due date and sort by completion, newest first", () => {
