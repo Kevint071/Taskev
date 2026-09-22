@@ -3,37 +3,26 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import {
-  type Project,
-  STATUS_LABELS,
-  type Task,
-} from "@/components/project-types";
+import type { Project, Task } from "@/components/project-types";
 import type {
   LocalTask,
   TaskUpdates,
 } from "@/components/task-detail/task-detail-view";
+import { TaskRow } from "@/components/tasks/task-row";
 import { Button } from "@/components/ui/button";
-import { CalendarPanel } from "@/components/ui/calendar-panel";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormError } from "@/components/ui/field";
 import { BackIcon, PlusIcon } from "@/components/ui/icons";
-import { Input, Select } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { EmptyState, LoadingRows, Panel } from "@/components/ui/panel";
-import { Popover } from "@/components/ui/popover";
-import { ProgressChip } from "@/components/ui/progress-chip";
-import { STATUS_DOT } from "@/components/ui/status-badge";
 import { type SyncState, SyncStatus } from "@/components/ui/sync-status";
 import { Toast, type ToastState } from "@/components/ui/toast";
 import { handleUnauthenticated } from "@/lib/api-client";
-import { todayUtcMidnight } from "@/lib/calendar";
 import { MAX_TASK_TITLE_LENGTH } from "@/lib/constraints";
-import { formatDueDate, isOverdue } from "@/lib/format";
-import { blockedFromDisponible, canCompleteAtProgress } from "@/lib/progress";
 import { compareForProjectOrder, computeRelevance } from "@/lib/relevance";
 import {
   ApiError,
   createSyncQueue,
-  isTempId,
   type SyncQueue,
   sendJson,
   tempId,
@@ -56,6 +45,7 @@ export default function ProjectDetailPage() {
   const [toast, setToast] = useState<ToastState>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [rowNow] = useState(() => new Date());
   const newTaskInputRef = useRef<HTMLInputElement>(null);
   const newTaskOverflowRef = useRef(0);
 
@@ -379,13 +369,16 @@ export default function ProjectDetailPage() {
       <TaskRow
         key={task.key}
         task={task}
+        now={rowNow}
+        showProject={false}
+        dragKey={task.key}
         dragging={draggedKey === task.key}
         dropTarget={dropTargetKey === task.key && draggedKey !== task.key}
         onHandlePointerDown={(e) => handlePointerDownOnHandle(task.key, e)}
         onHandlePointerMove={handlePointerMoveOnHandle}
         onHandlePointerUp={handlePointerUpOnHandle}
         onHandlePointerCancel={handlePointerCancelOnHandle}
-        onUpdate={(updates) => updateTask(task.key, updates)}
+        onStatusChange={(change) => updateTask(task.key, change)}
         onBlocked={showToast}
       />
     );
@@ -604,180 +597,4 @@ function trackTitleOverflowAttempt(
     counterRef.current = 0;
     onLimitReached();
   }
-}
-
-function TaskRow({
-  task,
-  dragging,
-  dropTarget,
-  onHandlePointerDown,
-  onHandlePointerMove,
-  onHandlePointerUp,
-  onHandlePointerCancel,
-  onUpdate,
-  onBlocked,
-}: {
-  task: LocalTask;
-  dragging: boolean;
-  dropTarget: boolean;
-  onHandlePointerDown: (e: React.PointerEvent<HTMLElement>) => void;
-  onHandlePointerMove: (e: React.PointerEvent<HTMLElement>) => void;
-  onHandlePointerUp: (e: React.PointerEvent<HTMLElement>) => void;
-  onHandlePointerCancel: (e: React.PointerEvent<HTMLElement>) => void;
-  onUpdate: (updates: TaskUpdates) => void;
-  onBlocked: (message: string) => void;
-}) {
-  const done = task.status === "completada";
-  const overdue = !done && task.dueDate && isOverdue(task.dueDate);
-  const creating = isTempId(task.id);
-
-  const [completePromptOpen, setCompletePromptOpen] = useState(false);
-
-  function handleStatusChange(next: Task["status"]) {
-    if (next === "completada") {
-      if (!canCompleteAtProgress(task.progressPct)) {
-        onBlocked("Sube el avance al 100% para poder completar la tarea.");
-        return;
-      }
-      setCompletePromptOpen(true);
-      return;
-    }
-    if (next === "disponible") {
-      const blocked = blockedFromDisponible(task.progressPct, task.completedAt);
-      if (blocked === "progress") {
-        onBlocked("Baja el avance a 0% antes de pasarla a disponible.");
-        return;
-      }
-      if (blocked === "completedAt") {
-        onBlocked(
-          "Esta tarea todavía tiene fecha de finalización. Cambia antes a otro estado.",
-        );
-        return;
-      }
-    }
-    onUpdate({ status: next, completedAt: null });
-  }
-
-  function confirmComplete(date: Date) {
-    setCompletePromptOpen(false);
-    onUpdate({ status: "completada", completedAt: date.toISOString() });
-  }
-
-  const titleClassName = `min-w-0 flex-1 truncate rounded-[4px] px-1 -mx-1 py-1 text-left text-body font-medium sm:text-ui ${
-    done ? "text-muted" : ""
-  }`;
-
-  // The title link is stretched over the whole row (`after:absolute after:inset-0`)
-  // so the row navigates on click without nesting the row's own controls inside an
-  // <a>. Those controls sit above it with `relative z-10`.
-  return (
-    <li
-      data-task-key={task.key}
-      className={`relative transition-opacity ${dragging ? "opacity-40" : ""} ${
-        dropTarget ? "shadow-[inset_0_2px_0_var(--accent)]" : ""
-      } ${creating ? "" : "hover:bg-sunken/40"}`}
-    >
-      <div className="flex items-center gap-x-2 px-3 py-2.5 sm:gap-x-3">
-        <span className="flex min-w-0 flex-1 items-center gap-2">
-          <span
-            className="relative z-10 cursor-grab select-none touch-none rounded-[4px] p-1 -m-1 text-muted active:cursor-grabbing"
-            title="Arrastra para reordenar"
-            aria-hidden="true"
-            onPointerDown={onHandlePointerDown}
-            onPointerMove={onHandlePointerMove}
-            onPointerUp={onHandlePointerUp}
-            onPointerCancel={onHandlePointerCancel}
-          >
-            ⠿
-          </span>
-          {creating ? (
-            // A task still being created has no server id to navigate to yet.
-            <span className={titleClassName}>{task.title}</span>
-          ) : (
-            <Link
-              href={`/projects/${task.projectId}/tasks/${task.id}`}
-              className={`${titleClassName} after:absolute after:inset-0 after:content-['']`}
-            >
-              {task.title}
-            </Link>
-          )}
-          {creating && (
-            <span
-              title="Guardando"
-              className="animate-syncing size-1.5 shrink-0 rounded-full bg-accent"
-            >
-              <span className="sr-only">Guardando</span>
-            </span>
-          )}
-        </span>
-        {task.dueDate && (
-          <span
-            className={`hidden shrink-0 tabular text-meta sm:inline ${overdue ? "font-medium text-danger" : "text-muted"}`}
-            title={overdue ? "Vencida" : "Fecha límite"}
-          >
-            {formatDueDate(task.dueDate)}
-          </span>
-        )}
-        <ProgressChip value={task.progressPct} />
-        <span
-          title={STATUS_LABELS[task.status]}
-          aria-hidden="true"
-          className={`size-2.5 shrink-0 rounded-full ${STATUS_DOT[task.status]} sm:hidden`}
-        />
-        <Popover
-          open={completePromptOpen}
-          onClose={() => setCompletePromptOpen(false)}
-          className="z-10"
-        >
-          {/* biome-ignore lint/a11y/noLabelWithoutControl: wraps the Select component */}
-          <label className="relative hidden shrink-0 items-center sm:flex">
-            <span className="sr-only">Estado</span>
-            <span
-              aria-hidden="true"
-              className={`pointer-events-none absolute left-2.5 size-2 rounded-full ${STATUS_DOT[task.status]}`}
-            />
-            <Select
-              value={task.status}
-              onChange={(e) =>
-                handleStatusChange(e.target.value as Task["status"])
-              }
-              className="h-8 w-auto min-w-0 border-transparent bg-transparent pr-5 pl-6 text-meta sm:w-32 sm:min-w-[6.5rem] sm:border-line-strong sm:bg-raised sm:pr-7"
-            >
-              {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              className="pointer-events-none absolute right-2 size-3 text-muted"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5.5 8l4.5 4.5L14.5 8" />
-            </svg>
-          </label>
-          {completePromptOpen && (
-            <div className="absolute right-0 top-full z-20 mt-1.5">
-              <p className="mb-1.5 px-1 text-meta font-medium text-muted">
-                Fecha de finalización
-              </p>
-              <CalendarPanel
-                selected={todayUtcMidnight()}
-                shortcuts={[
-                  { key: "today", label: "Hoy", date: todayUtcMidnight() },
-                ]}
-                onSelect={confirmComplete}
-              />
-            </div>
-          )}
-        </Popover>
-      </div>
-    </li>
-  );
 }
