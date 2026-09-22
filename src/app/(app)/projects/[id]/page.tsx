@@ -16,12 +16,13 @@ import { Button } from "@/components/ui/button";
 import { CalendarPanel } from "@/components/ui/calendar-panel";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormError } from "@/components/ui/field";
-import { PlusIcon } from "@/components/ui/icons";
+import { BackIcon, PlusIcon } from "@/components/ui/icons";
 import { Input, Select } from "@/components/ui/input";
 import { EmptyState, LoadingRows, Panel } from "@/components/ui/panel";
 import { Popover } from "@/components/ui/popover";
 import { ProgressChip } from "@/components/ui/progress-chip";
 import { STATUS_DOT } from "@/components/ui/status-badge";
+import { type SyncState, SyncStatus } from "@/components/ui/sync-status";
 import { Toast, type ToastState } from "@/components/ui/toast";
 import { handleUnauthenticated } from "@/lib/api-client";
 import { todayUtcMidnight } from "@/lib/calendar";
@@ -39,8 +40,6 @@ import {
 } from "@/lib/sync-queue";
 
 type ProjectDetail = Project & { tasks: Task[] };
-
-type SyncState = "idle" | "saving" | "saved";
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -369,7 +368,9 @@ export default function ProjectDetailPage() {
   if (!project) {
     return (
       <>
-        <BackLink />
+        <div className="-mx-2 flex h-11 items-center">
+          <BackLink />
+        </div>
         <LoadingRows rows={4} />
       </>
     );
@@ -400,9 +401,11 @@ export default function ProjectDetailPage() {
   return (
     <>
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-4">
+        <div className="-mx-2 flex h-11 items-center justify-between gap-4">
           <BackLink />
-          <SyncStatus state={syncState} />
+          <span className="pr-2">
+            <SyncStatus state={syncState} />
+          </span>
         </div>
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
@@ -581,41 +584,14 @@ export default function ProjectDetailPage() {
   );
 }
 
-function SyncStatus({ state }: { state: SyncState }) {
-  return (
-    <p
-      aria-live="polite"
-      className="flex items-center gap-1.5 text-meta text-muted"
-    >
-      {state === "saving" && (
-        <>
-          <span
-            aria-hidden="true"
-            className="animate-syncing size-1.5 rounded-full bg-accent"
-          />
-          Guardando…
-        </>
-      )}
-      {state === "saved" && (
-        <>
-          <span
-            aria-hidden="true"
-            className="size-1.5 rounded-full bg-status-done"
-          />
-          Cambios guardados
-        </>
-      )}
-    </p>
-  );
-}
-
 function BackLink() {
   return (
     <Link
       href="/projects"
-      className="w-fit text-meta text-muted hover:text-ink"
+      className="inline-flex h-11 min-w-0 items-center gap-0.5 rounded-[14px] pr-3 pl-1.5 text-ui font-medium text-muted transition-colors hover:text-ink"
     >
-      ‹ Proyectos
+      <BackIcon />
+      <span className="truncate">Proyectos</span>
     </Link>
   );
 }
