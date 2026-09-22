@@ -14,13 +14,12 @@ const DUE_CHIP_TONE = {
 } as const;
 
 const CHIP =
-  "inline-flex h-6 items-center gap-1 whitespace-nowrap rounded-full px-2 text-meta font-medium tabular lg:justify-self-start";
+  "inline-flex h-6 items-center gap-1 whitespace-nowrap rounded-full px-2 text-meta font-medium tabular";
 
 /**
- * One task. Below `lg` it is a card: title, a status/project line and a row of
- * chips, with the progress ring on the right. From `lg` the chips wrapper
- * dissolves (`contents`) so priority, due date and ring become aligned grid
- * columns and each task fits on a single line.
+ * One task: title, then a status-dot/project/due-date line, on the left,
+ * with the priority flag stacked directly above the progress ring
+ * (vertically, same x-position) on the right, at every breakpoint.
  *
  * The whole row is clickable through the title link's stretched `::after`.
  */
@@ -46,17 +45,16 @@ export function TaskRow({
         : "muted";
   const priority = Number(task.priority);
   const hasPriority = priority > 0;
-  const hasChips = hasPriority || task.dueDate !== null;
 
   return (
-    <li className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 py-3 pr-4 pl-3.5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken lg:grid-cols-[minmax(0,1fr)_3.75rem_7rem_2rem] lg:gap-x-3">
+    <li className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 py-3 pr-4 pl-3.5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken lg:gap-x-3">
       <span
         aria-hidden="true"
         className="absolute inset-y-2 left-0 w-[3px] rounded-full"
         style={{ backgroundColor: STATUS_TONE[task.status] }}
       />
 
-      <div className="col-start-1 row-start-1 min-w-0 lg:col-auto lg:row-auto">
+      <div className="col-start-1 row-start-1 min-w-0 self-start">
         <Link
           href={taskHref(task.projectId, task.id, from)}
           title={task.title}
@@ -71,15 +69,25 @@ export function TaskRow({
           </span>
         </Link>
         <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-meta text-muted">
-          <StatusDot status={task.status} />
-          <span className="shrink-0">{STATUS_LABELS[task.status]}</span>
-          <span aria-hidden="true">·</span>
+          <StatusDot
+            status={task.status}
+            title={STATUS_LABELS[task.status]}
+            className="size-2.5 shadow-sm"
+          />
           <span className="truncate">{task.projectName}</span>
+          {task.dueDate ? (
+            <span className={`${CHIP} shrink-0 ${DUE_CHIP_TONE[dueTone]}`}>
+              <CalendarIcon className="size-3.5" />
+              {formatDueRelative(task.dueDate, now)}
+            </span>
+          ) : null}
         </p>
       </div>
 
       <div
-        className={`${hasChips ? "flex" : "hidden"} col-start-1 row-start-2 mt-2 flex-wrap gap-2 lg:contents`}
+        className={`col-start-2 row-start-1 flex h-full flex-col items-center gap-1 self-stretch ${
+          hasPriority ? "justify-between" : "justify-end"
+        }`}
       >
         {hasPriority ? (
           <span
@@ -89,20 +97,7 @@ export function TaskRow({
             <FlagIcon className="size-3.5" />
             {formatPriority(priority)}
           </span>
-        ) : (
-          <span aria-hidden="true" className="hidden lg:block" />
-        )}
-        {task.dueDate ? (
-          <span className={`${CHIP} ${DUE_CHIP_TONE[dueTone]}`}>
-            <CalendarIcon className="size-3.5" />
-            {formatDueRelative(task.dueDate, now)}
-          </span>
-        ) : (
-          <span aria-hidden="true" className="hidden lg:block" />
-        )}
-      </div>
-
-      <div className="col-start-2 row-span-2 row-start-1 lg:col-auto lg:row-auto">
+        ) : null}
         <ProgressRing
           pct={task.progressPct}
           color={STATUS_TONE[task.status]}

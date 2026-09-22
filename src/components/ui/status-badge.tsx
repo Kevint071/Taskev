@@ -17,11 +17,21 @@ export const STATUS_TONE: Record<Task["status"], string> = {
   completada: "var(--status-done)",
 };
 
-export function StatusDot({ status }: { status: Task["status"] }) {
+export function StatusDot({
+  status,
+  className = "size-2",
+  title,
+}: {
+  status: Task["status"];
+  className?: string;
+  title?: string;
+}) {
   return (
     <span
-      aria-hidden
-      className={`inline-block size-2 shrink-0 rounded-full ${STATUS_DOT[status]}`}
+      aria-hidden={title ? undefined : true}
+      aria-label={title}
+      title={title}
+      className={`inline-block shrink-0 rounded-full ${className} ${STATUS_DOT[status]}`}
     />
   );
 }
