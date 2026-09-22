@@ -11,10 +11,6 @@ test("taskHref adds the source only when there is one", () => {
 
 test("resolveBack returns the screen the task was opened from", () => {
   assert.deepEqual(resolveBack("hoy", project), { href: "/", label: "Hoy" });
-  assert.deepEqual(resolveBack("agenda", project), {
-    href: "/agenda",
-    label: "Agenda",
-  });
   assert.deepEqual(resolveBack("tasks", project), {
     href: "/tasks",
     label: "Tareas",

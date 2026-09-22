@@ -1,9 +1,8 @@
 /** Screens that link to a task and that the task's back arrow can return to. */
-export type BackSource = "hoy" | "agenda" | "tasks";
+export type BackSource = "hoy" | "tasks";
 
 const SOURCES: Record<BackSource, { href: string; label: string }> = {
   hoy: { href: "/", label: "Hoy" },
-  agenda: { href: "/agenda", label: "Agenda" },
   tasks: { href: "/tasks", label: "Tareas" },
 };
 
