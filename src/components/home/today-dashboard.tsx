@@ -151,21 +151,23 @@ function HeroTile({ task }: { task: OverviewTask }) {
         className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full bg-accent opacity-20 blur-2xl dark:opacity-30"
       />
       <div className="relative flex flex-col gap-3">
-        <span
-          role="progressbar"
-          aria-label={`Avance de ${task.title}`}
-          aria-valuenow={task.progressPct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          className="absolute right-0 top-0 flex size-9 shrink-0 items-center justify-center rounded-full"
-          style={{
-            background: `conic-gradient(${STATUS_COLOR[task.status]} ${task.progressPct}%, var(--line-strong) 0)`,
-          }}
-        >
-          <span className="flex size-[26px] items-center justify-center rounded-full bg-[#f4f2ee] text-[9.5px] font-bold text-ink dark:bg-[#13151b] dark:text-white">
-            {task.progressPct}
+        {task.progressPct > 0 && (
+          <span
+            role="progressbar"
+            aria-label={`Avance de ${task.title}`}
+            aria-valuenow={task.progressPct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            className="absolute right-0 top-0 flex size-9 shrink-0 items-center justify-center rounded-full"
+            style={{
+              background: `conic-gradient(${STATUS_COLOR[task.status]} ${task.progressPct}%, var(--line-strong) 0)`,
+            }}
+          >
+            <span className="flex size-[26px] items-center justify-center rounded-full bg-[#f4f2ee] text-[9.5px] font-bold text-ink dark:bg-[#13151b] dark:text-white">
+              {task.progressPct}
+            </span>
           </span>
-        </span>
+        )}
         <p className="pr-12 text-[19px] font-bold leading-tight tracking-tight text-ink dark:text-white">
           {truncateWords(task.title, 14)}
         </p>
