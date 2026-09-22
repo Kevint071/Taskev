@@ -73,7 +73,7 @@ export function TaskDetailPageClient({
     setDeleting(true);
     try {
       await sendJson(`/api/tasks/${task.id}`, "DELETE");
-      router.push(`/projects/${task.projectId}`);
+      router.push(back.href);
     } catch (err) {
       setDeleting(false);
       showToast(

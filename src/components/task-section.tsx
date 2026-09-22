@@ -7,6 +7,7 @@ import {
   TriangleAlertIcon,
 } from "@/components/ui/icons";
 import { Panel } from "@/components/ui/panel";
+import { type BackSource, taskHref } from "@/lib/back-navigation";
 import type { OverviewTask } from "@/lib/data/overview";
 import { formatDueDate } from "@/lib/format";
 
@@ -64,11 +65,13 @@ export function TaskSection({
   tasks,
   empty,
   tone,
+  from,
 }: {
   title: string;
   tasks: OverviewTask[];
   empty: string;
   tone: TaskSectionTone;
+  from?: BackSource;
 }) {
   const cfg = TONE[tone];
   const Icon = cfg.icon;
@@ -109,7 +112,7 @@ export function TaskSection({
                   style={{ backgroundColor: cfg.barColor }}
                 />
                 <Link
-                  href={`/projects/${task.projectId}/tasks/${task.id}`}
+                  href={taskHref(task.projectId, task.id, from)}
                   className="flex min-w-0 items-center gap-2.5 px-4 py-2.5 pl-5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken sm:gap-3"
                 >
                   <span className="min-w-0 flex-1 truncate font-medium">

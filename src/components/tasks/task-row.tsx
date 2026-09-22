@@ -3,6 +3,7 @@ import { type GlobalTask, STATUS_LABELS } from "@/components/project-types";
 import { ProgressRing } from "@/components/task-section";
 import { CalendarIcon, CheckIcon, FlagIcon } from "@/components/ui/icons";
 import { STATUS_TONE, StatusDot } from "@/components/ui/status-badge";
+import { type BackSource, taskHref } from "@/lib/back-navigation";
 import { daysBetweenUtc, todayUtcMidnight } from "@/lib/calendar";
 import { formatDueRelative, formatPriority } from "@/lib/format";
 
@@ -29,11 +30,13 @@ export function TaskRow({
   now,
   pending,
   onToggle,
+  from,
 }: {
   task: GlobalTask;
   now: Date;
   pending: boolean;
   onToggle: (task: GlobalTask) => void;
+  from?: BackSource;
 }) {
   const done = task.status === "completada";
   const days = task.dueDate
@@ -80,7 +83,7 @@ export function TaskRow({
 
       <div className="col-start-2 row-start-1 min-w-0 lg:col-auto lg:row-auto">
         <Link
-          href={`/projects/${task.projectId}/tasks/${task.id}`}
+          href={taskHref(task.projectId, task.id, from)}
           title={task.title}
           className="block after:absolute after:inset-0"
         >

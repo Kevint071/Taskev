@@ -11,6 +11,7 @@ import {
   type ProjectActivityGroup,
   type TaskActivityGroup,
 } from "@/lib/activity";
+import { taskHref } from "@/lib/back-navigation";
 import { getRecentComments } from "@/lib/data/activity";
 import { getUserTaskOverview, type OverviewTask } from "@/lib/data/overview";
 import { formatDueDate, formatRelativeTime, truncateWords } from "@/lib/format";
@@ -110,6 +111,7 @@ export async function TodayDashboard({
           tasks={dueToday}
           empty="Nada vence hoy."
           tone="accent"
+          from="hoy"
         />
       )}
 
@@ -141,7 +143,7 @@ function TopTasks({ tasks }: { tasks: OverviewTask[] }) {
 function HeroTile({ task }: { task: OverviewTask }) {
   return (
     <Link
-      href={`/projects/${task.projectId}/tasks/${task.id}`}
+      href={taskHref(task.projectId, task.id, "hoy")}
       className="group relative col-span-full block overflow-hidden rounded-panel border border-line bg-accent-soft p-5 transition-colors dark:border-black/10 dark:bg-[#13151b] md:p-6"
     >
       <span
@@ -191,7 +193,7 @@ function HeroTile({ task }: { task: OverviewTask }) {
 function SecondaryTile({ task, rank }: { task: OverviewTask; rank: number }) {
   return (
     <Link
-      href={`/projects/${task.projectId}/tasks/${task.id}`}
+      href={taskHref(task.projectId, task.id, "hoy")}
       className="relative flex min-w-0 flex-col gap-3 rounded-panel border border-line bg-raised p-3.5 transition-colors hover:bg-sunken dark:border-white/10 dark:bg-[#14171d]"
     >
       <div className="flex min-w-0 items-start gap-2">
@@ -301,7 +303,7 @@ function UnplannedNotice({ tasks }: { tasks: OverviewTask[] }) {
       {preview.map((task, i) => (
         <span key={task.id} className="text-muted">
           <Link
-            href={`/projects/${task.projectId}/tasks/${task.id}`}
+            href={taskHref(task.projectId, task.id, "hoy")}
             className="text-ink hover:text-accent"
           >
             {task.title}
@@ -352,7 +354,7 @@ function ActivityTaskRow({
 }) {
   return (
     <Link
-      href={`/projects/${projectId}/tasks/${task.taskId}`}
+      href={taskHref(projectId, task.taskId, "hoy")}
       className="flex min-w-0 flex-col gap-2 px-4 py-3 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken"
     >
       <div className="flex items-baseline justify-between gap-2">

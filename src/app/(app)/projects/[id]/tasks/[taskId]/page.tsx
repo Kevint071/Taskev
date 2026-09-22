@@ -1,15 +1,19 @@
 import { notFound } from "next/navigation";
 import type { Task } from "@/components/project-types";
 import { getCurrentUser } from "@/lib/auth-guard";
+import { resolveBack } from "@/lib/back-navigation";
 import { getTaskWithProject } from "@/lib/data/access";
 import { TaskDetailPageClient } from "./task-detail-page-client";
 
 export default async function TaskDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string; taskId: string }>;
+  searchParams: Promise<{ from?: string | string[] }>;
 }) {
   const { id, taskId } = await params;
+  const { from } = await searchParams;
   const user = await getCurrentUser();
   if (!user) notFound();
 
@@ -38,7 +42,7 @@ export default async function TaskDetailPage({
     <div className="flex flex-1 flex-col">
       <TaskDetailPageClient
         initialTask={task}
-        back={{ href: `/projects/${project.id}`, label: project.name }}
+        back={resolveBack(from, project)}
       />
     </div>
   );

@@ -149,6 +149,7 @@ export default function GlobalTasksPage() {
                   pendingIds={pendingIds}
                   onToggle={toggleDone}
                   forceOpen={searching}
+                  from="tasks"
                 />
               ))}
             </div>

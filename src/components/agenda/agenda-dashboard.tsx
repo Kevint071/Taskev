@@ -36,6 +36,7 @@ export async function AgendaDashboard({ userId }: { userId: string }) {
             tasks={blocked}
             empty="Nada bloqueado ahora mismo."
             tone="blocked"
+            from="agenda"
           />
 
           <TaskSection
@@ -43,6 +44,7 @@ export async function AgendaDashboard({ userId }: { userId: string }) {
             tasks={overdue}
             empty="Nada vencido. Bien."
             tone="danger"
+            from="agenda"
           />
 
           <TaskSection
@@ -50,6 +52,7 @@ export async function AgendaDashboard({ userId }: { userId: string }) {
             tasks={thisWeek}
             empty="Nada vence esta semana."
             tone="accent"
+            from="agenda"
           />
 
           <TaskSection
@@ -57,6 +60,7 @@ export async function AgendaDashboard({ userId }: { userId: string }) {
             tasks={inProgress}
             empty="Nada en curso ahora mismo."
             tone="progress"
+            from="agenda"
           />
         </>
       )}

@@ -13,6 +13,7 @@ import {
   TriangleAlertIcon,
 } from "@/components/ui/icons";
 import { Panel } from "@/components/ui/panel";
+import type { BackSource } from "@/lib/back-navigation";
 import type { TaskGroupKey } from "@/lib/task-groups";
 
 type GroupConfig = {
@@ -49,6 +50,7 @@ export function TaskGroupSection({
   pendingIds,
   onToggle,
   forceOpen = false,
+  from,
 }: {
   groupKey: TaskGroupKey;
   tasks: GlobalTask[];
@@ -57,6 +59,7 @@ export function TaskGroupSection({
   onToggle: (task: GlobalTask) => void;
   /** Keeps a collapsible group open, e.g. while a search is active. */
   forceOpen?: boolean;
+  from?: BackSource;
 }) {
   const cfg = GROUPS[groupKey];
   const Icon = cfg.icon;
@@ -114,6 +117,7 @@ export function TaskGroupSection({
                 now={now}
                 pending={pendingIds.has(task.id)}
                 onToggle={onToggle}
+                from={from}
               />
             ))}
           </ul>
