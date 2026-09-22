@@ -163,6 +163,7 @@ export default function ProjectDetailPage() {
         dueDate: null,
         completedAt: null,
         position: Number.MAX_SAFE_INTEGER,
+        pinnedToday: false,
         createdAt: now,
         updatedAt: now,
       },
@@ -217,14 +218,6 @@ export default function ProjectDetailPage() {
   function updateTask(key: string, updates: TaskUpdates) {
     applyLocal(key, updates);
     saveRemote(key, updates);
-  }
-
-  function deleteTask(key: string) {
-    setTasks((prev) => prev.filter((t) => t.key !== key));
-    queue.run(key, async () => {
-      const taskId = await queue.idFor(key);
-      await sendJson(`/api/tasks/${taskId}`, "DELETE");
-    });
   }
 
   const dragRef = useRef<{
@@ -393,7 +386,6 @@ export default function ProjectDetailPage() {
         onHandlePointerUp={handlePointerUpOnHandle}
         onHandlePointerCancel={handlePointerCancelOnHandle}
         onUpdate={(updates) => updateTask(task.key, updates)}
-        onDelete={() => deleteTask(task.key)}
         onBlocked={showToast}
       />
     );
@@ -623,7 +615,6 @@ function TaskRow({
   onHandlePointerUp,
   onHandlePointerCancel,
   onUpdate,
-  onDelete,
   onBlocked,
 }: {
   task: LocalTask;
@@ -634,7 +625,6 @@ function TaskRow({
   onHandlePointerUp: (e: React.PointerEvent<HTMLElement>) => void;
   onHandlePointerCancel: (e: React.PointerEvent<HTMLElement>) => void;
   onUpdate: (updates: TaskUpdates) => void;
-  onDelete: () => void;
   onBlocked: (message: string) => void;
 }) {
   const done = task.status === "completada";
@@ -787,25 +777,6 @@ function TaskRow({
             </div>
           )}
         </Popover>
-        <button
-          type="button"
-          onClick={onDelete}
-          aria-label={`Eliminar la tarea ${task.title}`}
-          title="Eliminar tarea"
-          className="relative z-10 flex size-9 shrink-0 items-center justify-center rounded-control text-muted active:bg-danger/10 active:text-danger sm:size-8 sm:hover:bg-danger/10 sm:hover:text-danger"
-        >
-          <svg
-            viewBox="0 0 20 20"
-            className="size-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            aria-hidden="true"
-          >
-            <path d="M4 6h12M8 6V4.5h4V6M6 6l.7 9.5h6.6L14 6" />
-          </svg>
-        </button>
       </div>
     </li>
   );

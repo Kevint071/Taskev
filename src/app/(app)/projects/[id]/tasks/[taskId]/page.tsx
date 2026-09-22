@@ -34,6 +34,7 @@ export default async function TaskDetailPage({
     dueDate: dbTask.dueDate ? dbTask.dueDate.toISOString() : null,
     completedAt: dbTask.completedAt ? dbTask.completedAt.toISOString() : null,
     position: dbTask.position,
+    pinnedToday: dbTask.pinnedToday,
     createdAt: dbTask.createdAt.toISOString(),
     updatedAt: dbTask.updatedAt.toISOString(),
   };

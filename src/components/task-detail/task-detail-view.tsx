@@ -17,11 +17,11 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   FlagIcon,
-  MoreIcon,
+  PinIcon,
   ProgressGaugeIcon,
   SendIcon,
+  TrashIcon,
 } from "@/components/ui/icons";
-import { Popover } from "@/components/ui/popover";
 import { STATUS_TONE, StatusDot } from "@/components/ui/status-badge";
 import { daysBetweenUtc } from "@/lib/calendar";
 import { MAX_TASK_TITLE_LENGTH } from "@/lib/constraints";
@@ -55,6 +55,7 @@ export type TaskUpdates = Partial<
     | "progressPct"
     | "dueDate"
     | "completedAt"
+    | "pinnedToday"
   >
 > & { priority?: number };
 
@@ -249,7 +250,6 @@ export function TaskDetailView({
   // `sheet` outlives `sheetOpen` so the title doesn't blank while the sheet closes.
   const [sheet, setSheet] = useState<SheetKey>("status");
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const titleRef = useRef<HTMLTextAreaElement>(null);
@@ -440,6 +440,10 @@ export function TaskDetailView({
     }
   }
 
+  function togglePin() {
+    onUpdate({ pinnedToday: !task.pinnedToday });
+  }
+
   function saveDueDate(date: Date | null) {
     const dueDate = date ? date.toISOString() : null;
     setSheetOpen(false);
@@ -481,43 +485,41 @@ export function TaskDetailView({
         ) : (
           <span />
         )}
-        {onDelete && (
-          <Popover
-            open={menuOpen}
-            onClose={() => setMenuOpen(false)}
-            className="shrink-0"
+        <div className="flex shrink-0 items-center gap-0.5">
+          <button
+            type="button"
+            onClick={togglePin}
+            aria-pressed={task.pinnedToday}
+            aria-label={
+              task.pinnedToday
+                ? "Quitar de las prioridades de hoy"
+                : "Fijar para hoy"
+            }
+            title={
+              task.pinnedToday
+                ? "Quitar de las prioridades de hoy"
+                : "Fijar para hoy"
+            }
+            className={`flex size-11 items-center justify-center rounded-full transition-colors ${
+              task.pinnedToday
+                ? "text-accent hover:bg-accent-soft"
+                : "text-muted hover:bg-sunken hover:text-ink"
+            }`}
           >
+            <PinIcon filled={task.pinnedToday} className="size-[18px]" />
+          </button>
+          {onDelete && (
             <button
               type="button"
-              aria-label="Más acciones"
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((o) => !o)}
-              className="flex size-11 items-center justify-center rounded-full text-muted transition-colors hover:bg-sunken hover:text-ink"
+              onClick={() => setConfirmDelete(true)}
+              aria-label="Eliminar tarea"
+              title="Eliminar tarea"
+              className="flex size-11 items-center justify-center rounded-full text-muted transition-colors hover:bg-danger/10 hover:text-danger"
             >
-              <MoreIcon />
+              <TrashIcon className="size-[18px]" />
             </button>
-            {menuOpen && (
-              <div
-                role="menu"
-                aria-label="Acciones de la tarea"
-                className="animate-reveal absolute top-12 right-0 z-30 w-52 rounded-panel border border-line bg-raised p-1.5 shadow-lg"
-              >
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setConfirmDelete(true);
-                  }}
-                  className="flex h-11 w-full items-center rounded-control px-3 text-left text-ui font-medium text-danger transition-colors hover:bg-danger/10"
-                >
-                  Eliminar tarea
-                </button>
-              </div>
-            )}
-          </Popover>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col gap-9 pt-4 pb-10">

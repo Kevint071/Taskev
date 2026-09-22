@@ -346,6 +346,50 @@ export function ChevronDownIcon({ className }: { className?: string } = {}) {
   );
 }
 
+export function TrashIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 6h12M8 6V4.5h4V6M6 6l.7 9.5h6.6L14 6" />
+    </svg>
+  );
+}
+
+/** A thumbtack: outline normally, filled solid once pinned. */
+export function PinIcon({
+  className,
+  filled = false,
+}: {
+  className?: string;
+  filled?: boolean;
+} = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        d="M8 3.5h4l.4 5.2 2.3 2.1a1 1 0 0 1-.68 1.73H6.98a1 1 0 0 1-.68-1.73l2.3-2.1L8 3.5Z"
+      />
+      <path strokeLinecap="round" d="M10 12.7V17" />
+    </svg>
+  );
+}
+
 export function SearchIcon({ className }: { className?: string } = {}) {
   return (
     <svg

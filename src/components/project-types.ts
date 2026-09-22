@@ -24,6 +24,8 @@ export type Task = {
   dueDate: string | null;
   completedAt: string | null;
   position: number;
+  /** Forced into "Hoy" regardless of relevance; the user's explicit override. */
+  pinnedToday: boolean;
   createdAt: string;
   updatedAt: string;
 };

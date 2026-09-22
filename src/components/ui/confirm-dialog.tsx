@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Button } from "./button";
+import { TriangleAlertIcon } from "./icons";
 import { Input } from "./input";
 
 /**
@@ -52,21 +53,28 @@ export function ConfirmDialog({
       ref={ref}
       onClose={onClose}
       onCancel={onClose}
-      className="m-auto w-[min(440px,calc(100vw-32px))] rounded-panel border border-line bg-raised p-0 text-ink shadow-2xl shadow-black/20 backdrop:bg-black/50"
+      className="animate-dialog-pop m-auto w-[min(440px,calc(100vw-32px))] translate-y-[6dvh] overflow-hidden rounded-[28px] border border-line bg-raised p-0 text-ink shadow-2xl shadow-black/25 backdrop:animate-backdrop-in backdrop:bg-black/55 backdrop:backdrop-blur-[2px]"
     >
       <form
         method="dialog"
-        className="flex flex-col gap-4 p-5"
+        className="flex flex-col gap-5 p-6"
         onSubmit={(e) => {
           e.preventDefault();
           if (canConfirm) onConfirm();
         }}
       >
-        <h2 className="text-section font-semibold">{title}</h2>
-        <div className="text-muted">{description}</div>
+        <div className="flex items-start gap-3.5">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-danger/10 text-danger">
+            <TriangleAlertIcon className="size-5" />
+          </span>
+          <div className="min-w-0 flex-1 pt-1">
+            <h2 className="text-section font-semibold">{title}</h2>
+            <div className="mt-1 text-muted">{description}</div>
+          </div>
+        </div>
         {confirmText !== undefined && (
           // biome-ignore lint/a11y/noLabelWithoutControl: wraps the Input component
-          <label className="flex flex-col gap-1.5">
+          <label className="flex flex-col gap-1.5 pl-[calc(2.5rem+0.875rem)]">
             <span className="text-meta text-muted">{confirmTextLabel}</span>
             <Input
               value={typed}
@@ -76,7 +84,7 @@ export function ConfirmDialog({
             />
           </label>
         )}
-        <div className="flex justify-end gap-2 pt-1">
+        <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>

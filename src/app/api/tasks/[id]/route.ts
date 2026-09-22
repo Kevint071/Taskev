@@ -92,6 +92,10 @@ export async function PATCH(request: Request, { params }: Params) {
     }
   }
 
+  if (body?.pinnedToday !== undefined) {
+    updates.pinnedToday = Boolean(body.pinnedToday);
+  }
+
   if (body?.completedAt !== undefined) {
     if (body.completedAt === null) {
       updates.completedAt = null;
