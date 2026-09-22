@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { type GlobalTask } from "@/components/project-types";
+import type { GlobalTask } from "@/components/project-types";
+import { ProgressRing } from "@/components/task-section";
 import { CalendarIcon, FlagIcon } from "@/components/ui/icons";
 import { STATUS_TONE } from "@/components/ui/status-badge";
 import { type BackSource, taskHref } from "@/lib/back-navigation";
@@ -16,9 +17,9 @@ const CHIP =
   "inline-flex h-6 items-center gap-1 whitespace-nowrap rounded-full px-2 text-meta font-medium tabular";
 
 /**
- * One task: title, then a project/due-date line, on the left,
- * with the priority flag on the right. `showProgress` also renders a short
- * progress bar below the flag (used outside the global Tareas screen).
+ * One task: title, then a project/due-date/priority line, on the left,
+ * with the priority flag always last (rightmost). `showProgress` also
+ * renders a small progress ring in the top-right corner of the row.
  *
  * The whole row is clickable through the title link's stretched `::after`.
  */
@@ -77,45 +78,26 @@ export function TaskRow({
               {formatDueRelative(task.dueDate, now)}
             </span>
           ) : null}
+          {hasPriority ? (
+            <span
+              title={`Prioridad ${formatPriority(priority)}`}
+              className={`${CHIP} shrink-0 bg-sunken text-muted`}
+            >
+              <FlagIcon className="size-3.5" />
+              {formatPriority(priority)}
+            </span>
+          ) : null}
         </p>
       </div>
 
-      <div
-        className={`col-start-2 row-start-1 flex h-full flex-col items-center gap-1 self-stretch ${
-          showProgress
-            ? hasPriority
-              ? "justify-between"
-              : "justify-end"
-            : "justify-center"
-        }`}
-      >
-        {hasPriority ? (
-          <span
-            title={`Prioridad ${formatPriority(priority)}`}
-            className={`${CHIP} bg-sunken text-muted`}
-          >
-            <FlagIcon className="size-3.5" />
-            {formatPriority(priority)}
-          </span>
-        ) : null}
-        {showProgress ? (
-          <span
-            role="progressbar"
-            aria-valuenow={task.progressPct}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            className="h-1.5 w-6 shrink-0 overflow-hidden rounded-full bg-line-strong"
-          >
-            <span
-              className="block h-full rounded-full"
-              style={{
-                width: `${task.progressPct}%`,
-                backgroundColor: STATUS_TONE[task.status],
-              }}
-            />
-          </span>
-        ) : null}
-      </div>
+      {showProgress ? (
+        <div className="col-start-2 row-start-1 flex justify-end self-start">
+          <ProgressRing
+            pct={task.progressPct}
+            color={STATUS_TONE[task.status]}
+          />
+        </div>
+      ) : null}
     </li>
   );
 }

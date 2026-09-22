@@ -99,13 +99,7 @@ export function TaskGroupSection({
         <Panel className="min-w-0 w-full overflow-hidden">
           <ul className="divide-y divide-line">
             {tasks.map((task) => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                now={now}
-                from={from}
-                showProgress={false}
-              />
+              <TaskRow key={task.id} task={task} now={now} from={from} />
             ))}
           </ul>
         </Panel>
