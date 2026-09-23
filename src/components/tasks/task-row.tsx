@@ -143,7 +143,7 @@ export function TaskRow({
         <label
           className={
             inline
-              ? "relative z-10 inline-flex shrink-0 items-center"
+              ? "relative z-10 inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-sm focus-within:outline focus-within:outline-1 focus-within:outline-accent"
               : "relative z-10 hidden shrink-0 items-center sm:flex"
           }
         >
@@ -161,7 +161,7 @@ export function TaskRow({
             }
             className={
               inline
-                ? "h-6 w-auto min-w-0 rounded-none border-0 bg-transparent p-0 pr-4 text-meta font-medium text-muted focus-visible:border-0 focus-visible:outline focus-visible:outline-1 focus-visible:outline-accent"
+                ? "absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 : "h-8 w-auto min-w-0 border-transparent bg-transparent pr-5 pl-6 text-meta sm:w-32 sm:min-w-[6.5rem] sm:border-line-strong sm:bg-raised sm:pr-7"
             }
           >
@@ -171,10 +171,18 @@ export function TaskRow({
               </option>
             ))}
           </Select>
+          {inline && (
+            <span
+              aria-hidden="true"
+              className="text-meta font-medium text-muted"
+            >
+              {STATUS_LABELS[task.status]}
+            </span>
+          )}
           <svg
             aria-hidden="true"
             viewBox="0 0 20 20"
-            className={`pointer-events-none absolute size-3 text-muted ${inline ? "right-0" : "right-2"}`}
+            className={`pointer-events-none size-3 text-muted ${inline ? "shrink-0" : "absolute right-2"}`}
             fill="none"
             stroke="currentColor"
             strokeWidth="1.6"
@@ -205,7 +213,9 @@ export function TaskRow({
   const titleEl = (
     <span
       className={`block truncate text-body font-medium lg:text-ui ${
-        done ? "text-muted line-through decoration-line-strong" : ""
+        done
+          ? `text-muted ${inlineProjectStatus ? "" : "line-through decoration-line-strong"}`
+          : ""
       }`}
     >
       {task.title}
