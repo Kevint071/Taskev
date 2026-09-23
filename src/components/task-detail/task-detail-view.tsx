@@ -211,6 +211,12 @@ function autosize(el: HTMLTextAreaElement | null) {
   el.style.height = `${el.scrollHeight}px`;
 }
 
+function centerTextareaEnd(el: HTMLTextAreaElement | null) {
+  if (!el || el.selectionStart !== el.value.length) return;
+  const maxScrollTop = el.scrollHeight - el.clientHeight;
+  el.scrollTop = maxScrollTop - Math.min(el.clientHeight / 2, maxScrollTop);
+}
+
 /** "Hoy", "Ayer", or the full weekday and date. */
 function dayLabel(d: Date, now = new Date()): string {
   const startOf = (x: Date) =>
@@ -323,7 +329,9 @@ export function TaskDetailView({
   }, []);
   // biome-ignore lint/correctness/useExhaustiveDependencies: Draft changes trigger sizing after React updates the controlled textarea.
   useEffect(() => {
-    autosize(descriptionRef.current);
+    const el = descriptionRef.current;
+    autosize(el);
+    if (document.activeElement === el) centerTextareaEnd(el);
   }, [description]);
 
   // A task still being created has no comments on the server yet.
@@ -693,6 +701,7 @@ export function TaskDetailView({
                 onChange={(e) => {
                   setDescription(e.target.value);
                   autosize(e.target);
+                  centerTextareaEnd(e.target);
                 }}
                 onBlur={commitDescription}
                 onKeyDown={(e) => {
@@ -703,7 +712,7 @@ export function TaskDetailView({
                   }
                 }}
                 rows={3}
-                className="block min-h-24 w-full resize-none overflow-hidden rounded-xl border border-line-strong bg-raised px-3 py-2.5 text-[15px] leading-6 text-ink caret-accent transition-colors placeholder:text-muted/80 hover:border-ink/30 focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+                className="description-scrollbar block min-h-24 max-h-[min(40dvh,32rem)] w-full resize-none overflow-y-auto rounded-xl border border-line-strong bg-raised px-3 py-2.5 text-[15px] leading-6 text-ink caret-accent transition-colors placeholder:text-muted/80 hover:border-ink/30 focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
               />
             </label>
           </FlashWrap>
