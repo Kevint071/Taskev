@@ -6,7 +6,9 @@ import {
   computeRelevance,
   computeUrgency,
   isActionable,
+  orderProjectTasks,
   positionRank,
+  sameTaskIdSequence,
 } from "./relevance";
 
 const NOW = new Date("2026-01-15T00:00:00Z");
@@ -148,5 +150,81 @@ test("compareForProjectOrder: workable tasks go before blocked or paused ones, e
   assert.deepEqual(
     list.sort(compareForProjectOrder).map((t) => t.id),
     ["workable-hot", "workable-cold", "blocked-hot", "paused-warm"],
+  );
+});
+
+test("sameTaskIdSequence: detects matching and differing task orders", () => {
+  assert.equal(
+    sameTaskIdSequence(["task-a", "task-b"], ["task-a", "task-b"]),
+    true,
+  );
+  assert.equal(
+    sameTaskIdSequence(["task-a", "task-b"], ["task-b", "task-a"]),
+    false,
+  );
+});
+
+test("orderProjectTasks: sorts actionable, blocked, paused, and completed tasks", () => {
+  const tasks = [
+    {
+      id: "completed-old",
+      status: "completada",
+      priority: "0",
+      dueDate: null,
+      progressPct: 100,
+      updatedAt: "2026-01-10T00:00:00Z",
+    },
+    {
+      id: "blocked-hot",
+      status: "bloqueada",
+      priority: "5",
+      dueDate: null,
+      progressPct: 0,
+      updatedAt: "2026-01-01T00:00:00Z",
+    },
+    {
+      id: "actionable-cold",
+      status: "disponible",
+      priority: "1",
+      dueDate: null,
+      progressPct: 0,
+      updatedAt: "2026-01-01T00:00:00Z",
+    },
+    {
+      id: "paused-warm",
+      status: "pausada",
+      priority: "2",
+      dueDate: null,
+      progressPct: 20,
+      updatedAt: "2026-01-01T00:00:00Z",
+    },
+    {
+      id: "completed-new",
+      status: "completada",
+      priority: "0",
+      dueDate: null,
+      progressPct: 100,
+      updatedAt: "2026-01-20T00:00:00Z",
+    },
+    {
+      id: "actionable-hot",
+      status: "en_curso",
+      priority: "3",
+      dueDate: null,
+      progressPct: 0,
+      updatedAt: "2026-01-01T00:00:00Z",
+    },
+  ];
+
+  assert.deepEqual(
+    orderProjectTasks(tasks, NOW).map((task) => task.id),
+    [
+      "actionable-hot",
+      "actionable-cold",
+      "blocked-hot",
+      "paused-warm",
+      "completed-new",
+      "completed-old",
+    ],
   );
 });

@@ -81,3 +81,47 @@ export function compareForProjectOrder(
     compareByRelevance(a, b)
   );
 }
+
+export function orderProjectTasks<
+  T extends {
+    status: string;
+    relevance?: number | null;
+    progressPct: number;
+    priority: number | string;
+    dueDate: Date | string | null;
+    updatedAt: Date | string;
+  },
+>(tasks: readonly T[], now = new Date()): T[] {
+  const incomplete = tasks
+    .filter((task) => task.status !== "completada")
+    .map((task) => ({
+      task,
+      relevance: computeRelevance(
+        Number(task.priority),
+        task.dueDate ? new Date(task.dueDate) : null,
+        now,
+      ),
+      progressPct: task.progressPct,
+      status: task.status,
+    }))
+    .sort(compareForProjectOrder)
+    .map(({ task }) => task);
+  const completed = tasks
+    .filter((task) => task.status === "completada")
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
+
+  return [...incomplete, ...completed];
+}
+
+export function sameTaskIdSequence(
+  current: readonly string[],
+  calculated: readonly string[],
+): boolean {
+  return (
+    current.length === calculated.length &&
+    current.every((taskId, index) => taskId === calculated[index])
+  );
+}
