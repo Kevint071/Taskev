@@ -49,6 +49,8 @@ export function TaskRow({
   from,
   showProgress = true,
   showProject = true,
+  centerProgressOnDesktop = false,
+  inlineProjectStatus = false,
   dragKey,
   dragging = false,
   dropTarget = false,
@@ -63,6 +65,10 @@ export function TaskRow({
   now: Date;
   from?: BackSource;
   showProgress?: boolean;
+  /** Vertically centers the progress ring at desktop widths. */
+  centerProgressOnDesktop?: boolean;
+  /** Shows the editable status as an unframed metadata control. */
+  inlineProjectStatus?: boolean;
   /** Hides the project-name meta text, e.g. inside that project's own page. */
   showProject?: boolean;
   /** Identifier used for drag hit-testing; defaults to `task.id`. */
@@ -126,6 +132,76 @@ export function TaskRow({
     onStatusChange?.({ status: "completada", completedAt: date.toISOString() });
   }
 
+  function renderStatusControl(inline: boolean) {
+    return (
+      <Popover
+        open={completePromptOpen}
+        onClose={() => setCompletePromptOpen(false)}
+        className="z-10"
+      >
+        {/* biome-ignore lint/a11y/noLabelWithoutControl: wraps the Select component */}
+        <label
+          className={
+            inline
+              ? "relative z-10 inline-flex shrink-0 items-center"
+              : "relative z-10 hidden shrink-0 items-center sm:flex"
+          }
+        >
+          <span className="sr-only">Estado</span>
+          {!inline && (
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none absolute left-2.5 size-2 rounded-full ${STATUS_DOT[task.status]}`}
+            />
+          )}
+          <Select
+            value={task.status}
+            onChange={(e) =>
+              handleStatusSelect(e.target.value as Task["status"])
+            }
+            className={
+              inline
+                ? "h-6 w-auto min-w-0 rounded-none border-0 bg-transparent p-0 pr-4 text-meta font-medium text-muted focus-visible:border-0 focus-visible:outline focus-visible:outline-1 focus-visible:outline-accent"
+                : "h-8 w-auto min-w-0 border-transparent bg-transparent pr-5 pl-6 text-meta sm:w-32 sm:min-w-[6.5rem] sm:border-line-strong sm:bg-raised sm:pr-7"
+            }
+          >
+            {Object.entries(STATUS_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            className={`pointer-events-none absolute size-3 text-muted ${inline ? "right-0" : "right-2"}`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M5.5 8l4.5 4.5L14.5 8" />
+          </svg>
+        </label>
+        {completePromptOpen && (
+          <div className="absolute right-0 top-full z-20 mt-1.5">
+            <p className="mb-1.5 px-1 text-meta font-medium text-muted">
+              Fecha de finalización
+            </p>
+            <CalendarPanel
+              selected={todayUtcMidnight()}
+              shortcuts={[
+                { key: "today", label: "Hoy", date: todayUtcMidnight() },
+              ]}
+              onSelect={confirmComplete}
+            />
+          </div>
+        )}
+      </Popover>
+    );
+  }
+
   const titleEl = (
     <span
       className={`block truncate text-body font-medium lg:text-ui ${
@@ -178,7 +254,11 @@ export function TaskRow({
             {titleEl}
           </Link>
         )}
-        <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-meta text-muted">
+        <div
+          className={`mt-0.5 flex min-w-0 items-center gap-1.5 text-meta text-muted ${
+            inlineProjectStatus ? "flex-wrap gap-y-1" : ""
+          }`}
+        >
           {showProject && task.projectName ? (
             <span className="truncate">{task.projectName}</span>
           ) : null}
@@ -190,6 +270,7 @@ export function TaskRow({
               <span className="sr-only">Guardando</span>
             </span>
           ) : null}
+          {editable && inlineProjectStatus ? renderStatusControl(true) : null}
           {task.dueDate ? (
             <span className={`${CHIP} shrink-0 ${DUE_CHIP_TONE[dueTone]}`}>
               <CalendarIcon className="size-3.5" />
@@ -205,11 +286,15 @@ export function TaskRow({
               {formatPriority(priority)}
             </span>
           ) : null}
-        </p>
+        </div>
       </div>
 
       {showProgress ? (
-        <span className="self-start">
+        <span
+          className={
+            centerProgressOnDesktop ? "self-start lg:self-center" : "self-start"
+          }
+        >
           <ProgressRing
             pct={task.progressPct}
             color={STATUS_TONE[task.status]}
@@ -217,66 +302,14 @@ export function TaskRow({
         </span>
       ) : null}
 
-      {editable && (
+      {editable && !inlineProjectStatus && (
         <>
           <span
             title={STATUS_LABELS[task.status]}
             aria-hidden="true"
             className={`size-2.5 shrink-0 rounded-full ${STATUS_DOT[task.status]} sm:hidden`}
           />
-          <Popover
-            open={completePromptOpen}
-            onClose={() => setCompletePromptOpen(false)}
-            className="z-10"
-          >
-            {/* biome-ignore lint/a11y/noLabelWithoutControl: wraps the Select component */}
-            <label className="relative hidden shrink-0 items-center sm:flex">
-              <span className="sr-only">Estado</span>
-              <span
-                aria-hidden="true"
-                className={`pointer-events-none absolute left-2.5 size-2 rounded-full ${STATUS_DOT[task.status]}`}
-              />
-              <Select
-                value={task.status}
-                onChange={(e) =>
-                  handleStatusSelect(e.target.value as Task["status"])
-                }
-                className="h-8 w-auto min-w-0 border-transparent bg-transparent pr-5 pl-6 text-meta sm:w-32 sm:min-w-[6.5rem] sm:border-line-strong sm:bg-raised sm:pr-7"
-              >
-                {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 20 20"
-                className="pointer-events-none absolute right-2 size-3 text-muted"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5.5 8l4.5 4.5L14.5 8" />
-              </svg>
-            </label>
-            {completePromptOpen && (
-              <div className="absolute right-0 top-full z-20 mt-1.5">
-                <p className="mb-1.5 px-1 text-meta font-medium text-muted">
-                  Fecha de finalización
-                </p>
-                <CalendarPanel
-                  selected={todayUtcMidnight()}
-                  shortcuts={[
-                    { key: "today", label: "Hoy", date: todayUtcMidnight() },
-                  ]}
-                  onSelect={confirmComplete}
-                />
-              </div>
-            )}
-          </Popover>
+          {renderStatusControl(false)}
         </>
       )}
     </li>

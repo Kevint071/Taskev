@@ -160,6 +160,8 @@ export function ProgressRing({
   color: string;
   size?: "sm" | "md";
 }) {
+  if (pct === 0) return null;
+
   const md = size === "md";
   return (
     <span

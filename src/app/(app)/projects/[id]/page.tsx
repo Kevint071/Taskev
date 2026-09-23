@@ -371,6 +371,8 @@ export default function ProjectDetailPage() {
         task={task}
         now={rowNow}
         showProject={false}
+        centerProgressOnDesktop
+        inlineProjectStatus
         dragKey={task.key}
         dragging={draggedKey === task.key}
         dropTarget={dropTargetKey === task.key && draggedKey !== task.key}
