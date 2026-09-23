@@ -14,6 +14,7 @@ import {
   BackIcon,
   CalendarIcon,
   CheckIcon,
+  ChevronDownIcon,
   FlagIcon,
   PinIcon,
   SendIcon,
@@ -23,9 +24,8 @@ import { STATUS_TONE, StatusDot } from "@/components/ui/status-badge";
 import { daysBetweenUtc } from "@/lib/calendar";
 import { MAX_TASK_TITLE_LENGTH } from "@/lib/constraints";
 import {
-  formatDayOffset,
   formatDueDate,
-  formatDueDateWithWeekday,
+  formatDueDateForTaskChip,
   formatLongDate,
   formatPriority,
   formatTime,
@@ -166,12 +166,14 @@ function PropertyChip({
   icon,
   tone,
   label,
+  appearance = "default",
   onClick,
   children,
 }: {
   icon: ReactNode;
   /** CSS color the pill's background, border and icon are mixed from. */
   tone?: string;
+  appearance?: "default" | "quiet" | "select";
   /** Accessible name, since the visible text is only the value. */
   label: string;
   onClick: () => void;
@@ -184,14 +186,21 @@ function PropertyChip({
       aria-label={label}
       onClick={onClick}
       style={tone ? ({ "--chip": tone } as CSSProperties) : undefined}
-      className={`inline-flex h-9 max-w-full items-center gap-2 rounded-full border px-3.5 text-ui font-medium whitespace-nowrap transition-[background-color,border-color,scale] duration-150 active:scale-[0.97] ${
-        tone
-          ? "border-[color-mix(in_srgb,var(--chip)_28%,transparent)] bg-[color-mix(in_srgb,var(--chip)_12%,var(--raised))] hover:bg-[color-mix(in_srgb,var(--chip)_20%,var(--raised))] [&>svg]:text-(--chip)"
-          : "border-line bg-raised shadow-panel hover:border-line-strong hover:bg-sunken/60 [&>svg]:text-muted"
+      className={`inline-flex h-9 max-w-full items-center gap-2 rounded-full border text-ui font-medium whitespace-nowrap transition-[background-color,border-color,color,scale] duration-150 active:scale-[0.97] ${
+        appearance === "quiet"
+          ? "border-transparent bg-transparent px-2.5 text-muted hover:bg-sunken/70 hover:text-ink [&>svg]:text-muted"
+          : appearance === "select"
+            ? "border-transparent bg-transparent px-3 text-ink hover:bg-sunken/60 [&>svg]:text-(--chip)"
+            : tone
+              ? "border-[color-mix(in_srgb,var(--chip)_28%,transparent)] bg-[color-mix(in_srgb,var(--chip)_12%,var(--raised))] px-3.5 hover:bg-[color-mix(in_srgb,var(--chip)_20%,var(--raised))] [&>svg]:text-(--chip)"
+              : "border-line bg-raised px-3.5 shadow-panel hover:border-line-strong hover:bg-sunken/60 [&>svg]:text-muted"
       }`}
     >
       {icon}
       {children}
+      {appearance === "select" && (
+        <ChevronDownIcon className="size-3.5 shrink-0 text-muted" />
+      )}
     </button>
   );
 }
@@ -554,7 +563,7 @@ export function TaskDetailView({
                 }}
                 rows={1}
                 maxLength={MAX_TASK_TITLE_LENGTH}
-                className={`-mx-1 block w-full resize-none overflow-hidden rounded-[4px] bg-transparent px-1 text-[24px] leading-[30px] font-semibold tracking-[-0.02em] text-balance caret-accent outline-none sm:text-page ${
+                className={`-mx-1 block w-full resize-none overflow-hidden rounded-[4px] bg-transparent px-1 text-[23px] leading-[29px] font-semibold tracking-[-0.02em] text-pretty caret-accent outline-none sm:text-page ${
                   done ? "text-muted line-through decoration-1" : "text-ink"
                 }`}
               />
@@ -566,87 +575,81 @@ export function TaskDetailView({
             className="flex flex-wrap items-center gap-2"
           >
             <FlashWrap
-              tick={flash.status}
-              className="max-w-full rounded-full border-transparent"
-            >
-              <PropertyChip
-                label={`Estado: ${STATUS_LABELS[task.status]}`}
-                icon={<StatusDot status={task.status} />}
-                tone="var(--tone)"
-                onClick={() => openSheet("status")}
+                tick={flash.status}
+                className="max-w-full rounded-full border-transparent"
               >
-                {STATUS_LABELS[task.status]}
-              </PropertyChip>
+                <PropertyChip
+                  label={`Estado: ${STATUS_LABELS[task.status]}`}
+                  icon={<StatusDot status={task.status} />}
+                  tone="var(--tone)"
+                  appearance="select"
+                  onClick={() => openSheet("status")}
+                >
+                  {STATUS_LABELS[task.status]}
+                </PropertyChip>
             </FlashWrap>
 
             <FlashWrap
-              tick={flash.dueDate}
-              className="max-w-full rounded-full border-transparent"
-            >
-              <PropertyChip
-                label={
-                  task.dueDate
-                    ? `Fecha: ${formatDueDateWithWeekday(task.dueDate)}`
-                    : "Fecha: sin fecha"
-                }
-                icon={<CalendarIcon className="text-current" />}
-                tone={overdue ? "var(--danger)" : undefined}
-                onClick={() => openSheet("due")}
+                tick={flash.dueDate}
+                className="max-w-full rounded-full border-transparent"
               >
-                {task.dueDate ? (
-                  <span className="truncate">
-                    {formatDueDateWithWeekday(task.dueDate)}
-                    {dueOffset !== null && !done && (
-                      <span
-                        className={
-                          overdue ? "text-danger" : "font-normal text-muted"
-                        }
-                      >
-                        {" "}
-                        · {formatDayOffset(dueOffset)}
-                      </span>
-                    )}
-                  </span>
-                ) : (
-                  <span className="font-normal text-muted">Sin fecha</span>
-                )}
-              </PropertyChip>
+                <PropertyChip
+                  label={
+                    task.dueDate
+                      ? `Fecha: ${formatDueDateForTaskChip(task.dueDate)}`
+                      : "Fecha: sin fecha"
+                  }
+                  icon={<CalendarIcon className="text-current" />}
+                  tone={overdue ? "var(--danger)" : undefined}
+                  appearance="quiet"
+                  onClick={() => openSheet("due")}
+                >
+                  {task.dueDate ? (
+                    <span className="truncate">
+                      {formatDueDateForTaskChip(task.dueDate)}
+                    </span>
+                  ) : (
+                    <span className="font-normal text-muted">Sin fecha</span>
+                  )}
+                </PropertyChip>
             </FlashWrap>
 
             <FlashWrap
-              tick={flash.priority}
-              className="max-w-full rounded-full border-transparent"
-            >
-              <PropertyChip
-                label={`Prioridad: ${formatPriority(priority)}`}
-                icon={<FlagIcon className="text-current" />}
-                onClick={() => openSheet("priority")}
+                tick={flash.progress}
+                className="max-w-full rounded-full border-transparent"
               >
-                <span className="tabular">{formatPriority(priority)}</span>
-              </PropertyChip>
+                <PropertyChip
+                  label={`Avance: ${progressDraft} %`}
+                  icon={
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        background: `conic-gradient(var(--tone) ${progressDraft}%, var(--line-strong) 0)`,
+                      }}
+                      className="flex size-4 shrink-0 items-center justify-center rounded-full"
+                    >
+                      <span className="size-2 rounded-full bg-raised" />
+                    </span>
+                  }
+                  appearance="quiet"
+                  onClick={() => openSheet("progress")}
+                >
+                  <span className="tabular">{progressDraft} %</span>
+                </PropertyChip>
             </FlashWrap>
 
             <FlashWrap
-              tick={flash.progress}
-              className="max-w-full rounded-full border-transparent"
-            >
-              <PropertyChip
-                label={`Avance: ${progressDraft} %`}
-                icon={
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      background: `conic-gradient(var(--tone) ${progressDraft}%, var(--line-strong) 0)`,
-                    }}
-                    className="flex size-4 shrink-0 items-center justify-center rounded-full"
-                  >
-                    <span className="size-2 rounded-full bg-raised" />
-                  </span>
-                }
-                onClick={() => openSheet("progress")}
+                tick={flash.priority}
+                className="max-w-full rounded-full border-transparent"
               >
-                <span className="tabular">{progressDraft} %</span>
-              </PropertyChip>
+                <PropertyChip
+                  label={`Prioridad: ${formatPriority(priority)}`}
+                  icon={<FlagIcon className="text-current" />}
+                  appearance="quiet"
+                  onClick={() => openSheet("priority")}
+                >
+                  <span className="tabular">{formatPriority(priority)}</span>
+                </PropertyChip>
             </FlashWrap>
 
             {readyToComplete && (
@@ -679,6 +682,7 @@ export function TaskDetailView({
         </header>
 
         <section aria-label="Descripción" className="mt-3">
+          <h2 className="mb-2 text-ui font-semibold text-ink">Descripción</h2>
           <FlashWrap
             tick={flash.description}
             className="rounded-xl border-transparent"

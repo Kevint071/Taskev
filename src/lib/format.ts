@@ -49,6 +49,18 @@ export function formatDueDateWithWeekday(iso: string | Date): string {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
+/** "hoy" and "mañana" for imminent due dates; otherwise the weekday and date. */
+export function formatDueDateForTaskChip(
+  iso: string | Date,
+  now = new Date(),
+): string {
+  const date = typeof iso === "string" ? new Date(iso) : iso;
+  const days = daysBetweenUtc(date, todayUtcMidnight(now));
+  if (days === 0) return "hoy";
+  if (days === 1) return "mañana";
+  return formatDueDateWithWeekday(date);
+}
+
 /** "2,5" — the decimal comma the rest of the UI uses. */
 export function formatPriority(value: number | string): string {
   return String(Number(value)).replace(".", ",");

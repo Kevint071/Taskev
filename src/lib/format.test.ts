@@ -3,6 +3,8 @@ import { test } from "node:test";
 import {
   formatDateTime,
   formatDueDate,
+  formatDueDateForTaskChip,
+  formatDueDateWithWeekday,
   formatDueRelative,
   formatRelativeTime,
 } from "./format";
@@ -63,5 +65,24 @@ test("formatDueRelative: farther than a week falls back to the date", () => {
   assert.equal(
     formatDueRelative("2026-08-01T00:00:00Z", localNoon),
     formatDueDate("2026-08-01T00:00:00Z"),
+  );
+});
+
+test("formatDueDateForTaskChip: today and tomorrow use only relative labels", () => {
+  assert.equal(
+    formatDueDateForTaskChip("2026-09-16T00:00:00Z", localNoon),
+    "hoy",
+  );
+  assert.equal(
+    formatDueDateForTaskChip("2026-09-17T00:00:00Z", localNoon),
+    "mañana",
+  );
+});
+
+test("formatDueDateForTaskChip: other days show only the formatted date", () => {
+  const date = "2026-09-19T00:00:00Z";
+  assert.equal(
+    formatDueDateForTaskChip(date, localNoon),
+    formatDueDateWithWeekday(date),
   );
 });
