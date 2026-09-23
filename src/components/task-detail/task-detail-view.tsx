@@ -575,81 +575,81 @@ export function TaskDetailView({
             className="flex flex-wrap items-center gap-2"
           >
             <FlashWrap
-                tick={flash.status}
-                className="max-w-full rounded-full border-transparent"
+              tick={flash.status}
+              className="max-w-full rounded-full border-transparent"
+            >
+              <PropertyChip
+                label={`Estado: ${STATUS_LABELS[task.status]}`}
+                icon={<StatusDot status={task.status} />}
+                tone="var(--tone)"
+                appearance="select"
+                onClick={() => openSheet("status")}
               >
-                <PropertyChip
-                  label={`Estado: ${STATUS_LABELS[task.status]}`}
-                  icon={<StatusDot status={task.status} />}
-                  tone="var(--tone)"
-                  appearance="select"
-                  onClick={() => openSheet("status")}
-                >
-                  {STATUS_LABELS[task.status]}
-                </PropertyChip>
+                {STATUS_LABELS[task.status]}
+              </PropertyChip>
             </FlashWrap>
 
             <FlashWrap
-                tick={flash.dueDate}
-                className="max-w-full rounded-full border-transparent"
+              tick={flash.dueDate}
+              className="max-w-full rounded-full border-transparent"
+            >
+              <PropertyChip
+                label={
+                  task.dueDate
+                    ? `Fecha: ${formatDueDateForTaskChip(task.dueDate)}`
+                    : "Fecha: sin fecha"
+                }
+                icon={<CalendarIcon className="text-current" />}
+                tone={overdue ? "var(--danger)" : undefined}
+                appearance="quiet"
+                onClick={() => openSheet("due")}
               >
-                <PropertyChip
-                  label={
-                    task.dueDate
-                      ? `Fecha: ${formatDueDateForTaskChip(task.dueDate)}`
-                      : "Fecha: sin fecha"
-                  }
-                  icon={<CalendarIcon className="text-current" />}
-                  tone={overdue ? "var(--danger)" : undefined}
-                  appearance="quiet"
-                  onClick={() => openSheet("due")}
-                >
-                  {task.dueDate ? (
-                    <span className="truncate">
-                      {formatDueDateForTaskChip(task.dueDate)}
-                    </span>
-                  ) : (
-                    <span className="font-normal text-muted">Sin fecha</span>
-                  )}
-                </PropertyChip>
+                {task.dueDate ? (
+                  <span className="truncate">
+                    {formatDueDateForTaskChip(task.dueDate)}
+                  </span>
+                ) : (
+                  <span className="font-normal text-muted">Sin fecha</span>
+                )}
+              </PropertyChip>
             </FlashWrap>
 
             <FlashWrap
-                tick={flash.progress}
-                className="max-w-full rounded-full border-transparent"
+              tick={flash.progress}
+              className="max-w-full rounded-full border-transparent"
+            >
+              <PropertyChip
+                label={`Avance: ${progressDraft} %`}
+                icon={
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      background: `conic-gradient(var(--tone) ${progressDraft}%, var(--line-strong) 0)`,
+                    }}
+                    className="flex size-4 shrink-0 items-center justify-center rounded-full"
+                  >
+                    <span className="size-2 rounded-full bg-raised" />
+                  </span>
+                }
+                appearance="quiet"
+                onClick={() => openSheet("progress")}
               >
-                <PropertyChip
-                  label={`Avance: ${progressDraft} %`}
-                  icon={
-                    <span
-                      aria-hidden="true"
-                      style={{
-                        background: `conic-gradient(var(--tone) ${progressDraft}%, var(--line-strong) 0)`,
-                      }}
-                      className="flex size-4 shrink-0 items-center justify-center rounded-full"
-                    >
-                      <span className="size-2 rounded-full bg-raised" />
-                    </span>
-                  }
-                  appearance="quiet"
-                  onClick={() => openSheet("progress")}
-                >
-                  <span className="tabular">{progressDraft} %</span>
-                </PropertyChip>
+                <span className="tabular">{progressDraft} %</span>
+              </PropertyChip>
             </FlashWrap>
 
             <FlashWrap
-                tick={flash.priority}
-                className="max-w-full rounded-full border-transparent"
+              tick={flash.priority}
+              className="max-w-full rounded-full border-transparent"
+            >
+              <PropertyChip
+                label={`Prioridad: ${formatPriority(priority)}`}
+                icon={<FlagIcon className="text-current" />}
+                appearance="quiet"
+                onClick={() => openSheet("priority")}
               >
-                <PropertyChip
-                  label={`Prioridad: ${formatPriority(priority)}`}
-                  icon={<FlagIcon className="text-current" />}
-                  appearance="quiet"
-                  onClick={() => openSheet("priority")}
-                >
-                  <span className="tabular">{formatPriority(priority)}</span>
-                </PropertyChip>
+                <span className="tabular">{formatPriority(priority)}</span>
+              </PropertyChip>
             </FlashWrap>
 
             {readyToComplete && (
