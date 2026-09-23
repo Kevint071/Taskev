@@ -19,7 +19,7 @@ import { type SyncState, SyncStatus } from "@/components/ui/sync-status";
 import { Toast, type ToastState } from "@/components/ui/toast";
 import { handleUnauthenticated } from "@/lib/api-client";
 import { MAX_TASK_TITLE_LENGTH } from "@/lib/constraints";
-import { compareForProjectOrder, computeRelevance } from "@/lib/relevance";
+import { orderProjectTasks, sameTaskIdSequence } from "@/lib/relevance";
 import {
   ApiError,
   createSyncQueue,
@@ -35,13 +35,12 @@ export default function ProjectDetailPage() {
   const router = useRouter();
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<LocalTask[]>([]);
+  const tasksRef = useRef<LocalTask[]>([]);
   const [addingTask, setAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncState, setSyncState] = useState<SyncState>("idle");
-  const [draggedKey, setDraggedKey] = useState<string | null>(null);
-  const [dropTargetKey, setDropTargetKey] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -77,7 +76,8 @@ export default function ProjectDetailPage() {
     const data: ProjectDetail = await res.json();
     const { tasks: serverTasks, ...rest } = data;
     setProject(rest);
-    setTasks(serverTasks.map((t) => ({ ...t, key: t.id })));
+    const loadedTasks = serverTasks.map((task) => ({ ...task, key: task.id }));
+    applyProjectOrder(loadedTasks, orderProjectTasks(loadedTasks));
   }
 
   const loadRef = useRef(load);
@@ -114,6 +114,42 @@ export default function ProjectDetailPage() {
     }),
   );
 
+  function updateTasks(updater: (current: LocalTask[]) => LocalTask[]) {
+    const next = updater(tasksRef.current);
+    tasksRef.current = next;
+    setTasks(next);
+    return next;
+  }
+
+  function applyProjectOrder(current: LocalTask[], ordered: LocalTask[]) {
+    updateTasks(() => ordered);
+    if (
+      sameTaskIdSequence(
+        current.map((task) => task.id),
+        ordered.map((task) => task.id),
+      )
+    ) {
+      return;
+    }
+
+    queue.run(`project-order:${id}`, async () => {
+      const taskIds = await Promise.all(
+        ordered.map((task) => queue.idFor(task.key)),
+      );
+      const updated = await sendJson<{ id: string; position: number }[]>(
+        `/api/projects/${id}/tasks/reorder`,
+        "POST",
+        { taskIds },
+      );
+      updateTasks((previous) =>
+        previous.map((task) => {
+          const match = updated.find((item) => item.id === task.id);
+          return match ? { ...task, position: match.position } : task;
+        }),
+      );
+    });
+  }
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: load reads `id` via closure and is redefined every render
   useEffect(() => {
     load();
@@ -139,7 +175,7 @@ export default function ProjectDetailPage() {
     setError(null);
     const key = tempId();
     const now = new Date().toISOString();
-    setTasks((prev) => [
+    updateTasks((prev) => [
       ...prev,
       {
         key,
@@ -167,7 +203,7 @@ export default function ProjectDetailPage() {
         "POST",
         { title },
       );
-      setTasks((prev) =>
+      const withCreatedTask = updateTasks((prev) =>
         prev.map((t) =>
           t.key === key
             ? {
@@ -179,13 +215,14 @@ export default function ProjectDetailPage() {
             : t,
         ),
       );
+      applyProjectOrder(withCreatedTask, orderProjectTasks(withCreatedTask));
       return created.id;
     });
   }
 
   function applyLocal(key: string, updates: TaskUpdates) {
     const { priority, ...rest } = updates;
-    setTasks((prev) =>
+    updateTasks((prev) =>
       prev.map((t) =>
         t.key === key
           ? {
@@ -208,127 +245,6 @@ export default function ProjectDetailPage() {
   function updateTask(key: string, updates: TaskUpdates) {
     applyLocal(key, updates);
     saveRemote(key, updates);
-  }
-
-  const dragRef = useRef<{
-    movedKey: string;
-    overKey: string | null;
-    pointerId: number;
-  } | null>(null);
-
-  function handlePointerDownOnHandle(
-    key: string,
-    e: React.PointerEvent<HTMLElement>,
-  ) {
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    if (dragRef.current) return;
-    e.preventDefault();
-    dragRef.current = { movedKey: key, overKey: null, pointerId: e.pointerId };
-    setDraggedKey(key);
-    e.currentTarget.setPointerCapture(e.pointerId);
-  }
-
-  function handlePointerMoveOnHandle(e: React.PointerEvent<HTMLElement>) {
-    const drag = dragRef.current;
-    if (!drag || e.pointerId !== drag.pointerId) return;
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const row = el?.closest<HTMLElement>("[data-task-key]");
-    const key = row?.dataset.taskKey;
-    const overKey = key && key !== drag.movedKey ? key : null;
-    if (overKey !== drag.overKey) {
-      drag.overKey = overKey;
-      setDropTargetKey(overKey);
-    }
-  }
-
-  function endDrag(reorder: boolean) {
-    const drag = dragRef.current;
-    dragRef.current = null;
-    setDraggedKey(null);
-    setDropTargetKey(null);
-    if (reorder && drag?.overKey) {
-      handleReorder(drag.movedKey, drag.overKey);
-    }
-  }
-
-  function handlePointerUpOnHandle(e: React.PointerEvent<HTMLElement>) {
-    if (dragRef.current?.pointerId !== e.pointerId) return;
-    endDrag(true);
-  }
-
-  function handlePointerCancelOnHandle(e: React.PointerEvent<HTMLElement>) {
-    if (dragRef.current?.pointerId !== e.pointerId) return;
-    endDrag(false);
-  }
-
-  function handleReorder(movedKey: string, targetKey: string) {
-    const next = [...tasks];
-    const [dragged] = next.splice(
-      next.findIndex((t) => t.key === movedKey),
-      1,
-    );
-    next.splice(
-      next.findIndex((t) => t.key === targetKey),
-      0,
-      dragged,
-    );
-    const newIndex = next.findIndex((t) => t.key === movedKey);
-    const beforeKey = newIndex > 0 ? next[newIndex - 1].key : null;
-    const afterKey = newIndex < next.length - 1 ? next[newIndex + 1].key : null;
-    setTasks(next);
-
-    queue.run(movedKey, async () => {
-      const [taskId, beforeTaskId, afterTaskId] = await Promise.all([
-        queue.idFor(movedKey),
-        beforeKey ? queue.idFor(beforeKey) : null,
-        afterKey ? queue.idFor(afterKey) : null,
-      ]);
-      await sendJson(`/api/tasks/${taskId}/reorder`, "POST", {
-        beforeTaskId,
-        afterTaskId,
-      });
-    });
-  }
-
-  function applyAutomaticSort() {
-    const now = new Date();
-    const sortedIncomplete = tasks
-      .filter((t) => t.status !== "completada")
-      .map((task) => ({
-        task,
-        relevance: computeRelevance(
-          Number(task.priority),
-          task.dueDate ? new Date(task.dueDate) : null,
-          now,
-        ),
-        progressPct: task.progressPct,
-        status: task.status,
-      }))
-      .sort(compareForProjectOrder)
-      .map(({ task }) => task);
-    const sortedCompleted = tasks
-      .filter((t) => t.status === "completada")
-      .sort(
-        (a, b) =>
-          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-      );
-    const next = [...sortedIncomplete, ...sortedCompleted];
-    setTasks(next);
-
-    queue.run("auto-sort", async () => {
-      const taskIds = await Promise.all(next.map((t) => queue.idFor(t.key)));
-      const updated = await sendJson<{ id: string; position: number }[]>(
-        `/api/projects/${id}/tasks/reorder`,
-        "POST",
-        { taskIds },
-      );
-      setTasks((prev) =>
-        prev.map((t) => {
-          const match = updated.find((u) => u.id === t.id);
-          return match ? { ...t, position: match.position } : t;
-        }),
-      );
-    });
   }
 
   function toggleArchive() {
@@ -373,13 +289,6 @@ export default function ProjectDetailPage() {
         showProject={false}
         centerProgressOnDesktop
         inlineProjectStatus
-        dragKey={task.key}
-        dragging={draggedKey === task.key}
-        dropTarget={dropTargetKey === task.key && draggedKey !== task.key}
-        onHandlePointerDown={(e) => handlePointerDownOnHandle(task.key, e)}
-        onHandlePointerMove={handlePointerMoveOnHandle}
-        onHandlePointerUp={handlePointerUpOnHandle}
-        onHandlePointerCancel={handlePointerCancelOnHandle}
         onStatusChange={(change) => updateTask(task.key, change)}
         onBlocked={showToast}
       />
@@ -512,24 +421,15 @@ export default function ProjectDetailPage() {
       {tasks.length === 0 ? (
         <EmptyState
           title="Este proyecto no tiene tareas"
-          description="Añade la primera con el botón de arriba. Luego puedes arrastrarlas para ordenarlas a tu manera."
+          description="Añade la primera con el botón de arriba."
         />
       ) : (
         <div className="flex flex-col gap-5">
           {incompleteTasks.length > 0 && (
             <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-meta font-medium text-muted">
-                  Tareas incompletas
-                </h2>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={applyAutomaticSort}
-                >
-                  Ordenar automáticamente
-                </Button>
-              </div>
+              <h2 className="text-meta font-medium text-muted">
+                Tareas incompletas
+              </h2>
               <Panel>
                 <ul className="divide-y divide-line">
                   {incompleteTasks.map((task) => renderTaskRow(task))}

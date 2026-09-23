@@ -51,7 +51,7 @@ export async function POST(request: Request, { params }: Params) {
     taskIds.map(async (taskId, i) => {
       const [row] = await db
         .update(tasks)
-        .set({ position: positions[i], updatedAt: new Date() })
+        .set({ position: positions[i] })
         .where(eq(tasks.id, taskId))
         .returning({ id: tasks.id, position: tasks.position });
       return row;

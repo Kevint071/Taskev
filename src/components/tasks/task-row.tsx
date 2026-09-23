@@ -39,9 +39,8 @@ export type TaskStatusChange = {
  *
  * The whole row is clickable through the title link's stretched `::after`.
  *
- * Passing `onHandlePointer*` adds a drag handle, and passing `onStatusChange`
- * adds an inline status control (both used by the project detail page; the
- * global task list omits them and stays read-only).
+ * Passing `onStatusChange` adds an inline status control on the project detail
+ * page; the global task list omits it and stays read-only.
  */
 export function TaskRow({
   task,
@@ -51,13 +50,6 @@ export function TaskRow({
   showProject = true,
   centerProgressOnDesktop = false,
   inlineProjectStatus = false,
-  dragKey,
-  dragging = false,
-  dropTarget = false,
-  onHandlePointerDown,
-  onHandlePointerMove,
-  onHandlePointerUp,
-  onHandlePointerCancel,
   onStatusChange,
   onBlocked,
 }: {
@@ -71,14 +63,6 @@ export function TaskRow({
   inlineProjectStatus?: boolean;
   /** Hides the project-name meta text, e.g. inside that project's own page. */
   showProject?: boolean;
-  /** Identifier used for drag hit-testing; defaults to `task.id`. */
-  dragKey?: string;
-  dragging?: boolean;
-  dropTarget?: boolean;
-  onHandlePointerDown?: (e: React.PointerEvent<HTMLElement>) => void;
-  onHandlePointerMove?: (e: React.PointerEvent<HTMLElement>) => void;
-  onHandlePointerUp?: (e: React.PointerEvent<HTMLElement>) => void;
-  onHandlePointerCancel?: (e: React.PointerEvent<HTMLElement>) => void;
   onStatusChange?: (change: TaskStatusChange) => void;
   onBlocked?: (message: string) => void;
 }) {
@@ -95,7 +79,6 @@ export function TaskRow({
         : "muted";
   const priority = Number(task.priority);
   const hasPriority = priority > 0;
-  const draggable = Boolean(onHandlePointerDown);
   const editable = Boolean(onStatusChange);
   const creating = isTempId(task.id);
 
@@ -224,32 +207,13 @@ export function TaskRow({
 
   return (
     <li
-      data-task-key={dragKey ?? task.id}
-      className={`relative flex items-center gap-x-2 py-3 pr-4 pl-3.5 transition-colors first:rounded-t-panel last:rounded-b-panel lg:gap-x-3 ${
-        dragging ? "opacity-40" : ""
-      } ${dropTarget ? "shadow-[inset_0_2px_0_var(--accent)]" : ""} ${
-        creating ? "" : "hover:bg-sunken"
-      }`}
+      className={`relative flex items-center gap-x-2 py-3 pr-4 pl-3.5 transition-colors first:rounded-t-panel last:rounded-b-panel lg:gap-x-3 ${creating ? "" : "hover:bg-sunken"}`}
     >
       <span
         aria-hidden="true"
         className="absolute inset-y-2 left-0 w-[3px] rounded-full"
         style={{ backgroundColor: STATUS_TONE[task.status] }}
       />
-
-      {draggable && (
-        <span
-          className="relative z-10 cursor-grab select-none touch-none rounded-[4px] p-1 -m-1 text-muted active:cursor-grabbing"
-          title="Arrastra para reordenar"
-          aria-hidden="true"
-          onPointerDown={onHandlePointerDown}
-          onPointerMove={onHandlePointerMove}
-          onPointerUp={onHandlePointerUp}
-          onPointerCancel={onHandlePointerCancel}
-        >
-          ⠿
-        </span>
-      )}
 
       <div className="min-w-0 flex-1 self-start">
         {creating ? (
