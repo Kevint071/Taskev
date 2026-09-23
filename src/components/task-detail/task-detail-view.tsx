@@ -668,7 +668,7 @@ export function TaskDetailView({
                 <PropertyChip
                   label={`Finalizada el ${formatDueDate(task.completedAt)}`}
                   icon={<CheckIcon className="text-current" />}
-                  tone="var(--status-done)"
+                  appearance="quiet"
                   onClick={() => openSheet("completion")}
                 >
                   Finalizada el {formatDueDate(task.completedAt)}
