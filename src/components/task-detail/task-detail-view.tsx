@@ -188,12 +188,12 @@ function PropertyChip({
       style={tone ? ({ "--chip": tone } as CSSProperties) : undefined}
       className={`inline-flex h-9 max-w-full items-center gap-2 rounded-full border text-ui font-medium whitespace-nowrap transition-[background-color,border-color,color,scale] duration-150 active:scale-[0.97] ${
         appearance === "quiet"
-          ? "border-transparent bg-transparent px-2.5 text-muted hover:bg-sunken/70 hover:text-ink [&>svg]:text-muted"
+          ? "border-transparent bg-transparent pr-2.5 pl-0 text-muted hover:bg-sunken/70 hover:text-ink [&>svg]:text-muted"
           : appearance === "select"
-            ? "border-transparent bg-transparent px-3 text-ink hover:bg-sunken/60 [&>svg]:text-(--chip)"
+            ? "border-transparent bg-transparent pr-3 pl-0 text-ink hover:bg-sunken/60 [&>svg]:text-(--chip)"
             : tone
-              ? "border-[color-mix(in_srgb,var(--chip)_28%,transparent)] bg-[color-mix(in_srgb,var(--chip)_12%,var(--raised))] px-3.5 hover:bg-[color-mix(in_srgb,var(--chip)_20%,var(--raised))] [&>svg]:text-(--chip)"
-              : "border-line bg-raised px-3.5 shadow-panel hover:border-line-strong hover:bg-sunken/60 [&>svg]:text-muted"
+              ? "border-[color-mix(in_srgb,var(--chip)_28%,transparent)] bg-[color-mix(in_srgb,var(--chip)_12%,var(--raised))] pr-3.5 pl-0 hover:bg-[color-mix(in_srgb,var(--chip)_20%,var(--raised))] [&>svg]:text-(--chip)"
+              : "border-line bg-raised pr-3.5 pl-0 shadow-panel hover:border-line-strong hover:bg-sunken/60 [&>svg]:text-muted"
       }`}
     >
       {icon}
@@ -259,7 +259,6 @@ export function TaskDetailView({
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [description, setDescription] = useState(task.description ?? "");
-  const [editingDescription, setEditingDescription] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
   const [progressDraft, setProgressDraft] = useState(task.progressPct);
   const [showAllLog, setShowAllLog] = useState(false);
@@ -314,15 +313,14 @@ export function TaskDetailView({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-  // The description textarea only exists while editing, so it is fitted on mount.
   useEffect(() => {
     const el = descriptionRef.current;
-    if (!editingDescription || !el) return;
+    if (!el) return;
     autosize(el);
     const observer = new ResizeObserver(() => autosize(el));
     observer.observe(el);
     return () => observer.disconnect();
-  }, [editingDescription]);
+  }, []);
   // biome-ignore lint/correctness/useExhaustiveDependencies: Draft changes trigger sizing after React updates the controlled textarea.
   useEffect(() => {
     autosize(descriptionRef.current);
@@ -359,7 +357,6 @@ export function TaskDetailView({
   }
 
   function commitDescription() {
-    setEditingDescription(false);
     if (cancelDescriptionEdit.current) {
       cancelDescriptionEdit.current = false;
       setDescription(task.description ?? "");
@@ -687,49 +684,28 @@ export function TaskDetailView({
             tick={flash.description}
             className="rounded-xl border-transparent"
           >
-            {editingDescription ? (
-              <label className="block">
-                <span className="sr-only">Descripción</span>
-                <textarea
-                  ref={descriptionRef}
-                  // biome-ignore lint/a11y/noAutofocus: the user just tapped the text to edit it
-                  autoFocus
-                  value={description}
-                  placeholder="Añade notas, contexto, enlaces…"
-                  onFocus={(e) => {
-                    const end = e.currentTarget.value.length;
-                    e.currentTarget.setSelectionRange(end, end);
-                  }}
-                  onChange={(e) => {
-                    setDescription(e.target.value);
-                    autosize(e.target);
-                  }}
-                  onBlur={commitDescription}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                      e.preventDefault();
-                      cancelDescriptionEdit.current = true;
-                      e.currentTarget.blur();
-                    }
-                  }}
-                  rows={2}
-                  className="-mx-2 block min-h-14 w-[calc(100%+1rem)] resize-none overflow-hidden rounded-xl bg-sunken/70 px-2 py-1.5 text-[15px] leading-6 caret-accent outline-none placeholder:text-muted/80"
-                />
-              </label>
-            ) : (
-              <button
-                type="button"
-                aria-label="Editar la descripción"
-                onClick={() => setEditingDescription(true)}
-                className="-mx-2 block min-h-11 w-[calc(100%+1rem)] rounded-xl px-2 py-1.5 text-left text-[15px] leading-6 break-words whitespace-pre-wrap transition-colors hover:bg-sunken/60"
-              >
-                {description || (
-                  <span className="text-muted/80">
-                    Añade notas, contexto, enlaces…
-                  </span>
-                )}
-              </button>
-            )}
+            <label className="block">
+              <span className="sr-only">Descripción</span>
+              <textarea
+                ref={descriptionRef}
+                value={description}
+                placeholder="Añade notas, contexto, enlaces…"
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  autosize(e.target);
+                }}
+                onBlur={commitDescription}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    e.preventDefault();
+                    cancelDescriptionEdit.current = true;
+                    e.currentTarget.blur();
+                  }
+                }}
+                rows={3}
+                className="block min-h-24 w-full resize-none overflow-hidden rounded-xl border border-line-strong bg-raised px-3 py-2.5 text-[15px] leading-6 text-ink caret-accent transition-colors placeholder:text-muted/80 hover:border-ink/30 focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+              />
+            </label>
           </FlashWrap>
         </section>
 
