@@ -341,6 +341,12 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
+.progress-slider:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
 /* The landing animation is the product demo: it keeps its motion ([data-motion-ok]) and has its own pause button. */
 @media (prefers-reduced-motion: reduce) {
   *:not([data-motion-ok], [data-motion-ok] *),

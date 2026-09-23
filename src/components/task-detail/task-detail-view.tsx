@@ -14,11 +14,8 @@ import {
   BackIcon,
   CalendarIcon,
   CheckIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
   FlagIcon,
   PinIcon,
-  ProgressGaugeIcon,
   SendIcon,
   TrashIcon,
 } from "@/components/ui/icons";
@@ -161,15 +158,22 @@ function FlashWrap({
   );
 }
 
-/** One property of the task: reads as a sentence, and opens its sheet when tapped. */
-function PropertyButton({
+/**
+ * One property of the task as a pill under the title, tinted by `tone` when
+ * it has one. Opens its sheet when tapped.
+ */
+function PropertyChip({
   icon,
-  danger = false,
+  tone,
+  label,
   onClick,
   children,
 }: {
   icon: ReactNode;
-  danger?: boolean;
+  /** CSS color the pill's background, border and icon are mixed from. */
+  tone?: string;
+  /** Accessible name, since the visible text is only the value. */
+  label: string;
   onClick: () => void;
   children: ReactNode;
 }) {
@@ -177,14 +181,17 @@ function PropertyButton({
     <button
       type="button"
       aria-haspopup="dialog"
+      aria-label={label}
       onClick={onClick}
-      className={`flex min-h-12 w-full items-center gap-3 rounded-2xl px-3 text-left text-[15px] transition-colors hover:bg-sunken/70 active:bg-sunken ${
-        danger ? "text-danger" : ""
+      style={tone ? ({ "--chip": tone } as CSSProperties) : undefined}
+      className={`inline-flex h-9 max-w-full items-center gap-2 rounded-full border px-3.5 text-ui font-medium whitespace-nowrap transition-[background-color,border-color,scale] duration-150 active:scale-[0.97] ${
+        tone
+          ? "border-[color-mix(in_srgb,var(--chip)_28%,transparent)] bg-[color-mix(in_srgb,var(--chip)_12%,var(--raised))] hover:bg-[color-mix(in_srgb,var(--chip)_20%,var(--raised))] [&>svg]:text-(--chip)"
+          : "border-line bg-raised shadow-panel hover:border-line-strong hover:bg-sunken/60 [&>svg]:text-muted"
       }`}
     >
-      <span className={danger ? "" : "text-muted"}>{icon}</span>
+      {icon}
       {children}
-      <ChevronRightIcon className="ml-auto text-muted/60" />
     </button>
   );
 }
@@ -287,6 +294,7 @@ export function TaskDetailView({
   useEffect(() => setProgressDraft(task.progressPct), [task.progressPct]);
   // Re-fit whenever the text changes or the width does (fonts loading,
   // rotation, resizing), otherwise a stale height clips the last lines.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Draft changes trigger sizing after React updates the controlled textarea.
   useEffect(() => {
     autosize(titleRef.current);
   }, [titleDraft]);
@@ -306,6 +314,7 @@ export function TaskDetailView({
     observer.observe(el);
     return () => observer.disconnect();
   }, [editingDescription]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Draft changes trigger sizing after React updates the controlled textarea.
   useEffect(() => {
     autosize(descriptionRef.current);
   }, [description]);
@@ -522,8 +531,8 @@ export function TaskDetailView({
         </div>
       </div>
 
-      <div className="flex flex-col gap-9 pt-4 pb-10">
-        <header className="flex flex-col gap-3">
+      <div className="flex flex-col gap-6 pt-4 pb-10">
+        <header className="flex flex-col gap-4">
           <FlashWrap tick={flash.title}>
             <label className="block">
               <span className="sr-only">Título de la tarea</span>
@@ -552,173 +561,175 @@ export function TaskDetailView({
             </label>
           </FlashWrap>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <section
+            aria-label="Detalles"
+            className="flex flex-wrap items-center gap-2"
+          >
             <FlashWrap
               tick={flash.status}
-              className="w-fit rounded-full border-transparent"
+              className="max-w-full rounded-full border-transparent"
             >
-              <button
-                type="button"
-                aria-haspopup="dialog"
+              <PropertyChip
+                label={`Estado: ${STATUS_LABELS[task.status]}`}
+                icon={<StatusDot status={task.status} />}
+                tone="var(--tone)"
                 onClick={() => openSheet("status")}
-                className="inline-flex h-8 items-center gap-2 rounded-full bg-[color-mix(in_srgb,var(--tone)_13%,var(--raised))] pr-2.5 pl-3 text-ui font-medium transition-colors hover:bg-[color-mix(in_srgb,var(--tone)_20%,var(--raised))]"
               >
-                <StatusDot status={task.status} />
                 {STATUS_LABELS[task.status]}
-                <ChevronDownIcon className="-mr-0.5 text-muted" />
-              </button>
+              </PropertyChip>
+            </FlashWrap>
+
+            <FlashWrap
+              tick={flash.dueDate}
+              className="max-w-full rounded-full border-transparent"
+            >
+              <PropertyChip
+                label={
+                  task.dueDate
+                    ? `Fecha: ${formatDueDateWithWeekday(task.dueDate)}`
+                    : "Fecha: sin fecha"
+                }
+                icon={<CalendarIcon className="text-current" />}
+                tone={overdue ? "var(--danger)" : undefined}
+                onClick={() => openSheet("due")}
+              >
+                {task.dueDate ? (
+                  <span className="truncate">
+                    {formatDueDateWithWeekday(task.dueDate)}
+                    {dueOffset !== null && !done && (
+                      <span
+                        className={
+                          overdue ? "text-danger" : "font-normal text-muted"
+                        }
+                      >
+                        {" "}
+                        · {formatDayOffset(dueOffset)}
+                      </span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="font-normal text-muted">Sin fecha</span>
+                )}
+              </PropertyChip>
+            </FlashWrap>
+
+            <FlashWrap
+              tick={flash.priority}
+              className="max-w-full rounded-full border-transparent"
+            >
+              <PropertyChip
+                label={`Prioridad: ${formatPriority(priority)}`}
+                icon={<FlagIcon className="text-current" />}
+                onClick={() => openSheet("priority")}
+              >
+                <span className="tabular">{formatPriority(priority)}</span>
+              </PropertyChip>
+            </FlashWrap>
+
+            <FlashWrap
+              tick={flash.progress}
+              className="max-w-full rounded-full border-transparent"
+            >
+              <PropertyChip
+                label={`Avance: ${progressDraft} %`}
+                icon={
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      background: `conic-gradient(var(--tone) ${progressDraft}%, var(--line-strong) 0)`,
+                    }}
+                    className="flex size-4 shrink-0 items-center justify-center rounded-full"
+                  >
+                    <span className="size-2 rounded-full bg-raised" />
+                  </span>
+                }
+                onClick={() => openSheet("progress")}
+              >
+                <span className="tabular">{progressDraft} %</span>
+              </PropertyChip>
             </FlashWrap>
 
             {readyToComplete && (
               <button
                 type="button"
                 onClick={() => pickStatus("completada")}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-status-done px-3.5 text-ui font-semibold text-accent-ink transition-opacity hover:opacity-90"
+                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-status-done px-3.5 text-ui font-semibold text-accent-ink transition-opacity hover:opacity-90"
               >
                 <CheckIcon />
                 Marcar completada
               </button>
             )}
-          </div>
 
-          <div>
-            <FlashWrap
-              tick={flash.description}
-              className="rounded-xl border-transparent"
-            >
-              {editingDescription ? (
-                <label className="block">
-                  <span className="sr-only">Descripción</span>
-                  <textarea
-                    ref={descriptionRef}
-                    // biome-ignore lint/a11y/noAutofocus: the user just tapped the text to edit it
-                    autoFocus
-                    value={description}
-                    placeholder="Añade notas, contexto, enlaces…"
-                    onFocus={(e) => {
-                      const end = e.currentTarget.value.length;
-                      e.currentTarget.setSelectionRange(end, end);
-                    }}
-                    onChange={(e) => {
-                      setDescription(e.target.value);
-                      autosize(e.target);
-                    }}
-                    onBlur={commitDescription}
-                    onKeyDown={(e) => {
-                      if (e.key === "Escape") {
-                        e.preventDefault();
-                        cancelDescriptionEdit.current = true;
-                        e.currentTarget.blur();
-                      }
-                    }}
-                    rows={2}
-                    className="-mx-2 block min-h-14 w-[calc(100%+1rem)] resize-none overflow-hidden rounded-xl bg-sunken/70 px-2 py-1.5 text-[15px] leading-6 caret-accent outline-none placeholder:text-muted/80"
-                  />
-                </label>
-              ) : (
-                <button
-                  type="button"
-                  aria-label="Editar la descripción"
-                  onClick={() => setEditingDescription(true)}
-                  className="-mx-2 block min-h-11 w-[calc(100%+1rem)] rounded-xl px-2 py-1.5 text-left text-[15px] leading-6 break-words whitespace-pre-wrap transition-colors hover:bg-sunken/60"
+            {done && task.completedAt && (
+              <FlashWrap
+                tick={flash.completedAt}
+                className="max-w-full rounded-full border-transparent"
+              >
+                <PropertyChip
+                  label={`Finalizada el ${formatDueDate(task.completedAt)}`}
+                  icon={<CheckIcon className="text-current" />}
+                  tone="var(--status-done)"
+                  onClick={() => openSheet("completion")}
                 >
-                  {description || (
-                    <span className="text-muted/80">
-                      Añade notas, contexto, enlaces…
-                    </span>
-                  )}
-                </button>
-              )}
-            </FlashWrap>
-          </div>
+                  Finalizada el {formatDueDate(task.completedAt)}
+                </PropertyChip>
+              </FlashWrap>
+            )}
+          </section>
         </header>
 
-        <section
-          aria-label="Detalles"
-          className="rounded-3xl bg-raised p-1.5 shadow-panel"
-        >
+        <section aria-label="Descripción" className="mt-3">
           <FlashWrap
-            tick={flash.dueDate}
-            className="rounded-2xl border-transparent"
+            tick={flash.description}
+            className="rounded-xl border-transparent"
           >
-            <PropertyButton
-              icon={<CalendarIcon className="text-current" />}
-              danger={overdue}
-              onClick={() => openSheet("due")}
-            >
-              {task.dueDate ? (
-                <span className="min-w-0 truncate">
-                  <span className="font-medium">
-                    {formatDueDateWithWeekday(task.dueDate)}
-                  </span>
-                  {dueOffset !== null && !done && (
-                    <span className={overdue ? "" : "text-muted"}>
-                      {" "}
-                      · {formatDayOffset(dueOffset)}
-                    </span>
-                  )}
-                </span>
-              ) : (
-                <span className="text-muted">Sin fecha</span>
-              )}
-            </PropertyButton>
-          </FlashWrap>
-
-          <FlashWrap
-            tick={flash.priority}
-            className="rounded-2xl border-transparent"
-          >
-            <PropertyButton
-              icon={<FlagIcon className="text-current" />}
-              onClick={() => openSheet("priority")}
-            >
-              <span className="font-medium">
-                Prioridad {formatPriority(priority)}
-              </span>
-            </PropertyButton>
-          </FlashWrap>
-
-          <FlashWrap
-            tick={flash.progress}
-            className="rounded-2xl border-transparent"
-          >
-            <PropertyButton
-              icon={<ProgressGaugeIcon className="text-current" />}
-              onClick={() => openSheet("progress")}
-            >
-              <span className="tabular font-medium">
-                {progressDraft} % completado
-              </span>
-              <span
-                aria-hidden="true"
-                className="ml-auto h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-line-strong/50"
-              >
-                <span
-                  style={{ width: `${progressDraft}%` }}
-                  className="block h-full rounded-full bg-(--tone) transition-[width] duration-300"
+            {editingDescription ? (
+              <label className="block">
+                <span className="sr-only">Descripción</span>
+                <textarea
+                  ref={descriptionRef}
+                  // biome-ignore lint/a11y/noAutofocus: the user just tapped the text to edit it
+                  autoFocus
+                  value={description}
+                  placeholder="Añade notas, contexto, enlaces…"
+                  onFocus={(e) => {
+                    const end = e.currentTarget.value.length;
+                    e.currentTarget.setSelectionRange(end, end);
+                  }}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    autosize(e.target);
+                  }}
+                  onBlur={commitDescription}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      cancelDescriptionEdit.current = true;
+                      e.currentTarget.blur();
+                    }
+                  }}
+                  rows={2}
+                  className="-mx-2 block min-h-14 w-[calc(100%+1rem)] resize-none overflow-hidden rounded-xl bg-sunken/70 px-2 py-1.5 text-[15px] leading-6 caret-accent outline-none placeholder:text-muted/80"
                 />
-              </span>
-            </PropertyButton>
-          </FlashWrap>
-
-          {done && task.completedAt && (
-            <FlashWrap
-              tick={flash.completedAt}
-              className="rounded-2xl border-transparent"
-            >
-              <PropertyButton
-                icon={<CheckIcon className="text-current" />}
-                onClick={() => openSheet("completion")}
+              </label>
+            ) : (
+              <button
+                type="button"
+                aria-label="Editar la descripción"
+                onClick={() => setEditingDescription(true)}
+                className="-mx-2 block min-h-11 w-[calc(100%+1rem)] rounded-xl px-2 py-1.5 text-left text-[15px] leading-6 break-words whitespace-pre-wrap transition-colors hover:bg-sunken/60"
               >
-                <span className="font-medium">
-                  Finalizada el {formatDueDate(task.completedAt)}
-                </span>
-              </PropertyButton>
-            </FlashWrap>
-          )}
+                {description || (
+                  <span className="text-muted/80">
+                    Añade notas, contexto, enlaces…
+                  </span>
+                )}
+              </button>
+            )}
+          </FlashWrap>
         </section>
 
-        <section className="flex flex-col gap-4" aria-label="Bitácora">
+        <section className="mt-3 flex flex-col gap-4" aria-label="Bitácora">
           <h2 className="text-[15px] font-semibold">
             Bitácora
             {comments.length > 0 && (
