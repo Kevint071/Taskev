@@ -208,7 +208,8 @@ function PropertyChip({
 function autosize(el: HTMLTextAreaElement | null) {
   if (!el) return;
   el.style.height = "auto";
-  el.style.height = `${el.scrollHeight}px`;
+  const borderHeight = el.offsetHeight - el.clientHeight;
+  el.style.height = `${el.scrollHeight + borderHeight}px`;
 }
 
 function centerTextareaEnd(el: HTMLTextAreaElement | null) {
@@ -265,6 +266,7 @@ export function TaskDetailView({
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [description, setDescription] = useState(task.description ?? "");
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
   const [progressDraft, setProgressDraft] = useState(task.progressPct);
   const [showAllLog, setShowAllLog] = useState(false);
@@ -332,7 +334,7 @@ export function TaskDetailView({
     const el = descriptionRef.current;
     autosize(el);
     if (document.activeElement === el) centerTextareaEnd(el);
-  }, [description]);
+  }, [description, descriptionExpanded]);
 
   // A task still being created has no comments on the server yet.
   const serverId = isTempId(task.id) ? null : task.id;
@@ -687,7 +689,30 @@ export function TaskDetailView({
         </header>
 
         <section aria-label="Descripción" className="mt-3">
-          <h2 className="mb-2 text-ui font-semibold text-ink">Descripción</h2>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-ui font-semibold text-ink">Descripción</h2>
+            <button
+              type="button"
+              aria-label={
+                descriptionExpanded
+                  ? "Contraer descripción"
+                  : "Expandir descripción"
+              }
+              aria-expanded={descriptionExpanded}
+              aria-controls="task-description"
+              title={
+                descriptionExpanded
+                  ? "Contraer descripción"
+                  : "Expandir descripción"
+              }
+              onClick={() => setDescriptionExpanded((expanded) => !expanded)}
+              className="flex size-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-sunken hover:text-ink"
+            >
+              <ChevronDownIcon
+                className={`size-4 transition-transform ${descriptionExpanded ? "rotate-180" : ""}`}
+              />
+            </button>
+          </div>
           <FlashWrap
             tick={flash.description}
             className="rounded-xl border-transparent"
@@ -695,6 +720,7 @@ export function TaskDetailView({
             <label className="block">
               <span className="sr-only">Descripción</span>
               <textarea
+                id="task-description"
                 ref={descriptionRef}
                 value={description}
                 placeholder="Añade notas, contexto, enlaces…"
@@ -712,7 +738,7 @@ export function TaskDetailView({
                   }
                 }}
                 rows={3}
-                className="description-scrollbar block min-h-24 max-h-[min(40dvh,32rem)] w-full resize-none overflow-y-auto rounded-xl border border-line-strong bg-raised px-3 py-2.5 text-[15px] leading-6 text-ink caret-accent transition-colors placeholder:text-muted/80 hover:border-ink/30 focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/15"
+                className={`description-scrollbar block min-h-24 w-full resize-none overflow-y-auto rounded-xl border border-line bg-sunken/55 px-4 py-3 text-[15px] leading-7 text-ink caret-accent transition-[background-color,border-color,box-shadow] placeholder:text-muted/80 hover:border-line-strong focus:border-accent focus:bg-raised focus-visible:ring-2 focus-visible:ring-accent/15 ${descriptionExpanded ? "max-h-[440px]" : "max-h-[160px]"}`}
               />
             </label>
           </FlashWrap>
