@@ -20,6 +20,11 @@
   --status-blocked: #c0392b;
   --status-paused: #b8860b;
   --status-done: #2f8a5b;
+  /* Bright solid toast fills carrying dark text; shared by both themes. */
+  --toast-warning: #f5c542;
+  --toast-warning-ink: #2b2206;
+  --toast-error: #f47c6c;
+  --toast-error-ink: #2a0d08;
   --shadow-panel: 0 1px 2px rgba(26, 35, 50, 0.04);
   color-scheme: light;
 }
@@ -215,42 +220,76 @@
   animation: sheet-up 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* A toast dropping in from the top edge with a slight overshoot. */
+/* A toast sliding in from the right edge, overshooting and settling back. */
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(-14px) scale(0.94);
+    transform: translateX(calc(100% + 2rem));
   }
-  60% {
+  65% {
     opacity: 1;
-    transform: translateY(2px) scale(1.01);
+    transform: translateX(-6px);
   }
   to {
-    transform: translateY(0) scale(1);
+    transform: translateX(0);
   }
 }
 
 @utility animate-toast-in {
-  animation: toast-in 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: toast-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* The toast's icon popping in just after the toast lands. */
-@keyframes toast-icon {
-  from {
+/* A toast easing back out to the right. */
+@keyframes toast-out {
+  to {
     opacity: 0;
-    transform: scale(0.4) rotate(-24deg);
+    transform: translateX(calc(100% + 2rem)) scale(0.96);
+  }
+}
+
+@utility animate-toast-out {
+  animation: toast-out 320ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+/* The toast's label icon shaking "no" once the toast has landed. */
+@keyframes toast-wiggle {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20% {
+    transform: rotate(-16deg);
+  }
+  40% {
+    transform: rotate(13deg);
   }
   60% {
-    opacity: 1;
-    transform: scale(1.15) rotate(8deg);
+    transform: rotate(-9deg);
   }
-  to {
-    transform: scale(1) rotate(0);
+  80% {
+    transform: rotate(5deg);
   }
 }
 
-@utility animate-toast-icon {
-  animation: toast-icon 520ms cubic-bezier(0.34, 1.56, 0.64, 1) 120ms both;
+@utility animate-toast-wiggle {
+  animation: toast-wiggle 520ms ease-in-out 600ms;
+}
+
+/* The toast's text lines trailing the card in from the right. */
+@keyframes toast-text {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@utility animate-toast-text {
+  animation: toast-text 460ms cubic-bezier(0.22, 1, 0.36, 1)
+    var(--toast-text-delay, 0ms) both;
 }
 
 /* The toast's remaining time, shrinking toward the left. */
@@ -440,7 +479,7 @@
   border-radius: 999px;
 }
 
-/* The landing animation is the product demo: it keeps its motion ([data-motion-ok]) and has its own pause button. */
+/* The landing animation is the product demo (it has its own pause button) and toasts use motion as feedback: both keep their motion ([data-motion-ok]). */
 @media (prefers-reduced-motion: reduce) {
   *:not([data-motion-ok], [data-motion-ok] *),
   *:not([data-motion-ok], [data-motion-ok] *)::before,

@@ -16,7 +16,7 @@ import { BackIcon, PlusIcon } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { EmptyState, LoadingRows, Panel } from "@/components/ui/panel";
 import { type SyncState, SyncStatus } from "@/components/ui/sync-status";
-import { Toast, type ToastState } from "@/components/ui/toast";
+import { Toast, type ToastState, type ToastTone } from "@/components/ui/toast";
 import { handleUnauthenticated } from "@/lib/api-client";
 import { MAX_TASK_TITLE_LENGTH } from "@/lib/constraints";
 import { orderProjectTasks, sameTaskIdSequence } from "@/lib/relevance";
@@ -39,7 +39,6 @@ export default function ProjectDetailPage() {
   const [addingTask, setAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [syncError, setSyncError] = useState<string | null>(null);
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [toast, setToast] = useState<ToastState>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -62,8 +61,8 @@ export default function ProjectDetailPage() {
     setError(null);
   }
 
-  function showToast(message: string) {
-    setToast({ id: Date.now(), message });
+  function showToast(message: string, tone: ToastTone = "warning") {
+    setToast({ id: Date.now(), message, tone });
   }
 
   async function load() {
@@ -89,6 +88,9 @@ export default function ProjectDetailPage() {
   // queue drains, reload so what you see is what was stored.
   const resyncRef = useRef(false);
   const pendingRef = useRef(0);
+  // Whether a save failed since the queue was last idle, so the status never
+  // claims "saved" for a batch that lost changes.
+  const failedRef = useRef(false);
   const [queue] = useState<SyncQueue>(() =>
     createSyncQueue({
       onError: (err) => {
@@ -96,17 +98,24 @@ export default function ProjectDetailPage() {
           window.location.href = "/login";
           return;
         }
-        setSyncError(
+        showToast(
           err instanceof ApiError
             ? `${err.message}. Recargamos el proyecto para mostrar lo guardado.`
             : "Sin conexión con el servidor. Recargamos el proyecto para mostrar lo guardado.",
+          "error",
         );
+        failedRef.current = true;
         resyncRef.current = true;
       },
       onPendingChange: (pending) => {
         pendingRef.current = pending;
-        setSyncState(pending > 0 ? "saving" : "saved");
-        if (pending === 0 && resyncRef.current) {
+        if (pending > 0) {
+          setSyncState("saving");
+          return;
+        }
+        setSyncState(failedRef.current ? "error" : "saved");
+        failedRef.current = false;
+        if (resyncRef.current) {
           resyncRef.current = false;
           loadRef.current();
         }
@@ -172,6 +181,12 @@ export default function ProjectDetailPage() {
       setError("Escribe un título para la tarea");
       return;
     }
+    // Offline the creation can only fail: keep the title typed instead of
+    // showing a row that would never be saved.
+    if (!navigator.onLine) {
+      showToast("Sin conexión. La tarea no se añadió.", "error");
+      return;
+    }
     setError(null);
     const key = tempId();
     const now = new Date().toISOString();
@@ -198,11 +213,16 @@ export default function ProjectDetailPage() {
     newTaskInputRef.current?.focus();
 
     queue.create(key, async () => {
-      const created = await sendJson<Task>(
-        `/api/projects/${id}/tasks`,
-        "POST",
-        { title },
-      );
+      let created: Task;
+      try {
+        created = await sendJson<Task>(`/api/projects/${id}/tasks`, "POST", {
+          title,
+        });
+      } catch (err) {
+        // The row was never stored: drop it rather than leave it pending.
+        updateTasks((prev) => prev.filter((t) => t.key !== key));
+        throw err;
+      }
       const withCreatedTask = updateTasks((prev) =>
         prev.map((t) =>
           t.key === key
@@ -400,22 +420,6 @@ export default function ProjectDetailPage() {
           <PlusIcon />
           Añadir tarea
         </Button>
-      )}
-
-      {syncError && (
-        <div
-          role="alert"
-          className="flex items-start justify-between gap-3 rounded-control border border-danger/30 bg-danger/10 px-3 py-2 text-danger"
-        >
-          <span>{syncError}</span>
-          <button
-            type="button"
-            onClick={() => setSyncError(null)}
-            className="shrink-0 rounded-[4px] text-meta font-medium hover:underline"
-          >
-            Cerrar
-          </button>
-        </div>
       )}
 
       {tasks.length === 0 ? (

@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckIcon } from "@/components/ui/icons";
+import { CheckIcon, TriangleAlertIcon } from "@/components/ui/icons";
 
-export type SyncState = "idle" | "saving" | "saved";
+export type SyncState = "idle" | "saving" | "saved" | "error";
 
 const SAVED_VISIBLE_MS = 2000;
 
-/** "Guardando…" while changes are in flight, then a "Cambios guardados" check that fades away. */
+/**
+ * "Guardando…" while changes are in flight, then a "Cambios guardados" check
+ * that fades away, or a lasting "Sin guardar" when a change failed.
+ */
 export function SyncStatus({ state }: { state: SyncState }) {
   const [savedFaded, setSavedFaded] = useState(false);
 
@@ -29,7 +32,9 @@ export function SyncStatus({ state }: { state: SyncState }) {
           ? "Guardando…"
           : state === "saved"
             ? "Cambios guardados"
-            : undefined
+            : state === "error"
+              ? "Hubo cambios que no se guardaron"
+              : undefined
       }
       className={`flex items-center gap-1.5 text-meta text-muted transition-opacity duration-500 ${
         state === "saved" && savedFaded ? "opacity-0" : ""
@@ -48,6 +53,12 @@ export function SyncStatus({ state }: { state: SyncState }) {
         <>
           <CheckIcon className="text-status-done" />
           <span className={labelClassName}>Cambios guardados</span>
+        </>
+      )}
+      {state === "error" && (
+        <>
+          <TriangleAlertIcon className="size-3.5 text-danger" />
+          <span className={`${labelClassName} text-danger`}>Sin guardar</span>
         </>
       )}
     </p>

@@ -7,7 +7,7 @@ import {
   TaskDetailView,
   type TaskUpdates,
 } from "@/components/task-detail/task-detail-view";
-import { Toast, type ToastState } from "@/components/ui/toast";
+import { Toast, type ToastState, type ToastTone } from "@/components/ui/toast";
 import {
   ApiError,
   createSyncQueue,
@@ -28,8 +28,8 @@ export function TaskDetailPageClient({
   const [toast, setToast] = useState<ToastState>(null);
   const [deleting, setDeleting] = useState(false);
 
-  function showToast(message: string) {
-    setToast({ id: Date.now(), message });
+  function showToast(message: string, tone: ToastTone = "warning") {
+    setToast({ id: Date.now(), message, tone });
   }
 
   const [queue] = useState<SyncQueue>(() =>
@@ -43,6 +43,7 @@ export function TaskDetailPageClient({
           err instanceof ApiError
             ? err.message
             : "Sin conexión con el servidor.",
+          "error",
         );
       },
     }),
@@ -78,6 +79,7 @@ export function TaskDetailPageClient({
       setDeleting(false);
       showToast(
         err instanceof ApiError ? err.message : "No se pudo eliminar la tarea.",
+        "error",
       );
     }
   }
