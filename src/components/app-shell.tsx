@@ -83,10 +83,13 @@ export function AppShell({
   // edge, so the phone tab bar steps aside.
   const focusScreen = /^\/projects\/[^/]+\/tasks\/[^/]+/.test(pathname);
 
+  // The focus screen is pinned to the window instead of sized with `h-dvh`:
+  // installed Android apps resolve `dvh` too tall on a fresh load (until the
+  // next rotation), which pushed the composer below the visible edge.
   return (
     <div
       className={`flex min-w-0 ${
-        focusScreen ? "h-dvh flex-none" : "min-h-dvh flex-1"
+        focusScreen ? "fixed inset-0" : "min-h-dvh flex-1"
       }`}
     >
       {/* Desktop sidebar */}
@@ -142,6 +145,7 @@ export function AppShell({
       {/* Mobile tab bar */}
       <nav
         aria-label="Principal"
+        data-bottom-bar=""
         className={`fixed inset-x-0 bottom-0 z-10 grid-cols-4 border-t border-line bg-raised/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden ${
           focusScreen ? "hidden" : "grid"
         }`}

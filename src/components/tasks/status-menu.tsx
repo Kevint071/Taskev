@@ -1,16 +1,20 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { STATUS_LABELS, type Task } from "@/components/project-types";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CheckIcon, LockIcon, RefreshIcon } from "@/components/ui/icons";
 import { Popover } from "@/components/ui/popover";
 import { STATUS_DOT } from "@/components/ui/status-badge";
 import { formatDueDate } from "@/lib/format";
+import { type MenuPlacement, menuPlacement } from "@/lib/menu-placement";
 import { canCompleteAtProgress, statusTransition } from "@/lib/progress";
 
 const STATUS_ORDER = Object.keys(STATUS_LABELS) as Task["status"][];
+
+// Matches the menu's `mt-1.5` / `mb-1.5` offset from its trigger.
+const MENU_GAP_PX = 6;
 
 export type StatusChange = {
   status: Task["status"];
@@ -52,6 +56,29 @@ export function StatusMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [placement, setPlacement] = useState<MenuPlacement>("bottom");
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLFieldSetElement>(null);
+
+  // Measured before paint so a menu near the phone tab bar opens upward
+  // instead of covering it.
+  useLayoutEffect(() => {
+    const anchor = anchorRef.current;
+    const menu = menuRef.current;
+    if (!open || !anchor || !menu) return;
+    const rect = anchor.getBoundingClientRect();
+    const bar = document
+      .querySelector("[data-bottom-bar]")
+      ?.getBoundingClientRect();
+    const bottomLimit = bar && bar.height > 0 ? bar.top : window.innerHeight;
+    setPlacement(
+      menuPlacement({
+        spaceAbove: rect.top - MENU_GAP_PX,
+        spaceBelow: bottomLimit - rect.bottom - MENU_GAP_PX,
+        menuHeight: menu.offsetHeight,
+      }),
+    );
+  }, [open]);
 
   function setMenuOpen(next: boolean) {
     setOpen(next);
@@ -101,12 +128,19 @@ export function StatusMenu({
             className="fixed inset-0 z-0 cursor-default bg-transparent"
           />
         )}
-        <div className="relative z-10">
+        <div ref={anchorRef} className="relative z-10">
           {trigger({ open, toggle: () => setMenuOpen(!open) })}
           {open && (
             <fieldset
-              className="animate-menu-in pointer-events-auto absolute left-0 top-full z-50 m-0 mt-1.5 flex min-w-44 flex-col gap-0.5 rounded-control border border-line-strong bg-raised p-1 shadow-lg"
-              style={{ backgroundColor: "var(--raised)" }}
+              ref={menuRef}
+              className={`animate-menu-in pointer-events-auto absolute left-0 z-50 m-0 flex min-w-44 flex-col gap-0.5 rounded-control border border-line-strong bg-raised p-1 shadow-lg ${
+                placement === "top" ? "bottom-full mb-1.5" : "top-full mt-1.5"
+              }`}
+              style={{
+                backgroundColor: "var(--raised)",
+                transformOrigin:
+                  placement === "top" ? "bottom left" : undefined,
+              }}
             >
               <legend className="sr-only">Cambiar estado</legend>
               {STATUS_ORDER.map((s) => {

@@ -91,7 +91,10 @@ export function TaskRow({
       <Popover
         open={completePromptOpen}
         onClose={() => setCompletePromptOpen(false)}
-        className={statusMenuOpen || completePromptOpen ? "z-50" : "z-30"}
+        // At rest it only needs to clear the row link's overlay; open, it only
+        // needs to clear the other rows. Either way it stays under the fixed
+        // tab bar (z-10) so an open menu scrolls beneath it.
+        className={statusMenuOpen || completePromptOpen ? "z-5" : "z-1"}
       >
         <StatusMenu
           status={task.status}
