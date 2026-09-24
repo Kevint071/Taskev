@@ -207,9 +207,13 @@ function PropertyChip({
 
 function autosize(el: HTMLTextAreaElement | null) {
   if (!el) return;
+  // Measure without a scrollbar: at the collapsed "auto" height one appears,
+  // narrows the text, and the extra wrapping leaves a phantom blank line.
+  el.style.overflowY = "hidden";
   el.style.height = "auto";
   const borderHeight = el.offsetHeight - el.clientHeight;
   el.style.height = `${el.scrollHeight + borderHeight}px`;
+  el.style.overflowY = "";
 }
 
 function centerTextareaEnd(el: HTMLTextAreaElement | null) {
