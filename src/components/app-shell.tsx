@@ -84,7 +84,11 @@ export function AppShell({
   const focusScreen = /^\/projects\/[^/]+\/tasks\/[^/]+/.test(pathname);
 
   return (
-    <div className="flex min-w-0 min-h-dvh flex-1">
+    <div
+      className={`flex min-w-0 ${
+        focusScreen ? "h-dvh flex-none" : "min-h-dvh flex-1"
+      }`}
+    >
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-[232px] shrink-0 flex-col border-r border-line bg-raised px-3 py-4 md:flex">
         <Link href="/" className="mb-6 w-fit rounded-control px-2 py-1">
@@ -107,7 +111,7 @@ export function AppShell({
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 min-h-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex h-14 items-center justify-end border-b border-line bg-surface/90 px-4 backdrop-blur md:px-10">
           <Link
             href="/"
@@ -119,11 +123,19 @@ export function AppShell({
         </header>
 
         <main
-          className={`mx-auto flex min-w-0 w-full max-w-[880px] flex-1 flex-col gap-8 px-4 md:px-10 md:pt-10 ${
-            focusScreen ? "pt-3 pb-0" : "pt-6 pb-28 md:pb-16"
+          className={`flex min-w-0 w-full flex-1 flex-col gap-8 ${
+            focusScreen
+              ? "min-h-0 overflow-y-auto overscroll-contain px-0 pt-0 pb-0"
+              : "mx-auto max-w-[880px] px-4 pt-6 pb-28 md:px-10 md:pt-10 md:pb-16"
           }`}
         >
-          {children}
+          {focusScreen ? (
+            <div className="mx-auto flex w-full max-w-[880px] flex-1 flex-col gap-8 px-4 pt-3 pb-0 md:px-10 md:pt-10">
+              {children}
+            </div>
+          ) : (
+            children
+          )}
         </main>
       </div>
 

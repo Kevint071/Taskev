@@ -40,7 +40,7 @@ export default async function TaskDetailPage({
   };
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <TaskDetailPageClient
         initialTask={task}
         back={resolveBack(from, project)}
