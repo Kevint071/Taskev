@@ -27,7 +27,6 @@ export function useProjectDetail(id: string) {
   const tasksRef = useRef<LocalTask[]>([]);
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [toast, setToast] = useState<ToastState>(null);
-  const [deleting, setDeleting] = useState(false);
 
   function showToast(message: string, tone: ToastTone = "warning") {
     setToast({ id: Date.now(), message, tone });
@@ -232,35 +231,14 @@ export function useProjectDetail(id: string) {
     saveRemote(key, updates);
   }
 
-  function toggleArchive() {
-    if (!project) return;
-    const archived = !project.archivedAt;
-    setProject({
-      ...project,
-      archivedAt: archived ? new Date().toISOString() : null,
-    });
-    queue.run(`project:${id}`, async () => {
-      await sendJson(`/api/projects/${id}`, "PATCH", { archived });
-    });
-  }
-
-  async function deleteProject() {
-    setDeleting(true);
-    await fetch(`/api/projects/${id}`, { method: "DELETE" });
-    router.push("/projects");
-  }
-
   return {
     project,
     tasks,
     syncState,
     toast,
-    deleting,
     showToast,
     dismissToast,
     addTask,
     updateTask,
-    toggleArchive,
-    deleteProject,
   };
 }

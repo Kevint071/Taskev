@@ -6,10 +6,14 @@ export function ProjectGrid({
   projects,
   loading,
   showArchived,
+  onUpdated,
+  onError,
 }: {
   projects: ProjectSummary[];
   loading: boolean;
   showArchived: boolean;
+  onUpdated: () => void;
+  onError: (message: string) => void;
 }) {
   if (loading) {
     return (
@@ -46,7 +50,7 @@ export function ProjectGrid({
     <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {projects.map((p) => (
         <li key={p.id}>
-          <ProjectCard project={p} />
+          <ProjectCard project={p} onUpdated={onUpdated} onError={onError} />
         </li>
       ))}
     </ul>

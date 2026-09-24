@@ -82,6 +82,7 @@ export function AppShell({
   // A single task is a focus screen: it pins its own composer to the bottom
   // edge, so the phone tab bar steps aside.
   const focusScreen = /^\/projects\/[^/]+\/tasks\/[^/]+/.test(pathname);
+  const projectDetailScreen = /^\/projects\/[^/]+\/?$/.test(pathname);
 
   // The focus screen is pinned to the window instead of sized with `h-dvh`:
   // installed Android apps resolve `dvh` too tall on a fresh load (until the
@@ -129,7 +130,9 @@ export function AppShell({
           className={`flex min-w-0 w-full flex-1 flex-col gap-8 ${
             focusScreen
               ? "min-h-0 overflow-y-auto overscroll-contain px-0 pt-0 pb-0"
-              : "mx-auto max-w-[880px] px-4 pt-6 pb-28 md:px-10 md:pt-10 md:pb-16"
+              : `mx-auto max-w-[880px] px-4 pb-28 md:px-10 md:pb-16 ${
+                  projectDetailScreen ? "pt-4 md:pt-7" : "pt-6 md:pt-10"
+                }`
           }`}
         >
           {focusScreen ? (

@@ -8,10 +8,12 @@ import { useProjects } from "@/components/projects/use-projects";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/panel";
+import { Toast, type ToastState } from "@/components/ui/toast";
 
 export default function ProjectsPage() {
   const [showArchived, setShowArchived] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [toast, setToast] = useState<ToastState>(null);
   const { projects, loading, reload } = useProjects(showArchived);
 
   function handleCreated() {
@@ -51,8 +53,13 @@ export default function ProjectsPage() {
           projects={projects}
           loading={loading}
           showArchived={showArchived}
+          onUpdated={reload}
+          onError={(message) =>
+            setToast({ id: Date.now(), message, tone: "error" })
+          }
         />
       </section>
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
     </>
   );
 }

@@ -1,6 +1,5 @@
 import type { Project } from "@/components/project-types";
 import { BackLink } from "@/components/projects/back-link";
-import { Button } from "@/components/ui/button";
 import { type SyncState, SyncStatus } from "@/components/ui/sync-status";
 
 export function ProjectDetailHeader({
@@ -8,15 +7,11 @@ export function ProjectDetailHeader({
   taskCount,
   openCount,
   syncState,
-  onToggleArchive,
-  onDelete,
 }: {
   project: Project;
   taskCount: number;
   openCount: number;
   syncState: SyncState;
-  onToggleArchive: () => void;
-  onDelete: () => void;
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -26,7 +21,7 @@ export function ProjectDetailHeader({
           <SyncStatus state={syncState} />
         </span>
       </div>
-      <header className="flex flex-wrap items-start justify-between gap-4">
+      <header>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-page font-semibold break-words">
@@ -46,14 +41,6 @@ export function ProjectDetailHeader({
               ? "Sin tareas"
               : `${openCount} abiertas de ${taskCount}`}
           </p>
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" onClick={onToggleArchive}>
-            {project.archivedAt ? "Desarchivar" : "Archivar"}
-          </Button>
-          <Button size="sm" variant="danger" onClick={onDelete}>
-            Eliminar
-          </Button>
         </div>
       </header>
     </div>
