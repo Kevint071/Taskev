@@ -1,9 +1,7 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 import { LocalDate } from "@/components/local-date";
 import { TaskSection } from "@/components/task-section";
 import { ButtonLink } from "@/components/ui/button";
-import { CalendarIcon, CheckIcon, FlameIcon } from "@/components/ui/icons";
 import { EmptyState, Panel } from "@/components/ui/panel";
 import { StatusDot } from "@/components/ui/status-badge";
 import {
@@ -15,7 +13,8 @@ import { taskHref } from "@/lib/back-navigation";
 import { getRecentComments } from "@/lib/data/activity";
 import { getUserTaskOverview, type OverviewTask } from "@/lib/data/overview";
 import { formatDueDate, formatRelativeTime, truncateWords } from "@/lib/format";
-import { buildTodayMetrics, buildTodaySections } from "@/lib/today";
+import { buildTodaySections } from "@/lib/today";
+import { TodayMetrics } from "./today-metrics";
 
 const UNPLANNED_PREVIEW_LIMIT = 3;
 const ACTIVITY_LIMIT = 5;
@@ -49,9 +48,10 @@ export async function TodayDashboard({
   const unplanned = openTasks.filter(
     (t) => !t.dueDate && Number(t.priority) === 0,
   );
-  const metrics = buildTodayMetrics(
-    tasks.filter((t) => t.status === "completada").map((t) => t.completedAt),
-    now,
+  const completedAt = tasks.flatMap((t) =>
+    t.status === "completada" && t.completedAt
+      ? [t.completedAt.toISOString()]
+      : [],
   );
 
   return (
@@ -68,9 +68,7 @@ export async function TodayDashboard({
         </p>
       </header>
 
-      {(metrics.completedToday > 0 ||
-        metrics.completedThisWeek > 0 ||
-        metrics.streak > 0) && <MetricsBar metrics={metrics} />}
+      <TodayMetrics completedAt={completedAt} serverNow={now.toISOString()} />
 
       {top.length > 0 ? (
         <TopTasks tasks={top} />
@@ -219,75 +217,6 @@ function SecondaryTile({ task, rank }: { task: OverviewTask; rank: number }) {
         </span>
       </div>
     </Link>
-  );
-}
-
-function MetricsBar({
-  metrics,
-}: {
-  metrics: {
-    completedToday: number;
-    completedThisWeek: number;
-    streak: number;
-  };
-}) {
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <p className="text-meta font-medium text-muted dark:text-white">
-          Tu progreso
-        </p>
-        {metrics.streak > 0 && (
-          <span className="tabular inline-flex items-center gap-1.5 rounded-full bg-sunken py-1.5 pl-2 pr-3 text-[13px] font-bold">
-            <FlameIcon className="size-[18px]" />
-            {metrics.streak}
-          </span>
-        )}
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <MetricCell
-          label="completadas hoy"
-          value={metrics.completedToday}
-          tint="rgba(111, 197, 154, 0.16)"
-          icon={<CheckIcon className="size-[17px] text-status-done" />}
-        />
-        <MetricCell
-          label="esta semana"
-          value={metrics.completedThisWeek}
-          tint="rgba(143, 164, 245, 0.16)"
-          icon={<CalendarIcon className="size-[17px] text-accent" />}
-        />
-      </div>
-    </div>
-  );
-}
-
-function MetricCell({
-  label,
-  value,
-  icon,
-  tint,
-}: {
-  label: string;
-  value: number;
-  icon: ReactNode;
-  tint: string;
-}) {
-  return (
-    <div className="flex min-w-0 items-center gap-3 rounded-panel bg-sunken p-3 dark:bg-[#1a1e26]">
-      <span
-        className="flex size-9 shrink-0 items-center justify-center rounded-full"
-        style={{ backgroundColor: tint }}
-      >
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <p className="tabular text-[19px] font-semibold leading-tight tracking-tight">
-          {value}
-        </p>
-        <p className="truncate text-[11px] leading-tight text-muted">{label}</p>
-      </div>
-    </div>
   );
 }
 
