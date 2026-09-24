@@ -1,10 +1,8 @@
 "use client";
 
 import { type CSSProperties, useEffect, useRef, useState } from "react";
-import { STATUS_LABELS, type Task } from "@/components/project-types";
 import { CalendarPanel } from "@/components/ui/calendar-panel";
-import { CheckIcon, MinusIcon, PlusIcon } from "@/components/ui/icons";
-import { STATUS_TONE, StatusDot } from "@/components/ui/status-badge";
+import { MinusIcon, PlusIcon } from "@/components/ui/icons";
 import {
   addDaysUtc,
   daysBetweenUtc,
@@ -13,13 +11,7 @@ import {
   todayUtcMidnight,
 } from "@/lib/calendar";
 import { formatDueDateWithWeekday, formatPriority } from "@/lib/format";
-import {
-  blockedFromDisponible,
-  canCompleteAtProgress,
-  PROGRESS_MAX,
-  PROGRESS_MIN,
-  PROGRESS_STEP,
-} from "@/lib/progress";
+import { PROGRESS_MAX, PROGRESS_MIN, PROGRESS_STEP } from "@/lib/progress";
 
 const pillClass =
   "inline-flex h-8 shrink-0 items-center rounded-full border border-line-strong bg-raised px-3 text-meta font-medium transition-colors hover:bg-surface";
@@ -54,89 +46,6 @@ export function ProgressSlider({
       style={{ "--p": value / PROGRESS_MAX } as CSSProperties}
       className="progress-slider"
     />
-  );
-}
-
-/* ----------------------------------------------------------------- Estado */
-
-const STATUS_ORDER = Object.keys(STATUS_LABELS) as Task["status"][];
-
-/** Why a status can't be picked right now, or null when it can. */
-function lockReason(
-  status: Task["status"],
-  progressPct: number,
-  completedAt: string | null,
-): string | null {
-  if (status === "disponible") {
-    const blocked = blockedFromDisponible(progressPct, completedAt);
-    if (blocked === "progress") {
-      return "Disponible vuelve al bajar el avance a 0 %.";
-    }
-    if (blocked === "completedAt") {
-      return "Disponible vuelve tras pasar por otro estado.";
-    }
-  }
-  if (status === "completada" && !canCompleteAtProgress(progressPct)) {
-    return `Completada se desbloquea al llegar a 100 % (falta ${PROGRESS_MAX - progressPct} %).`;
-  }
-  return null;
-}
-
-/**
- * The five statuses as a single-choice list. A status that can't be picked yet
- * stays dimmed and says why right under its name, since the sheet covers the toasts.
- */
-export function StatusOptions({
-  status,
-  progressPct,
-  completedAt,
-  onPick,
-}: {
-  status: Task["status"];
-  progressPct: number;
-  completedAt: string | null;
-  onPick: (status: Task["status"]) => void;
-}) {
-  return (
-    <fieldset className="m-0 flex min-w-0 flex-col gap-0.5 border-0 p-0">
-      <legend className="sr-only">Estado</legend>
-      {STATUS_ORDER.map((s) => {
-        const current = status === s;
-        const reason = current ? null : lockReason(s, progressPct, completedAt);
-        return (
-          <button
-            key={s}
-            type="button"
-            aria-pressed={current}
-            disabled={reason !== null}
-            onClick={() => onPick(s)}
-            style={{ "--tone": STATUS_TONE[s] } as CSSProperties}
-            className={`flex min-h-13 items-center gap-3 rounded-2xl px-3 py-2 text-left transition-colors ${
-              current
-                ? "bg-[color-mix(in_srgb,var(--tone)_13%,var(--raised))]"
-                : "enabled:hover:bg-sunken"
-            } ${reason ? "cursor-not-allowed" : ""}`}
-          >
-            <span className={reason ? "opacity-50" : ""}>
-              <StatusDot status={s} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span
-                className={`block text-[15px] leading-6 ${
-                  current ? "font-semibold" : "font-medium"
-                } ${reason ? "text-muted/70" : ""}`}
-              >
-                {STATUS_LABELS[s]}
-              </span>
-              {reason && (
-                <span className="block text-meta text-muted">{reason}</span>
-              )}
-            </span>
-            {current && <CheckIcon className="text-(--tone)" />}
-          </button>
-        );
-      })}
-    </fieldset>
   );
 }
 

@@ -1,3 +1,5 @@
+import type { TaskStatus } from "./constraints";
+
 export const PROGRESS_MIN = 0;
 export const PROGRESS_MAX = 100;
 export const PROGRESS_STEP = 10;
@@ -40,4 +42,38 @@ export function blockedFromDisponible(
   if (progressPct !== PROGRESS_MIN) return "progress";
   if (completedAt) return "completedAt";
   return null;
+}
+
+export const COMPLETE_BLOCKED_MESSAGE =
+  "El avance debe estar al 100 % para completar la tarea.";
+
+export type StatusTransition =
+  | { kind: "none" }
+  | { kind: "apply" }
+  | { kind: "confirmReset" }
+  | { kind: "needCompletionDate" }
+  | { kind: "blocked"; message: string };
+
+/**
+ * What picking `next` should do for a task in its current state: nothing,
+ * apply it right away, confirm resetting progress back to "disponible", ask for
+ * a completion date, or refuse with a message.
+ */
+export function statusTransition(
+  next: TaskStatus,
+  task: { status: TaskStatus; progressPct: number; completedAt: unknown },
+): StatusTransition {
+  if (next === task.status) return { kind: "none" };
+  if (next === "completada") {
+    return canCompleteAtProgress(task.progressPct)
+      ? { kind: "needCompletionDate" }
+      : { kind: "blocked", message: COMPLETE_BLOCKED_MESSAGE };
+  }
+  if (
+    next === "disponible" &&
+    blockedFromDisponible(task.progressPct, task.completedAt)
+  ) {
+    return { kind: "confirmReset" };
+  }
+  return { kind: "apply" };
 }

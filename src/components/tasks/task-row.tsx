@@ -3,15 +3,14 @@ import { useState } from "react";
 import { STATUS_LABELS, type Task } from "@/components/project-types";
 import { ProgressRing } from "@/components/task-section";
 import { CalendarPanel } from "@/components/ui/calendar-panel";
-import { CalendarIcon, CheckIcon, FlagIcon } from "@/components/ui/icons";
-import { Select } from "@/components/ui/input";
+import { CalendarIcon, FlagIcon } from "@/components/ui/icons";
 import { Popover } from "@/components/ui/popover";
-import { STATUS_DOT, STATUS_TONE } from "@/components/ui/status-badge";
+import { STATUS_TONE } from "@/components/ui/status-badge";
 import { type BackSource, taskHref } from "@/lib/back-navigation";
 import { daysBetweenUtc, todayUtcMidnight } from "@/lib/calendar";
 import { formatDueRelative, formatPriority } from "@/lib/format";
-import { blockedFromDisponible, canCompleteAtProgress } from "@/lib/progress";
 import { isTempId } from "@/lib/sync-queue";
+import { type StatusChange, StatusMenu } from "./status-menu";
 
 const DUE_CHIP_TONE = {
   danger: "text-danger",
@@ -27,10 +26,7 @@ const CHIP =
 
 export type TaskRowTask = Task & { projectName?: string };
 
-export type TaskStatusChange = {
-  status: Task["status"];
-  completedAt: string | null;
-};
+export type TaskStatusChange = StatusChange;
 
 /**
  * One task: title, then a project/due-date/priority line, on the left,
@@ -59,7 +55,7 @@ export function TaskRow({
   showProgress?: boolean;
   /** Vertically centers the progress ring at desktop widths. */
   centerProgressOnDesktop?: boolean;
-  /** Shows the editable status as an unframed metadata control. */
+  /** Project page layout: wrapping meta line, no strike-through when done. */
   inlineProjectStatus?: boolean;
   /** Hides the project-name meta text, e.g. inside that project's own page. */
   showProject?: boolean;
@@ -85,71 +81,40 @@ export function TaskRow({
   const [completePromptOpen, setCompletePromptOpen] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
 
-  function handleStatusSelect(next: Task["status"]) {
-    if (!onStatusChange) return;
-    if (next === "completada") {
-      if (!canCompleteAtProgress(task.progressPct)) {
-        onBlocked?.("Sube el avance al 100% para poder completar la tarea.");
-        return;
-      }
-      setCompletePromptOpen(true);
-      return;
-    }
-    if (next === "disponible") {
-      const blocked = blockedFromDisponible(task.progressPct, task.completedAt);
-      if (blocked === "progress") {
-        onBlocked?.("Baja el avance a 0% antes de pasarla a disponible.");
-        return;
-      }
-      if (blocked === "completedAt") {
-        onBlocked?.(
-          "Esta tarea todavía tiene fecha de finalización. Cambia antes a otro estado.",
-        );
-        return;
-      }
-    }
-    onStatusChange({ status: next, completedAt: null });
-  }
-
   function confirmComplete(date: Date) {
     setCompletePromptOpen(false);
     onStatusChange?.({ status: "completada", completedAt: date.toISOString() });
   }
 
-  function renderStatusControl(inline: boolean) {
+  function renderStatusControl() {
     return (
       <Popover
-        open={completePromptOpen || (inline && statusMenuOpen)}
-        onClose={() => {
-          setCompletePromptOpen(false);
-          setStatusMenuOpen(false);
-        }}
-        className={inline && statusMenuOpen ? "z-50" : inline ? "z-30" : "z-10"}
+        open={completePromptOpen}
+        onClose={() => setCompletePromptOpen(false)}
+        className={statusMenuOpen || completePromptOpen ? "z-50" : "z-30"}
       >
-        {inline && statusMenuOpen && (
-          <button
-            type="button"
-            aria-label="Cerrar menú de estados"
-            tabIndex={-1}
-            onClick={() => setStatusMenuOpen(false)}
-            className="fixed inset-0 z-0 cursor-default bg-transparent"
-          />
-        )}
-        {inline ? (
-          <div className="relative z-10">
+        <StatusMenu
+          status={task.status}
+          progressPct={task.progressPct}
+          completedAt={task.completedAt}
+          onChange={(change) => onStatusChange?.(change)}
+          onComplete={() => setCompletePromptOpen(true)}
+          onBlocked={(message) => onBlocked?.(message)}
+          onOpenChange={setStatusMenuOpen}
+          trigger={({ open, toggle }) => (
             <button
               type="button"
               aria-label={`Estado: ${STATUS_LABELS[task.status]}`}
               aria-haspopup="true"
-              aria-expanded={statusMenuOpen}
-              onClick={() => setStatusMenuOpen((open) => !open)}
+              aria-expanded={open}
+              onClick={toggle}
               className="inline-flex items-center gap-1 whitespace-nowrap rounded-sm text-meta font-medium text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               {STATUS_LABELS[task.status]}
               <svg
                 aria-hidden="true"
                 viewBox="0 0 20 20"
-                className="size-3"
+                className={`size-3 transition-transform ${open ? "rotate-180" : ""}`}
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.6"
@@ -159,82 +124,8 @@ export function TaskRow({
                 <path d="M5.5 8l4.5 4.5L14.5 8" />
               </svg>
             </button>
-            {statusMenuOpen && (
-              <fieldset
-                className="pointer-events-auto absolute left-0 top-full z-50 m-0 mt-1.5 flex min-w-40 flex-col gap-0.5 rounded-control border border-line-strong bg-raised p-1 shadow-lg"
-                style={{ backgroundColor: "var(--raised)" }}
-              >
-                <legend className="sr-only">Cambiar estado</legend>
-                {(Object.keys(STATUS_LABELS) as Task["status"][]).map(
-                  (status) => {
-                    const current = task.status === status;
-                    return (
-                      <button
-                        key={status}
-                        type="button"
-                        aria-pressed={current}
-                        onClick={() => {
-                          setStatusMenuOpen(false);
-                          handleStatusSelect(status);
-                        }}
-                        className={`flex min-h-9 w-full items-center gap-2 rounded-control px-2.5 text-left text-meta transition-colors ${
-                          current
-                            ? "bg-sunken font-semibold text-ink"
-                            : "text-ink hover:bg-sunken"
-                        }`}
-                      >
-                        <span
-                          aria-hidden="true"
-                          className={`size-2.5 shrink-0 rounded-full ${STATUS_DOT[status]}`}
-                        />
-                        <span className="min-w-0 flex-1">
-                          {STATUS_LABELS[status]}
-                        </span>
-                        {current && (
-                          <CheckIcon className="size-4 text-accent" />
-                        )}
-                      </button>
-                    );
-                  },
-                )}
-              </fieldset>
-            )}
-          </div>
-        ) : (
-          // biome-ignore lint/a11y/noLabelWithoutControl: wraps the Select component
-          <label className="relative z-10 hidden shrink-0 items-center sm:flex">
-            <span className="sr-only">Estado</span>
-            <span
-              aria-hidden="true"
-              className={`pointer-events-none absolute left-2.5 size-2 rounded-full ${STATUS_DOT[task.status]}`}
-            />
-            <Select
-              value={task.status}
-              onChange={(e) =>
-                handleStatusSelect(e.target.value as Task["status"])
-              }
-              className="h-8 w-auto min-w-0 border-transparent bg-transparent pr-5 pl-6 text-meta sm:w-32 sm:min-w-[6.5rem] sm:border-line-strong sm:bg-raised sm:pr-7"
-            >
-              {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              className="pointer-events-none absolute right-2 size-3 text-muted"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5.5 8l4.5 4.5L14.5 8" />
-            </svg>
-          </label>
-        )}
+          )}
+        />
         {completePromptOpen && (
           <div className="absolute right-0 top-full z-20 mt-1.5">
             <p className="mb-1.5 px-1 text-meta font-medium text-muted">
@@ -304,7 +195,7 @@ export function TaskRow({
               <span className="sr-only">Guardando</span>
             </span>
           ) : null}
-          {editable && inlineProjectStatus ? renderStatusControl(true) : null}
+          {editable ? renderStatusControl() : null}
           {task.dueDate ? (
             <span className={`${CHIP} shrink-0 ${DUE_CHIP_TONE[dueTone]}`}>
               <CalendarIcon className="size-3.5" />
@@ -335,17 +226,6 @@ export function TaskRow({
           />
         </span>
       ) : null}
-
-      {editable && !inlineProjectStatus && (
-        <>
-          <span
-            title={STATUS_LABELS[task.status]}
-            aria-hidden="true"
-            className={`size-2.5 shrink-0 rounded-full ${STATUS_DOT[task.status]} sm:hidden`}
-          />
-          {renderStatusControl(false)}
-        </>
-      )}
     </li>
   );
 }

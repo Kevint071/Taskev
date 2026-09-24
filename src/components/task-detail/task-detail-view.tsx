@@ -8,6 +8,7 @@ import {
   type Task,
   type TaskComment,
 } from "@/components/project-types";
+import { type StatusChange, StatusMenu } from "@/components/tasks/status-menu";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
@@ -30,14 +31,13 @@ import {
   formatPriority,
   formatTime,
 } from "@/lib/format";
-import { canCompleteAtProgress, PROGRESS_MAX } from "@/lib/progress";
+import { PROGRESS_MAX } from "@/lib/progress";
 import { isTempId, type SyncQueue, sendJson, tempId } from "@/lib/sync-queue";
 import {
   CompletionPicker,
   DuePicker,
   PriorityStepper,
   ProgressSlider,
-  StatusOptions,
 } from "./task-pickers";
 
 /** Task shape used within a `SyncQueue`-backed screen: `key` is stable across id resolution. */
@@ -66,10 +66,9 @@ type FlashKey =
   | "description";
 
 /** Each property opens its own contextual sheet instead of sitting on the page as an input. */
-type SheetKey = "status" | "due" | "priority" | "progress" | "completion";
+type SheetKey = "due" | "priority" | "progress" | "completion";
 
 const SHEET_TITLES: Record<SheetKey, string> = {
-  status: "Estado",
   due: "Fecha",
   priority: "Prioridad",
   progress: "Avance",
@@ -167,6 +166,7 @@ function PropertyChip({
   tone,
   label,
   appearance = "default",
+  expanded,
   onClick,
   children,
 }: {
@@ -176,13 +176,16 @@ function PropertyChip({
   appearance?: "default" | "quiet" | "select";
   /** Accessible name, since the visible text is only the value. */
   label: string;
+  /** Set when the chip opens a dropdown menu instead of a sheet. */
+  expanded?: boolean;
   onClick: () => void;
   children: ReactNode;
 }) {
   return (
     <button
       type="button"
-      aria-haspopup="dialog"
+      aria-haspopup={expanded === undefined ? "dialog" : "true"}
+      aria-expanded={expanded}
       aria-label={label}
       onClick={onClick}
       style={tone ? ({ "--chip": tone } as CSSProperties) : undefined}
@@ -275,7 +278,7 @@ export function TaskDetailView({
   const [progressDraft, setProgressDraft] = useState(task.progressPct);
   const [showAllLog, setShowAllLog] = useState(false);
   // `sheet` outlives `sheetOpen` so the title doesn't blank while the sheet closes.
-  const [sheet, setSheet] = useState<SheetKey>("status");
+  const [sheet, setSheet] = useState<SheetKey>("due");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -435,24 +438,20 @@ export function TaskDetailView({
     progressSave.schedule(next);
   }
 
-  function pickStatus(next: Task["status"]) {
-    if (next === task.status) {
-      closeSheet();
-      return;
-    }
+  function changeStatus(change: StatusChange) {
     // The status change must reach the server after the progress it depends on.
     progressSave.flush();
-    if (next === "completada") {
-      if (!canCompleteAtProgress(progressDraft)) {
-        onBlocked("Sube el avance al 100% para poder completar la tarea.");
-        return;
-      }
-      openSheet("completion");
-      return;
+    if (change.progressPct !== undefined) {
+      setProgressDraft(change.progressPct);
+      bumpFlash("progress");
     }
-    setSheetOpen(false);
-    onUpdate({ status: next, completedAt: null });
+    onUpdate(change);
     bumpFlash("status");
+  }
+
+  function requestCompletion() {
+    progressSave.flush();
+    openSheet("completion");
   }
 
   function saveCompletion(date: Date) {
@@ -500,7 +499,7 @@ export function TaskDetailView({
   return (
     <div
       style={{ "--tone": STATUS_TONE[task.status] } as CSSProperties}
-      className="flex w-full max-w-[640px] flex-1 flex-col"
+      className="mx-auto flex w-full max-w-[640px] flex-1 flex-col 2xl:max-w-[800px]"
     >
       <div className="-mx-2 flex h-11 items-center justify-between">
         {back ? (
@@ -589,15 +588,26 @@ export function TaskDetailView({
               tick={flash.status}
               className="max-w-full rounded-full border-transparent"
             >
-              <PropertyChip
-                label={`Estado: ${STATUS_LABELS[task.status]}`}
-                icon={<StatusDot status={task.status} />}
-                tone="var(--tone)"
-                appearance="select"
-                onClick={() => openSheet("status")}
-              >
-                {STATUS_LABELS[task.status]}
-              </PropertyChip>
+              <StatusMenu
+                status={task.status}
+                progressPct={progressDraft}
+                completedAt={task.completedAt}
+                onChange={changeStatus}
+                onComplete={requestCompletion}
+                onBlocked={onBlocked}
+                trigger={({ open, toggle }) => (
+                  <PropertyChip
+                    label={`Estado: ${STATUS_LABELS[task.status]}`}
+                    icon={<StatusDot status={task.status} />}
+                    tone="var(--tone)"
+                    appearance="select"
+                    expanded={open}
+                    onClick={toggle}
+                  >
+                    {STATUS_LABELS[task.status]}
+                  </PropertyChip>
+                )}
+              />
             </FlashWrap>
 
             <FlashWrap
@@ -666,7 +676,7 @@ export function TaskDetailView({
             {readyToComplete && (
               <button
                 type="button"
-                onClick={() => pickStatus("completada")}
+                onClick={requestCompletion}
                 className="inline-flex h-9 items-center gap-1.5 rounded-full bg-status-done px-3.5 text-ui font-semibold text-accent-ink transition-opacity hover:opacity-90"
               >
                 <CheckIcon />
@@ -850,14 +860,6 @@ export function TaskDetailView({
         title={SHEET_TITLES[sheet]}
         onClose={closeSheet}
       >
-        {sheetOpen && sheet === "status" && (
-          <StatusOptions
-            status={task.status}
-            progressPct={progressDraft}
-            completedAt={task.completedAt}
-            onPick={pickStatus}
-          />
-        )}
         {sheetOpen && sheet === "due" && (
           <DuePicker value={task.dueDate} onPick={saveDueDate} />
         )}
@@ -887,10 +889,7 @@ export function TaskDetailView({
             {readyToComplete && (
               <button
                 type="button"
-                onClick={() => {
-                  progressSave.flush();
-                  pickStatus("completada");
-                }}
+                onClick={requestCompletion}
                 className="mt-2 inline-flex h-11 items-center justify-center gap-2 rounded-full bg-status-done px-5 text-ui font-semibold text-accent-ink transition-opacity hover:opacity-90"
               >
                 <CheckIcon />

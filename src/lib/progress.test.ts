@@ -5,6 +5,7 @@ import {
   canCompleteAtProgress,
   clampProgress,
   parseProgressInput,
+  statusTransition,
   stepProgress,
 } from "./progress";
 
@@ -55,4 +56,60 @@ test("blockedFromDisponible blocks on leftover progress, even with a completion 
 
 test("blockedFromDisponible blocks on a leftover completion date once progress is already 0", () => {
   assert.equal(blockedFromDisponible(0, "2026-01-01T00:00:00Z"), "completedAt");
+});
+
+const untouched = {
+  status: "en_curso" as const,
+  progressPct: 0,
+  completedAt: null,
+};
+
+test("statusTransition does nothing when picking the current status", () => {
+  assert.deepEqual(statusTransition("en_curso", untouched), { kind: "none" });
+});
+
+test("statusTransition applies disponible directly on an untouched task", () => {
+  assert.deepEqual(statusTransition("disponible", untouched), {
+    kind: "apply",
+  });
+});
+
+test("statusTransition asks to confirm a reset when leftover progress exists", () => {
+  assert.deepEqual(
+    statusTransition("disponible", { ...untouched, progressPct: 40 }),
+    { kind: "confirmReset" },
+  );
+});
+
+test("statusTransition asks to confirm a reset when a completion date exists", () => {
+  assert.deepEqual(
+    statusTransition("disponible", {
+      status: "completada",
+      progressPct: 100,
+      completedAt: "2026-01-01T00:00:00Z",
+    }),
+    { kind: "confirmReset" },
+  );
+});
+
+test("statusTransition blocks completada below 100%", () => {
+  const result = statusTransition("completada", {
+    ...untouched,
+    progressPct: 70,
+  });
+  assert.equal(result.kind, "blocked");
+});
+
+test("statusTransition asks for a completion date at 100%", () => {
+  assert.deepEqual(
+    statusTransition("completada", { ...untouched, progressPct: 100 }),
+    { kind: "needCompletionDate" },
+  );
+});
+
+test("statusTransition applies any other status directly", () => {
+  assert.deepEqual(
+    statusTransition("bloqueada", { ...untouched, progressPct: 60 }),
+    { kind: "apply" },
+  );
 });

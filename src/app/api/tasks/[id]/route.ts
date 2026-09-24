@@ -132,7 +132,7 @@ export async function PATCH(request: Request, { params }: Params) {
     } else if (updates.status === "disponible") {
       const blocked = blockedFromDisponible(
         resultingProgress,
-        guard.task.completedAt,
+        resultingCompletedAt,
       );
       if (blocked === "progress") {
         return NextResponse.json(

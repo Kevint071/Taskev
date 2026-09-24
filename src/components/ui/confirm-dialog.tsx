@@ -5,9 +5,22 @@ import { Button } from "./button";
 import { TriangleAlertIcon } from "./icons";
 import { Input } from "./input";
 
+const TONES = {
+  danger: {
+    badge: "bg-danger/10 text-danger",
+    button: "danger-solid",
+  },
+  warning: {
+    badge:
+      "bg-[color-mix(in_srgb,var(--status-paused)_16%,var(--raised))] text-status-paused ring-4 ring-[color-mix(in_srgb,var(--status-paused)_8%,transparent)]",
+    button: "primary",
+  },
+} as const;
+
 /**
  * Native <dialog> confirmation. When `confirmText` is set, the confirm button
- * stays disabled until the user types exactly that text.
+ * stays disabled until the user types exactly that text. `tone` switches the
+ * destructive red look for a softer warning one.
  */
 export function ConfirmDialog({
   open,
@@ -17,6 +30,8 @@ export function ConfirmDialog({
   confirmText,
   confirmTextLabel,
   pending = false,
+  tone = "danger",
+  icon,
   onConfirm,
   onClose,
 }: {
@@ -27,6 +42,9 @@ export function ConfirmDialog({
   confirmText?: string;
   confirmTextLabel?: ReactNode;
   pending?: boolean;
+  tone?: keyof typeof TONES;
+  /** Replaces the default alert icon in the badge. */
+  icon?: ReactNode;
   onConfirm: () => void;
   onClose: () => void;
 }) {
@@ -64,8 +82,10 @@ export function ConfirmDialog({
         }}
       >
         <div className="flex items-start gap-3.5">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-danger/10 text-danger">
-            <TriangleAlertIcon className="size-5" />
+          <span
+            className={`flex size-10 shrink-0 items-center justify-center rounded-full ${TONES[tone].badge}`}
+          >
+            {icon ?? <TriangleAlertIcon className="size-5" />}
           </span>
           <div className="min-w-0 flex-1 pt-1">
             <h2 className="text-section font-semibold">{title}</h2>
@@ -88,7 +108,11 @@ export function ConfirmDialog({
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit" variant="danger-solid" disabled={!canConfirm}>
+          <Button
+            type="submit"
+            variant={TONES[tone].button}
+            disabled={!canConfirm}
+          >
             {pending ? "Un momento…" : confirmLabel}
           </Button>
         </div>

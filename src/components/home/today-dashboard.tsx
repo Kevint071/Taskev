@@ -144,7 +144,7 @@ function HeroTile({ task }: { task: OverviewTask }) {
   return (
     <Link
       href={taskHref(task.projectId, task.id, "hoy")}
-      className="group relative col-span-full block overflow-hidden rounded-panel border border-line bg-accent-soft p-5 transition-colors dark:border-black/10 dark:bg-[#13151b] md:p-6"
+      className="group relative col-span-full block overflow-hidden rounded-panel border border-line bg-accent-soft p-5 transition-colors dark:border-white/10 dark:bg-[#13151b] md:p-6"
     >
       <span
         aria-hidden="true"
