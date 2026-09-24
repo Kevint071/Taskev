@@ -3,7 +3,7 @@ import type {
   TaskUpdates,
 } from "@/components/task-detail/task-detail-view";
 import { TaskRow } from "@/components/tasks/task-row";
-import { EmptyState, Panel } from "@/components/ui/panel";
+import { EmptyState } from "@/components/ui/panel";
 
 /** The project's tasks split into incomplete and completed groups. */
 export function ProjectTaskList({
@@ -51,11 +51,9 @@ export function ProjectTaskList({
           <h2 className="text-meta font-medium text-muted">
             Tareas incompletas
           </h2>
-          <Panel>
-            <ul className="divide-y divide-line">
-              {incompleteTasks.map((task) => renderTaskRow(task))}
-            </ul>
-          </Panel>
+          <ul className="flex flex-col gap-2">
+            {incompleteTasks.map((task) => renderTaskRow(task))}
+          </ul>
         </div>
       )}
       {completedTasks.length > 0 && (
@@ -63,11 +61,9 @@ export function ProjectTaskList({
           <h2 className="text-meta font-medium text-muted">
             Tareas completadas
           </h2>
-          <Panel>
-            <ul className="divide-y divide-line">
-              {completedTasks.map((task) => renderTaskRow(task))}
-            </ul>
-          </Panel>
+          <ul className="flex flex-col gap-2">
+            {completedTasks.map((task) => renderTaskRow(task))}
+          </ul>
         </div>
       )}
     </div>

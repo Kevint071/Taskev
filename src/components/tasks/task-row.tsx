@@ -161,7 +161,7 @@ export function TaskRow({
 
   return (
     <li
-      className={`relative flex items-center gap-x-2 py-3 pr-4 pl-3.5 transition-colors first:rounded-t-panel last:rounded-b-panel lg:gap-x-3 ${creating ? "" : "hover:bg-sunken"}`}
+      className={`relative flex items-center gap-x-2 pr-4 pl-3.5 transition-colors lg:gap-x-3 ${inlineProjectStatus ? "rounded-lg border border-line bg-raised py-2 shadow-panel lg:py-3 dark:border-white/10 dark:bg-[#101217] dark:hover:bg-[#1b2028]" : "py-3 first:rounded-t-panel last:rounded-b-panel"} ${creating ? "" : "hover:bg-sunken"}`}
     >
       <span
         aria-hidden="true"
@@ -183,8 +183,10 @@ export function TaskRow({
           </Link>
         )}
         <div
-          className={`mt-0.5 flex min-w-0 items-center gap-1.5 text-meta text-muted ${
-            inlineProjectStatus ? "flex-wrap gap-y-1" : ""
+          className={`flex min-w-0 items-center gap-1.5 text-meta text-muted ${
+            inlineProjectStatus
+              ? "flex-wrap gap-y-0.5 lg:gap-y-1 lg:mt-0.5"
+              : "mt-0.5"
           }`}
         >
           {showProject && task.projectName ? (
@@ -200,7 +202,9 @@ export function TaskRow({
           ) : null}
           {editable ? renderStatusControl() : null}
           {task.dueDate ? (
-            <span className={`${CHIP} shrink-0 ${DUE_CHIP_TONE[dueTone]}`}>
+            <span
+              className={`${CHIP} ${inlineProjectStatus ? "h-5 lg:h-6" : ""} shrink-0 ${DUE_CHIP_TONE[dueTone]}`}
+            >
               <CalendarIcon className="size-3.5" />
               {formatDueRelative(task.dueDate, now)}
             </span>
@@ -208,7 +212,7 @@ export function TaskRow({
           {hasPriority ? (
             <span
               title={`Prioridad ${formatPriority(priority)}`}
-              className={`${CHIP} ${task.dueDate ? "-ml-2" : ""} shrink-0 text-muted`}
+              className={`${CHIP} ${inlineProjectStatus ? "h-5 lg:h-6" : ""} ${task.dueDate ? "-ml-2" : ""} shrink-0 text-muted`}
             >
               <FlagIcon className="size-3.5" />
               {formatPriority(priority)}
