@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { SETTINGS_TABS, settingsHref } from "@/lib/settings-tabs";
 
 type NavItem = {
   href: string;
@@ -57,18 +58,6 @@ const NAV: NavItem[] = [
       </svg>
     ),
   },
-  {
-    href: "/settings",
-    label: "Ajustes",
-    match: (p) => p.startsWith("/settings"),
-    icon: (
-      <svg {...iconProps} aria-hidden="true">
-        <path d="M4 6h7M15 6h1M4 14h1M9 14h7" />
-        <circle cx="13" cy="6" r="1.9" />
-        <circle cx="7" cy="14" r="1.9" />
-      </svg>
-    ),
-  },
 ];
 
 export function AppShell({
@@ -99,7 +88,7 @@ export function AppShell({
           <Brand />
         </Link>
         <nav aria-label="Principal" className="flex flex-col gap-0.5">
-          {NAV.slice(0, 3).map((item) => (
+          {NAV.map((item) => (
             <SideLink
               key={item.href}
               item={item}
@@ -107,12 +96,7 @@ export function AppShell({
             />
           ))}
         </nav>
-        <div className="mt-auto flex flex-col gap-3">
-          <div className="border-t border-line pt-3">
-            <SideLink item={NAV[3]} active={NAV[3].match(pathname)} />
-          </div>
-          <ThemeToggle compact className="w-full" />
-        </div>
+        <ThemeToggle compact className="mt-auto w-full" />
       </aside>
 
       <div className="flex min-w-0 min-h-0 flex-1 flex-col">
@@ -149,7 +133,7 @@ export function AppShell({
       <nav
         aria-label="Principal"
         data-bottom-bar=""
-        className={`fixed inset-x-0 bottom-0 z-10 grid-cols-4 border-t border-line bg-raised/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden ${
+        className={`fixed inset-x-0 bottom-0 z-10 grid-cols-3 border-t border-line bg-raised/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden ${
           focusScreen ? "hidden" : "grid"
         }`}
       >
@@ -196,6 +180,14 @@ function SideLink({ item, active }: { item: NavItem; active: boolean }) {
     </Link>
   );
 }
+
+// Account deletion stays one step deeper, behind the settings tabs.
+const MENU_SETTINGS_TABS = SETTINGS_TABS.filter(
+  (tab) => tab.value !== "cuenta",
+);
+
+const menuItemClass =
+  "flex w-full rounded-control px-3 py-2 text-left text-ui text-muted hover:bg-sunken hover:text-ink";
 
 function UserMenu({ user }: { user: { email: string; name: string | null } }) {
   const [open, setOpen] = useState(false);
@@ -248,11 +240,24 @@ function UserMenu({ user }: { user: { email: string; name: string | null } }) {
               <p className="truncate text-meta text-muted">{user.email}</p>
             ) : null}
           </div>
+          <div className="border-b border-line py-1">
+            {MENU_SETTINGS_TABS.map((tab) => (
+              <Link
+                key={tab.value}
+                href={settingsHref(tab.value)}
+                role="menuitem"
+                onClick={() => setOpen(false)}
+                className={menuItemClass}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
           <button
             type="button"
             role="menuitem"
             onClick={() => signOut({ callbackUrl: "/" })}
-            className="mt-1 flex w-full rounded-control px-3 py-2 text-left text-ui text-muted hover:bg-sunken hover:text-ink"
+            className={`mt-1 ${menuItemClass}`}
           >
             Cerrar sesión
           </button>
