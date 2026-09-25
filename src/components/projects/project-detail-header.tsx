@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Project } from "@/components/project-types";
 import { BackLink } from "@/components/projects/back-link";
 import { type SyncState, SyncStatus } from "@/components/ui/sync-status";
@@ -7,11 +8,14 @@ export function ProjectDetailHeader({
   taskCount,
   openCount,
   syncState,
+  action,
 }: {
   project: Project;
   taskCount: number;
   openCount: number;
   syncState: SyncState;
+  /** Primary action shown beside the title. */
+  action?: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -21,7 +25,7 @@ export function ProjectDetailHeader({
           <SyncStatus state={syncState} />
         </span>
       </div>
-      <header>
+      <header className="flex items-start justify-between gap-6">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-page font-semibold break-words">
@@ -42,6 +46,7 @@ export function ProjectDetailHeader({
               : `${openCount} abiertas de ${taskCount}`}
           </p>
         </div>
+        {action && <div className="pt-1">{action}</div>}
       </header>
     </div>
   );

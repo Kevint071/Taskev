@@ -1,12 +1,20 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState } from "react";
-import { AddTaskForm } from "@/components/projects/add-task-form";
+import { useEffect, useState } from "react";
+import {
+  focusTaskComposer,
+  isNewTaskShortcut,
+  NewTaskButton,
+  NewTaskFab,
+  TaskComposer,
+} from "@/components/projects/add-task-form";
 import { BackLink } from "@/components/projects/back-link";
 import { ProjectDetailHeader } from "@/components/projects/project-detail-header";
 import { ProjectTaskList } from "@/components/projects/project-task-list";
 import { useProjectDetail } from "@/components/projects/use-project-detail";
+import { Button } from "@/components/ui/button";
+import { PlusIcon } from "@/components/ui/icons";
 import { LoadingRows } from "@/components/ui/panel";
 import { Toast } from "@/components/ui/toast";
 
@@ -23,6 +31,23 @@ export default function ProjectDetailPage() {
     updateTask,
   } = useProjectDetail(id);
   const [rowNow] = useState(() => new Date());
+  const [composing, setComposing] = useState(false);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (!isNewTaskShortcut(event)) return;
+      event.preventDefault();
+      setComposing(true);
+      focusTaskComposer();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  function openComposer() {
+    setComposing(true);
+    focusTaskComposer();
+  }
 
   if (!project) {
     return (
@@ -44,16 +69,36 @@ export default function ProjectDetailPage() {
         taskCount={tasks.length}
         openCount={openCount}
         syncState={syncState}
+        action={<NewTaskButton onClick={openComposer} />}
       />
 
-      <AddTaskForm onAdd={addTask} onTitleTooLong={showToast} />
+      {composing && (
+        <TaskComposer
+          onAdd={addTask}
+          onTitleTooLong={showToast}
+          onClose={() => setComposing(false)}
+        />
+      )}
 
       <ProjectTaskList
         tasks={tasks}
         now={rowNow}
         onTaskChange={updateTask}
         onBlocked={showToast}
+        emptyAction={
+          composing ? undefined : (
+            <Button variant="primary" onClick={openComposer}>
+              <PlusIcon />
+              Nueva tarea
+            </Button>
+          )
+        }
       />
+
+      {/* Room so the floating button never covers the last row. */}
+      <div aria-hidden="true" className="h-1 md:hidden" />
+      {/* An empty project already offers its own call to action. */}
+      {!composing && tasks.length > 0 && <NewTaskFab onClick={openComposer} />}
 
       <Toast toast={toast} onDismiss={dismissToast} />
     </>
