@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type {
   LocalTask,
   TaskUpdates,
@@ -11,17 +12,20 @@ export function ProjectTaskList({
   now,
   onTaskChange,
   onBlocked,
+  emptyAction,
 }: {
   tasks: LocalTask[];
   now: Date;
   onTaskChange: (key: string, updates: TaskUpdates) => void;
   onBlocked: (message: string) => void;
+  emptyAction?: ReactNode;
 }) {
   if (tasks.length === 0) {
     return (
       <EmptyState
         title="Este proyecto no tiene tareas"
-        description="Añade la primera con el botón de arriba."
+        description="Crea la primera y empieza a avanzar."
+        action={emptyAction}
       />
     );
   }
