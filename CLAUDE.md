@@ -18,3 +18,8 @@
 - No hay middleware de autenticación. La protección de páginas vive en `src/app/(app)/layout.tsx`; cada route handler de `src/app/api` debe validar propiedad con `requireOwnedProject`, `requireOwnedTask` o `requireUserId` de `src/lib/auth-guard.ts`. Una sesión JWT puede sobrevivir al borrado de una cuenta, por lo que el guard también comprueba que el usuario exista.
 - Las actualizaciones optimistas de tareas se serializan por tarea en `src/lib/sync-queue.ts`. Los IDs temporales `tmp-*` deben resolverse con `idFor` antes de llamar a la API.
 - Mantén en español los textos de UI y valores de dominio (por ejemplo, `disponible`, `en_curso`, `bloqueada`, `pausada`, `completada`); escribe el código y los comentarios en inglés.
+
+## Commits
+
+- El único autor de los commits es Kevin Torrecilla <andrestorrecilla.14@gmail.com>, tanto en author como en committer. Si la configuración de git del entorno tiene otra identidad (por ejemplo, `Claude <noreply@anthropic.com>` en sesiones remotas), sobrescríbela al hacer commit con `git -c user.name="Kevin Torrecilla" -c user.email="andrestorrecilla.14@gmail.com" commit ...`.
+- No añadas trailers `Co-Authored-By: Claude ...`, `Claude-Session: ...` ni ninguna otra atribución a Claude o Claude Code en los mensajes de commit.
