@@ -67,7 +67,7 @@ export default function GroupDetailPage() {
 
   function handleAdd(title: string): boolean {
     if (!addTask(title)) return false;
-    // New tasks have no due date yet: follow them to where they land.
+    // New tasks have no due date or priority yet: follow them to where they land.
     selectView("no_programadas");
     return true;
   }

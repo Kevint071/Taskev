@@ -28,23 +28,16 @@ test("groupTaskViewHref omits the param for the default view", () => {
 test("splitGroupTasks puts every task in exactly one view", () => {
   const due = "2026-09-30T00:00:00.000Z";
   const tasks = [
-    { id: "a", status: "disponible", dueDate: due },
-    { id: "b", status: "en_curso", dueDate: null },
-    { id: "c", status: "completada", dueDate: due },
-    { id: "d", status: "completada", dueDate: null },
-    { id: "e", status: "bloqueada", dueDate: due },
+    { id: "date", status: "disponible", dueDate: due, priority: "0" },
+    { id: "prio", status: "en_curso", dueDate: null, priority: "2.50" },
+    { id: "both", status: "bloqueada", dueDate: due, priority: "1" },
+    { id: "none", status: "pausada", dueDate: null, priority: "0.00" },
+    { id: "done-dated", status: "completada", dueDate: due, priority: "3" },
+    { id: "done-bare", status: "completada", dueDate: null, priority: "0" },
   ];
+  const ids = (list: { id: string }[]) => list.map((t) => t.id);
   const split = splitGroupTasks(tasks);
-  assert.deepEqual(
-    split.pendientes.map((t) => t.id),
-    ["a", "e"],
-  );
-  assert.deepEqual(
-    split.no_programadas.map((t) => t.id),
-    ["b"],
-  );
-  assert.deepEqual(
-    split.completadas.map((t) => t.id),
-    ["c", "d"],
-  );
+  assert.deepEqual(ids(split.pendientes), ["date", "prio", "both"]);
+  assert.deepEqual(ids(split.no_programadas), ["none"]);
+  assert.deepEqual(ids(split.completadas), ["done-dated", "done-bare"]);
 });

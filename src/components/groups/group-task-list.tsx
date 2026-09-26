@@ -16,16 +16,17 @@ const EMPTY_VIEW: Record<
   { title: string; description: string }
 > = {
   pendientes: {
-    title: "Nada pendiente con fecha",
-    description: "Las tareas abiertas con fecha límite aparecerán aquí.",
+    title: "Nada pendiente",
+    description:
+      "Las tareas abiertas con fecha límite o prioridad aparecerán aquí.",
   },
   completadas: {
     title: "Aún no hay tareas completadas",
     description: "Lo que termines en este grupo quedará aquí.",
   },
   no_programadas: {
-    title: "Todo tiene fecha",
-    description: "Las tareas abiertas sin fecha límite aparecerán aquí.",
+    title: "Todo está programado",
+    description: "Las tareas abiertas sin fecha ni prioridad aparecerán aquí.",
   },
 };
 

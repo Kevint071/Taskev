@@ -28,8 +28,8 @@ export function groupTaskPanelId(view: GroupTaskView) {
 }
 
 /**
- * Segmented control above a group's task list. A raised pill slides under
- * the active segment; each segment carries its view's count.
+ * Tabs above a group's task list, on a hairline rule. An underline in the
+ * active view's color slides between tabs; each tab carries its count.
  */
 export function GroupTaskTabs({
   active,
@@ -92,28 +92,16 @@ export function GroupTaskTabs({
     tabRefs.current.get(next)?.focus();
   }
 
+  const activeColor = VIEW_STYLE[active].color;
+
   return (
     <div
       ref={trackRef}
       role="tablist"
       aria-label="Filtrar tareas del grupo"
       onKeyDown={handleKeyDown}
-      className="relative flex w-full rounded-full border border-line bg-sunken p-1 md:inline-flex md:w-auto md:self-start"
+      className="relative flex w-full gap-1 border-b border-line md:gap-2"
     >
-      {indicator && (
-        <span
-          aria-hidden="true"
-          className={`absolute inset-y-1 left-0 rounded-full border border-line bg-raised shadow-[0_1px_3px_rgba(26,35,50,0.08),0_1px_1px_rgba(26,35,50,0.04)] dark:border-line-strong dark:shadow-none ${
-            animate
-              ? "transition-[transform,width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-              : ""
-          }`}
-          style={{
-            width: indicator.width,
-            transform: `translateX(${indicator.left}px)`,
-          }}
-        />
-      )}
       {GROUP_TASK_VIEWS.map((view) => {
         const selected = view.value === active;
         const { icon: Icon, color } = VIEW_STYLE[view.value];
@@ -132,35 +120,53 @@ export function GroupTaskTabs({
             aria-controls={groupTaskPanelId(view.value)}
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(view.value)}
-            className={`group relative z-10 flex h-9 min-w-0 flex-auto items-center justify-center gap-2 rounded-full px-2.5 text-meta font-medium transition-colors md:flex-none md:px-3.5 md:text-ui ${
+            className={`group flex h-11 min-w-0 flex-auto items-center justify-center text-meta font-medium transition-colors md:h-12 md:flex-none md:text-ui ${
               selected ? "text-ink" : "text-muted hover:text-ink"
             }`}
           >
-            <span
-              className="hidden transition-colors md:inline-flex"
-              style={{ color: selected ? color : undefined }}
-            >
-              <Icon className="size-4" />
-            </span>
-            <span className="truncate">{view.label}</span>
-            <span
-              className={`tabular hidden h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold transition-colors md:inline-flex ${
-                selected ? "" : "bg-line text-muted group-hover:text-ink"
-              }`}
-              style={
-                selected
-                  ? {
-                      backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`,
-                      color,
-                    }
-                  : undefined
-              }
-            >
-              {count}
+            {/* Hover chip sits above the rule, so the underline stays crisp. */}
+            <span className="flex min-w-0 items-center gap-2 rounded-control px-2 py-1.5 transition-colors group-hover:bg-sunken md:px-2.5">
+              <span
+                className="hidden transition-colors md:inline-flex"
+                style={{ color: selected ? color : undefined }}
+              >
+                <Icon className="size-4" />
+              </span>
+              <span className="truncate">{view.label}</span>
+              <span
+                className={`tabular hidden h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold transition-colors md:inline-flex ${
+                  selected ? "" : "bg-sunken text-muted group-hover:bg-line"
+                }`}
+                style={
+                  selected
+                    ? {
+                        backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`,
+                        color,
+                      }
+                    : undefined
+                }
+              >
+                {count}
+              </span>
             </span>
           </button>
         );
       })}
+      {indicator && (
+        <span
+          aria-hidden="true"
+          className={`absolute -bottom-px left-0 h-0.5 rounded-full ${
+            animate
+              ? "transition-[transform,width,background-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+              : ""
+          }`}
+          style={{
+            width: indicator.width,
+            transform: `translateX(${indicator.left}px)`,
+            backgroundColor: activeColor,
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -31,15 +31,21 @@ export function groupTaskViewHref(
     : `${base}?${GROUP_TASK_VIEW_PARAM}=${view}`;
 }
 
-type ViewTask = { status: string; dueDate: string | null };
+type ViewTask = {
+  status: string;
+  dueDate: string | null;
+  priority: string | number;
+};
 
 /**
- * Completed tasks go to "completadas" whatever their date; open tasks split
- * on whether they have a due date.
+ * Completed tasks go to "completadas" whatever else they carry. An open task
+ * with a due date or a priority is planned ("pendientes"); one with neither
+ * is still waiting to be scheduled ("no_programadas").
  */
 export function groupTaskViewOf(task: ViewTask): GroupTaskView {
   if (task.status === "completada") return "completadas";
-  return task.dueDate ? "pendientes" : "no_programadas";
+  const planned = task.dueDate !== null || Number(task.priority) > 0;
+  return planned ? "pendientes" : "no_programadas";
 }
 
 export function splitGroupTasks<T extends ViewTask>(
@@ -47,8 +53,8 @@ export function splitGroupTasks<T extends ViewTask>(
 ): Record<GroupTaskView, T[]> {
   const split: Record<GroupTaskView, T[]> = {
     pendientes: [],
-    no_programadas: [],
     completadas: [],
+    no_programadas: [],
   };
   for (const task of tasks) split[groupTaskViewOf(task)].push(task);
   return split;
