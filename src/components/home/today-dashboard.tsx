@@ -3,7 +3,6 @@ import { LocalDate } from "@/components/local-date";
 import { TaskSection } from "@/components/task-section";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState, Panel } from "@/components/ui/panel";
-import { StatusDot } from "@/components/ui/status-badge";
 import {
   groupRecentCommentsByProject,
   type ProjectActivityGroup,
@@ -12,19 +11,13 @@ import {
 import { taskHref } from "@/lib/back-navigation";
 import { getRecentComments } from "@/lib/data/activity";
 import { getUserTaskOverview, type OverviewTask } from "@/lib/data/overview";
-import { formatDueDate, formatRelativeTime, truncateWords } from "@/lib/format";
+import { formatRelativeTime } from "@/lib/format";
 import { buildTodaySections } from "@/lib/today";
 import { TodayMetrics } from "./today-metrics";
+import { TopTasks } from "./top-tasks";
 
 const UNPLANNED_PREVIEW_LIMIT = 3;
 const ACTIVITY_LIMIT = 5;
-const STATUS_COLOR: Record<OverviewTask["status"], string> = {
-  disponible: "var(--status-open)",
-  en_curso: "var(--status-progress)",
-  bloqueada: "var(--status-blocked)",
-  pausada: "var(--status-paused)",
-  completada: "var(--status-done)",
-};
 
 export async function TodayDashboard({
   userId,
@@ -117,106 +110,6 @@ export async function TodayDashboard({
 
       {activity.length > 0 && <ActivityFeed groups={activity} />}
     </>
-  );
-}
-
-function TopTasks({ tasks }: { tasks: OverviewTask[] }) {
-  const [hero, ...rest] = tasks;
-
-  return (
-    <section className="flex min-w-0 flex-col gap-2">
-      <p className="text-meta font-medium text-accent dark:text-white">
-        {tasks.length > 1 ? "Prioridades de hoy" : "Siguiente tarea"}
-      </p>
-      <div className="grid min-w-0 grid-cols-2 gap-2.5 max-[360px]:grid-cols-1">
-        <HeroTile task={hero} />
-        {rest.map((task, i) => (
-          <SecondaryTile key={task.id} task={task} rank={i + 2} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function HeroTile({ task }: { task: OverviewTask }) {
-  return (
-    <Link
-      href={taskHref(task.projectId, task.id, "hoy")}
-      className="group relative col-span-full block overflow-hidden rounded-panel border border-line bg-accent-soft p-5 transition-colors dark:border-white/10 dark:bg-[#13151b] md:p-6"
-    >
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full bg-accent opacity-20 blur-2xl dark:opacity-30"
-      />
-      <div className="relative flex flex-col gap-3">
-        {task.progressPct > 0 && (
-          <span
-            role="progressbar"
-            aria-label={`Avance de ${task.title}`}
-            aria-valuenow={task.progressPct}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            className="absolute right-0 top-0 flex size-9 shrink-0 items-center justify-center rounded-full"
-            style={{
-              background: `conic-gradient(${STATUS_COLOR[task.status]} ${task.progressPct}%, var(--line-strong) 0)`,
-            }}
-          >
-            <span className="flex size-[26px] items-center justify-center rounded-full bg-[#f4f2ee] text-[9.5px] font-bold text-ink dark:bg-[#13151b] dark:text-white">
-              {task.progressPct}
-            </span>
-          </span>
-        )}
-        <p className="pr-12 text-[19px] font-bold leading-tight tracking-tight text-ink dark:text-white">
-          {truncateWords(task.title, 14)}
-        </p>
-        <div className="flex min-w-0 items-center gap-2 text-[12px] leading-[18px] text-muted dark:text-white/60">
-          <span className="truncate">{task.projectName}</span>
-          {task.dueDate && (
-            <>
-              <span
-                aria-hidden="true"
-                className="text-line-strong dark:text-white/25"
-              >
-                ·
-              </span>
-              <span className="shrink-0 tabular">
-                vence {formatDueDate(task.dueDate)}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function SecondaryTile({ task, rank }: { task: OverviewTask; rank: number }) {
-  return (
-    <Link
-      href={taskHref(task.projectId, task.id, "hoy")}
-      className="relative flex min-w-0 flex-col gap-3 rounded-panel border border-line bg-raised p-3.5 transition-colors hover:bg-sunken dark:border-white/10 dark:bg-[#14171d]"
-    >
-      <div className="flex min-w-0 items-start gap-2">
-        <span className="absolute right-3.5 top-3.5 text-[10px] font-bold uppercase tracking-wide text-muted">
-          #{rank}
-        </span>
-        <span className="line-clamp-3 min-w-0 flex-1 pr-7 text-[12.5px] font-semibold leading-snug text-ink dark:text-white">
-          {truncateWords(task.title, 12)}
-        </span>
-      </div>
-      <div className="mt-auto flex items-center gap-1.5">
-        <StatusDot status={task.status} />
-        <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-line dark:bg-white/10">
-          <div
-            className="h-full rounded-full bg-accent"
-            style={{ width: `${task.progressPct}%` }}
-          />
-        </div>
-        <span className="tabular shrink-0 text-[10.5px] font-semibold text-muted">
-          {task.progressPct}%
-        </span>
-      </div>
-    </Link>
   );
 }
 
