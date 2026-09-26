@@ -15,7 +15,7 @@ export function NewTaskButton({ href }: { href: string }) {
     <Link
       href={href}
       aria-keyshortcuts={NEW_TASK_SHORTCUT.toUpperCase()}
-      className="group hidden h-9 shrink-0 items-center gap-2 rounded-full bg-accent pr-2 pl-3.5 font-medium text-accent-ink shadow-sm shadow-accent/25 transition-[background-color,box-shadow,transform] hover:bg-accent/90 hover:shadow-md hover:shadow-accent/30 active:scale-[0.97] md:inline-flex"
+      className="group hidden h-9 shrink-0 items-center gap-2 rounded-full bg-accent px-3.5 font-medium text-accent-ink shadow-sm shadow-accent/25 transition-[background-color,box-shadow,transform] hover:bg-accent/90 hover:shadow-md hover:shadow-accent/30 active:scale-[0.97] md:inline-flex"
     >
       <PlusIcon className="size-4 transition-transform duration-200 group-hover:rotate-90" />
       Nueva tarea
