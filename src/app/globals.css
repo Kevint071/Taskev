@@ -26,6 +26,11 @@
   --toast-error: #f47c6c;
   --toast-error-ink: #2a0d08;
   --shadow-panel: 0 1px 2px rgba(26, 35, 50, 0.04);
+  /* The day's lead task: a solid cobalt card carrying white text. */
+  --spotlight-from: #3d5ad6;
+  --spotlight-to: #2c45b0;
+  --spotlight-ink: #ffffff;
+  --shadow-spotlight: 0 12px 32px -12px rgba(44, 69, 176, 0.55);
   color-scheme: light;
 }
 
@@ -48,6 +53,10 @@
   --status-paused: #d9a441;
   --status-done: #6fc59a;
   --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.6);
+  --spotlight-from: #3148b8;
+  --spotlight-to: #1f2f7a;
+  --spotlight-ink: #ffffff;
+  --shadow-spotlight: 0 12px 32px -12px rgba(0, 0, 0, 0.8);
   color-scheme: dark;
 }
 
@@ -70,6 +79,9 @@
   --color-status-blocked: var(--status-blocked);
   --color-status-paused: var(--status-paused);
   --color-status-done: var(--status-done);
+  --color-spotlight-from: var(--spotlight-from);
+  --color-spotlight-to: var(--spotlight-to);
+  --color-spotlight-ink: var(--spotlight-ink);
 
   --radius-control: 6px;
   --radius-panel: 10px;
@@ -152,6 +164,10 @@
   box-shadow: var(--shadow-panel);
 }
 
+@utility shadow-spotlight {
+  box-shadow: var(--shadow-spotlight);
+}
+
 .description-scrollbar {
   scrollbar-color: color-mix(in srgb, var(--muted) 38%, var(--raised))
     transparent;
@@ -176,6 +192,43 @@
 .description-scrollbar::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--muted) 56%, var(--raised));
   background-clip: content-box;
+}
+
+/* Cards settling into place one after another (`--delay` staggers them). */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@utility animate-rise {
+  animation: rise 420ms cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0ms)
+    backwards;
+}
+
+/* A progress ring drawing itself from empty up to its value. */
+@keyframes ring-draw {
+  from {
+    stroke-dashoffset: var(--ring-length);
+  }
+}
+
+@utility animate-ring-draw {
+  animation: ring-draw 900ms cubic-bezier(0.65, 0, 0.35, 1) 200ms both;
+}
+
+/* A progress bar growing from empty up to its width. */
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@utility animate-bar-grow {
+  animation: bar-grow 800ms cubic-bezier(0.65, 0, 0.35, 1) var(--delay, 0ms)
+    both;
+  transform-origin: left;
 }
 
 /* A task that exists on screen but is still being saved in the background. */

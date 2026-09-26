@@ -45,7 +45,7 @@ export function TodayMetrics({
           Tu progreso
         </p>
         {metrics.streak > 0 && (
-          <span className="tabular inline-flex items-center gap-1.5 rounded-full bg-sunken py-1.5 pl-2 pr-3 text-[13px] font-bold">
+          <span className="tabular inline-flex items-center gap-1.5 rounded-full border border-line bg-raised py-1 pl-2 pr-3 text-[13px] font-semibold">
             <FlameIcon className="size-[18px]" />
             {metrics.streak}
           </span>
@@ -81,7 +81,7 @@ function MetricCell({
   tint: string;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-3 rounded-panel bg-sunken p-3 dark:bg-[#1a1e26]">
+    <div className="flex min-w-0 items-center gap-3 rounded-panel border border-line bg-raised p-3 shadow-panel">
       <span
         className="flex size-9 shrink-0 items-center justify-center rounded-full"
         style={{ backgroundColor: tint }}
