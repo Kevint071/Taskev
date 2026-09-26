@@ -64,7 +64,7 @@ export async function TodayDashboard({
       <TodayMetrics completedAt={completedAt} serverNow={now.toISOString()} />
 
       {top.length > 0 ? (
-        <TopTasks tasks={top} />
+        <TopTasks tasks={top} serverNow={now.toISOString()} />
       ) : (
         <EmptyState
           title={
