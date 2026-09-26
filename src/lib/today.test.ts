@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildTodayMetrics, buildTodaySections, type TodayTask } from "./today";
+import {
+  buildTodayMetrics,
+  buildTodaySections,
+  dueAroundDay,
+  dueOnDay,
+  type TodayTask,
+} from "./today";
 
 // Local noon on 2026-09-16, so the calendar day is unambiguous in any zone.
 const now = new Date(2026, 8, 16, 12, 0, 0);
@@ -314,4 +320,33 @@ test("buildTodayMetrics: streak is zero once a day is skipped", () => {
   const metrics = buildTodayMetrics([utcDay("2026-09-13")], now);
 
   assert.equal(metrics.streak, 0);
+});
+
+test("dueOnDay keeps open tasks due on exactly that day", () => {
+  const tasks = [
+    task("a", { due: "2026-09-26" }),
+    task("b", { due: "2026-09-27" }),
+    task("c", { due: "2026-09-26", status: "completada" }),
+    task("d"),
+  ];
+  assert.deepEqual(
+    dueOnDay(tasks, Date.UTC(2026, 8, 26)).map((t) => t.id),
+    ["a"],
+  );
+});
+
+test("dueAroundDay keeps open tasks due within a day either side", () => {
+  const tasks = [
+    task("before", { due: "2026-09-24" }),
+    task("yesterday", { due: "2026-09-25" }),
+    task("today", { due: "2026-09-26" }),
+    task("tomorrow", { due: "2026-09-27" }),
+    task("after", { due: "2026-09-28" }),
+    task("done", { due: "2026-09-26", status: "completada" }),
+    task("undated"),
+  ];
+  assert.deepEqual(
+    dueAroundDay(tasks, Date.UTC(2026, 8, 26)).map((t) => t.id),
+    ["yesterday", "today", "tomorrow"],
+  );
 });

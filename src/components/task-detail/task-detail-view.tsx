@@ -58,7 +58,6 @@ export type TaskUpdates = Partial<
 
 type FlashKey =
   | "title"
-  | "status"
   | "progress"
   | "priority"
   | "dueDate"
@@ -289,7 +288,6 @@ export function TaskDetailView({
 
   const [flash, setFlash] = useState<Record<FlashKey, number>>({
     title: 0,
-    status: 0,
     progress: 0,
     priority: 0,
     dueDate: 0,
@@ -446,7 +444,6 @@ export function TaskDetailView({
       bumpFlash("progress");
     }
     onUpdate(change);
-    bumpFlash("status");
   }
 
   function requestCompletion() {
@@ -464,7 +461,6 @@ export function TaskDetailView({
       }
     } else {
       onUpdate({ status: "completada", completedAt });
-      bumpFlash("status");
     }
   }
 
@@ -584,10 +580,9 @@ export function TaskDetailView({
             aria-label="Detalles"
             className="flex flex-wrap items-center gap-2"
           >
-            <FlashWrap
-              tick={flash.status}
-              className="max-w-full rounded-full border-transparent"
-            >
+            {/* Same transparent border as the FlashWrap chips, so they line up; the
+                status chip itself doesn't flash on save. */}
+            <div className="max-w-full rounded-full border border-transparent">
               <StatusMenu
                 status={task.status}
                 progressPct={progressDraft}
@@ -608,7 +603,7 @@ export function TaskDetailView({
                   </PropertyChip>
                 )}
               />
-            </FlashWrap>
+            </div>
 
             <FlashWrap
               tick={flash.dueDate}

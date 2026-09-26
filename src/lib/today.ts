@@ -80,6 +80,30 @@ export function buildTodaySections<T extends TodayTask>(
   };
 }
 
+type DatedTask = Pick<TodayTask, "status" | "dueDate">;
+
+/** Open tasks due on the calendar day `dayKey` (UTC midnight, like stored due dates). */
+export function dueOnDay<T extends DatedTask>(tasks: T[], dayKey: number): T[] {
+  return tasks.filter(
+    (t) => t.status !== "completada" && t.dueDate?.getTime() === dayKey,
+  );
+}
+
+/**
+ * Open tasks due the day before, on, or after `dayKey`. Around the UTC day,
+ * that covers every viewer's "today" whatever their time zone, so the browser
+ * can pick its own day out of it with `dueOnDay`.
+ */
+export function dueAroundDay<T extends DatedTask>(
+  tasks: T[],
+  dayKey: number,
+): T[] {
+  return tasks.filter((t) => {
+    if (t.status === "completada" || !t.dueDate) return false;
+    return Math.abs(t.dueDate.getTime() - dayKey) <= MS_PER_DAY;
+  });
+}
+
 export type TodayMetrics = {
   completedToday: number;
   completedThisWeek: number;

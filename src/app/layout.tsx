@@ -4,6 +4,7 @@ import { Instrument_Sans } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
+import { TIME_ZONE_INIT_SCRIPT } from "@/lib/time-zone";
 import "./globals.css";
 
 const instrumentSans = Instrument_Sans({
@@ -28,6 +29,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script
           // biome-ignore lint/security/noDangerouslySetInnerHtml: static theme bootstrap that must run before first paint
           dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+        />
+        <script
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: static time zone cookie bootstrap so server renders know the viewer's day
+          dangerouslySetInnerHTML={{ __html: TIME_ZONE_INIT_SCRIPT }}
         />
       </head>
       <body

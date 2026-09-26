@@ -1,6 +1,6 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { LocalDate } from "@/components/local-date";
-import { TaskSection } from "@/components/task-section";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState, Panel } from "@/components/ui/panel";
 import {
@@ -12,7 +12,9 @@ import { taskHref } from "@/lib/back-navigation";
 import { getRecentComments } from "@/lib/data/activity";
 import { getUserTaskOverview, type OverviewTask } from "@/lib/data/overview";
 import { formatRelativeTime } from "@/lib/format";
-import { buildTodaySections } from "@/lib/today";
+import { dayKeyInTimeZone, TIME_ZONE_COOKIE } from "@/lib/time-zone";
+import { buildTodaySections, dueAroundDay } from "@/lib/today";
+import { DueTodaySection } from "./due-today-section";
 import { TodayMetrics } from "./today-metrics";
 import { TopTasks } from "./top-tasks";
 
@@ -27,11 +29,17 @@ export async function TodayDashboard({
   name: string | null;
 }) {
   const now = new Date();
-  const [{ tasks, projectCount }, comments] = await Promise.all([
+  const [{ tasks, projectCount }, comments, cookieStore] = await Promise.all([
     getUserTaskOverview(userId, now),
     getRecentComments(userId, ACTIVITY_LIMIT),
+    cookies(),
   ]);
-  const { top, dueToday } = buildTodaySections(tasks, now);
+  const { top } = buildTodaySections(tasks, now);
+  const serverToday = dayKeyInTimeZone(
+    now,
+    cookieStore.get(TIME_ZONE_COOKIE)?.value,
+  );
+  const utcToday = dayKeyInTimeZone(now, "UTC");
   const activity = groupRecentCommentsByProject(comments);
   const firstName = name?.split(" ")[0];
 
@@ -97,12 +105,9 @@ export async function TodayDashboard({
       )}
 
       {top.length > 0 && (
-        <TaskSection
-          title="Hoy"
-          tasks={dueToday}
-          empty="Nada vence hoy."
-          tone="accent"
-          from="hoy"
+        <DueTodaySection
+          tasks={dueAroundDay(tasks, utcToday)}
+          serverToday={serverToday}
         />
       )}
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ComponentType, CSSProperties } from "react";
 import {
   CalendarIcon,
+  CheckIcon,
   LockIcon,
   RefreshIcon,
   TriangleAlertIcon,
@@ -26,7 +27,6 @@ type ToneConfig = {
   color: string;
   tintLight: string;
   tintDark: string;
-  barColor: string;
 };
 
 const TONE: Record<TaskSectionTone, ToneConfig> = {
@@ -35,28 +35,24 @@ const TONE: Record<TaskSectionTone, ToneConfig> = {
     color: "var(--danger)",
     tintLight: "rgba(192, 57, 43, 0.14)",
     tintDark: "rgba(240, 138, 124, 0.16)",
-    barColor: "var(--danger)",
   },
   blocked: {
     icon: LockIcon,
     color: "var(--status-blocked)",
     tintLight: "rgba(184, 134, 11, 0.14)",
     tintDark: "rgba(217, 164, 65, 0.16)",
-    barColor: "var(--status-paused)",
   },
   accent: {
     icon: CalendarIcon,
     color: "var(--accent)",
     tintLight: "rgba(53, 83, 199, 0.12)",
     tintDark: "rgba(143, 164, 245, 0.16)",
-    barColor: "var(--accent)",
   },
   progress: {
     icon: RefreshIcon,
     color: "var(--status-progress)",
     tintLight: "rgba(53, 83, 199, 0.12)",
     tintDark: "rgba(143, 164, 245, 0.16)",
-    barColor: "var(--status-progress)",
   },
 };
 
@@ -76,40 +72,51 @@ export function TaskSection({
   const cfg = TONE[tone];
   const Icon = cfg.icon;
 
+  const isEmpty = tasks.length === 0;
+
   return (
     <section className="flex min-w-0 flex-col gap-2">
-      <h2 className="flex items-center gap-2 font-semibold">
-        <span
-          className="flex size-6 shrink-0 items-center justify-center rounded-control dark:hidden"
-          style={{ backgroundColor: cfg.tintLight }}
-        >
-          <Icon className="size-3.5" style={{ color: cfg.color }} />
-        </span>
-        <span
-          className="hidden size-6 shrink-0 items-center justify-center rounded-control dark:flex"
-          style={{ backgroundColor: cfg.tintDark }}
-        >
-          <Icon className="size-3.5" style={{ color: cfg.color }} />
-        </span>
-        {title}
-        <span
-          className="tabular text-meta font-medium"
-          style={{ color: tasks.length > 0 ? cfg.color : "var(--muted)" }}
-        >
-          {tasks.length}
-        </span>
-      </h2>
-      <Panel className="min-w-0 w-full overflow-hidden">
-        {tasks.length === 0 ? (
-          empty && <p className="px-4 py-3 text-muted">{empty}</p>
-        ) : (
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 font-semibold">
+          <span
+            className="flex size-6 shrink-0 items-center justify-center rounded-control dark:hidden"
+            style={{ backgroundColor: cfg.tintLight }}
+          >
+            <Icon className="size-3.5" style={{ color: cfg.color }} />
+          </span>
+          <span
+            className="hidden size-6 shrink-0 items-center justify-center rounded-control dark:flex"
+            style={{ backgroundColor: cfg.tintDark }}
+          >
+            <Icon className="size-3.5" style={{ color: cfg.color }} />
+          </span>
+          {title}
+          {!isEmpty && (
+            <span
+              className="tabular text-meta font-medium"
+              style={{ color: cfg.color }}
+            >
+              {tasks.length}
+            </span>
+          )}
+        </h2>
+        {isEmpty && empty && (
+          // Nothing to list: a quiet pill beside the title instead of an empty panel.
+          <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-line bg-raised py-1 pr-3 pl-2 text-meta text-muted shadow-panel">
+            <CheckIcon className="size-3.5 shrink-0 text-status-done" />
+            <span className="truncate">{empty}</span>
+          </span>
+        )}
+      </div>
+      {!isEmpty && (
+        <Panel className="min-w-0 w-full overflow-hidden">
           <ul className="divide-y divide-line">
             {tasks.map((task) => (
               <li key={task.id} className="relative">
                 <span
                   aria-hidden="true"
                   className="absolute inset-y-1.5 left-0 w-[3px] rounded-full"
-                  style={{ backgroundColor: cfg.barColor }}
+                  style={{ backgroundColor: STATUS_COLOR[task.status] }}
                 />
                 <Link
                   href={taskHref(task.projectId, task.id, from)}
@@ -145,8 +152,8 @@ export function TaskSection({
               </li>
             ))}
           </ul>
-        )}
-      </Panel>
+        </Panel>
+      )}
     </section>
   );
 }

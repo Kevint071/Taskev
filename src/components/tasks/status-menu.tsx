@@ -1,10 +1,15 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
-import { useLayoutEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { STATUS_LABELS, type Task } from "@/components/project-types";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { CheckIcon, LockIcon, RefreshIcon } from "@/components/ui/icons";
+import {
+  CalendarIcon,
+  CheckIcon,
+  LockIcon,
+  RefreshIcon,
+} from "@/components/ui/icons";
 import { Popover } from "@/components/ui/popover";
 import { STATUS_DOT } from "@/components/ui/status-badge";
 import { formatDueDate } from "@/lib/format";
@@ -186,8 +191,15 @@ export function StatusMenu({
           open
           tone="warning"
           icon={<RefreshIcon className="size-5" />}
+          layout="stacked"
+          alwaysAnimate
           title="¿Volver a disponible?"
           description={
+            progressPct > 0
+              ? "La tarea vuelve a empezar y su avance se reinicia."
+              : "La tarea vuelve a empezar desde cero."
+          }
+          body={
             <ResetSummary progressPct={progressPct} completedAt={completedAt} />
           }
           confirmLabel="Pasar a disponible"
@@ -206,6 +218,34 @@ export function StatusMenu({
   );
 }
 
+// The drain waits for the dialog to settle in, then eases down slowly enough
+// to follow. Driven from JS so it plays even with reduced motion turned on.
+const DRAIN_DELAY_MS = 550;
+const DRAIN_DURATION_MS = 1500;
+
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+}
+
+/** `from` counting down to 0 over the drain, as a fraction of it left (1 → 0). */
+function useDrain(): number {
+  const [left, setLeft] = useState(1);
+
+  useEffect(() => {
+    let frame = 0;
+    const start = performance.now() + DRAIN_DELAY_MS;
+    const tick = (time: number) => {
+      const t = Math.min(Math.max((time - start) / DRAIN_DURATION_MS, 0), 1);
+      setLeft(1 - easeInOutCubic(t));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  return left;
+}
+
 function ResetSummary({
   progressPct,
   completedAt,
@@ -213,35 +253,51 @@ function ResetSummary({
   progressPct: number;
   completedAt: string | null;
 }) {
+  if (progressPct === 0 && !completedAt) return null;
+
   return (
-    <div className="flex flex-col gap-3">
-      <p>
-        {progressPct > 0
-          ? "La tarea vuelve a empezar: su avance se reducirá a 0 %."
-          : "La tarea vuelve a empezar desde cero."}
-      </p>
-      {progressPct > 0 && (
-        <div className="rounded-2xl border border-line bg-sunken/60 px-3.5 py-3">
-          <div className="flex items-baseline justify-between text-meta">
-            <span>Avance</span>
-            <span className="tabular font-semibold text-ink">
-              {progressPct} % <span className="text-muted">→</span> 0 %
-            </span>
-          </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-line">
-            <div
-              style={{ "--from": `${progressPct}%` } as CSSProperties}
-              className="animate-progress-drain h-full rounded-full bg-linear-to-r from-status-paused to-status-progress"
-            />
-          </div>
-        </div>
-      )}
+    <div className="flex flex-col gap-2.5">
+      {progressPct > 0 && <ProgressDrain from={progressPct} />}
       {completedAt && (
-        <p className="text-meta">
-          También se borrará la fecha de finalización (
-          {formatDueDate(completedAt)}).
+        <p className="flex items-center gap-2.5 rounded-xl bg-sunken/70 px-3.5 py-2.5 text-meta text-muted">
+          <CalendarIcon className="size-4 shrink-0" />
+          <span>
+            Se quitará la fecha de finalización (
+            <span className="text-ink">{formatDueDate(completedAt)}</span>).
+          </span>
         </p>
       )}
+    </div>
+  );
+}
+
+function ProgressDrain({ from }: { from: number }) {
+  const left = useDrain();
+  const width = from * left;
+
+  return (
+    <div className="rounded-2xl border border-line bg-sunken/60 px-4 pt-3.5 pb-4">
+      <div className="flex items-baseline justify-between">
+        <span className="text-meta font-medium text-muted">Avance</span>
+        <span className="tabular text-[22px] leading-7 font-semibold tracking-[-0.02em]">
+          {Math.round(width)}
+          <span className="ml-0.5 text-[15px] font-medium text-muted">%</span>
+        </span>
+      </div>
+      <div className="relative mt-2.5 h-2 overflow-hidden rounded-full bg-line">
+        {/* The ground being given up stays faintly visible behind the fill. */}
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-[color-mix(in_srgb,var(--status-progress)_22%,transparent)]"
+          style={{ width: `${from}%` }}
+        />
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-status-progress"
+          style={{ width: `${width}%` }}
+        />
+      </div>
+      <p className="tabular mt-2 text-right text-[12px] leading-4 text-muted">
+        {from} % → 0 %
+      </p>
     </div>
   );
 }
