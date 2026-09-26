@@ -904,13 +904,7 @@ export function TaskDetailView({
           layout="compact"
           icon={<TrashIcon className="size-4" />}
           title="¿Eliminar esta tarea?"
-          description={
-            <>
-              Se borrará{" "}
-              <strong className="font-medium text-ink">{task.title}</strong> y
-              toda su bitácora. No se puede deshacer.
-            </>
-          }
+          description="Se borrará junto a toda su bitácora. No se puede deshacer."
           confirmLabel="Eliminar"
           onConfirm={() => {
             setConfirmDelete(false);
