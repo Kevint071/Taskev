@@ -4,7 +4,7 @@ import { type ReactNode, useState } from "react";
 import { STATUS_LABELS } from "@/components/project-types";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
-import { FilterIcon, SearchIcon } from "@/components/ui/icons";
+import { CheckIcon, FilterIcon, SearchIcon } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { StatusDot } from "@/components/ui/status-badge";
 import {
@@ -63,60 +63,50 @@ export function TaskToolbar({
         title="Filtrar tareas"
         onClose={() => setOpen(false)}
       >
-        <div className="flex flex-col gap-4 pb-2">
-          <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
-            <legend className="px-0.5 text-meta font-semibold text-muted uppercase tracking-wide">
-              Estado
-            </legend>
-            <div className="flex flex-wrap gap-1.5">
-              <FilterChip
-                active={filters.status === "todas"}
-                onClick={() => onChange({ ...filters, status: "todas" })}
-                count={total}
+        <div className="flex flex-col gap-3 pb-1">
+          <FilterGroup label="Estado">
+            <FilterOption
+              active={filters.status === "todas"}
+              onClick={() => onChange({ ...filters, status: "todas" })}
+              count={total}
+            >
+              Todas
+            </FilterOption>
+            {OPEN_STATUSES.map((status) => (
+              <FilterOption
+                key={status}
+                active={filters.status === status}
+                onClick={() => onChange({ ...filters, status })}
+                count={counts[status]}
+                icon={<StatusDot status={status} />}
               >
-                Todas
-              </FilterChip>
-              {OPEN_STATUSES.map((status) => (
-                <FilterChip
-                  key={status}
-                  active={filters.status === status}
-                  onClick={() => onChange({ ...filters, status })}
-                  count={counts[status]}
-                  icon={<StatusDot status={status} />}
-                >
-                  {STATUS_LABELS[status]}
-                </FilterChip>
-              ))}
-            </div>
-          </fieldset>
+                {STATUS_LABELS[status]}
+              </FilterOption>
+            ))}
+          </FilterGroup>
 
           {projects.length > 1 && (
-            <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
-              <legend className="px-0.5 text-meta font-semibold text-muted uppercase tracking-wide">
-                Proyecto
-              </legend>
-              <div className="flex flex-wrap gap-1.5">
-                <FilterChip
-                  active={filters.projectId === ALL_PROJECTS}
+            <FilterGroup label="Proyecto" divided>
+              <FilterOption
+                active={filters.projectId === ALL_PROJECTS}
+                onClick={() =>
+                  onChange({ ...filters, projectId: ALL_PROJECTS })
+                }
+              >
+                Todos
+              </FilterOption>
+              {projects.map((project) => (
+                <FilterOption
+                  key={project.id}
+                  active={filters.projectId === project.id}
                   onClick={() =>
-                    onChange({ ...filters, projectId: ALL_PROJECTS })
+                    onChange({ ...filters, projectId: project.id })
                   }
                 >
-                  Todos
-                </FilterChip>
-                {projects.map((project) => (
-                  <FilterChip
-                    key={project.id}
-                    active={filters.projectId === project.id}
-                    onClick={() =>
-                      onChange({ ...filters, projectId: project.id })
-                    }
-                  >
-                    {project.name}
-                  </FilterChip>
-                ))}
-              </div>
-            </fieldset>
+                  {project.name}
+                </FilterOption>
+              ))}
+            </FilterGroup>
           )}
         </div>
       </BottomSheet>
@@ -124,7 +114,29 @@ export function TaskToolbar({
   );
 }
 
-function FilterChip({
+function FilterGroup({
+  label,
+  divided = false,
+  children,
+}: {
+  label: string;
+  divided?: boolean;
+  children: ReactNode;
+}) {
+  // The divider sits on a wrapper: a fieldset draws its legend over its own top border.
+  return (
+    <div className={divided ? "border-t border-line pt-3" : undefined}>
+      <fieldset className="m-0 flex min-w-0 flex-col gap-px border-0 p-0">
+        <legend className="mb-1 px-2.5 text-[11px] leading-4 font-semibold tracking-wider text-muted uppercase">
+          {label}
+        </legend>
+        {children}
+      </fieldset>
+    </div>
+  );
+}
+
+function FilterOption({
   active,
   onClick,
   count,
@@ -142,21 +154,23 @@ function FilterChip({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`inline-flex h-8 max-w-full items-center gap-1.5 rounded-full border px-3 text-meta font-medium transition-colors ${
+      className={`flex h-9 w-full items-center gap-2 rounded-xl px-2.5 text-left text-ui transition-colors ${
         active
-          ? "border-accent-soft bg-accent-soft text-accent"
-          : "border-line text-ink hover:border-line-strong hover:bg-sunken"
+          ? "bg-accent-soft font-semibold text-accent"
+          : "font-medium text-ink hover:bg-sunken"
       }`}
     >
       {icon}
-      <span className="max-w-40 truncate">{children}</span>
+      <span className="min-w-0 flex-1 truncate">{children}</span>
       {count !== undefined && (
         <span
-          className={`tabular shrink-0 text-[11px] ${active ? "text-accent/75" : "text-muted"}`}
+          className={`tabular text-meta font-medium ${active ? "text-accent/80" : "text-muted"}`}
         >
           {count}
         </span>
       )}
+      {/* Reserved even when inactive so counts stay in one column. */}
+      <CheckIcon className={active ? "" : "invisible"} />
     </button>
   );
 }
