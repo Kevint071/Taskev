@@ -82,7 +82,6 @@ export default function GlobalTasksPage() {
             onChange={setFilters}
             projects={projects}
             counts={countByStatus(scoped)}
-            total={scoped.length}
           />
           {groups.length === 0 ? (
             <EmptyState

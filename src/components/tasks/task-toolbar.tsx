@@ -19,13 +19,11 @@ export function TaskToolbar({
   onChange,
   projects,
   counts,
-  total,
 }: {
   filters: TaskFilters;
   onChange: (next: TaskFilters) => void;
   projects: { id: string; name: string }[];
   counts: Record<OpenStatus, number>;
-  total: number;
 }) {
   const [open, setOpen] = useState(false);
   const filtered =
@@ -65,18 +63,16 @@ export function TaskToolbar({
       >
         <div className="flex flex-col gap-3 pb-1">
           <FilterGroup label="Estado">
-            <FilterOption
-              active={filters.status === "todas"}
-              onClick={() => onChange({ ...filters, status: "todas" })}
-              count={total}
-            >
-              Todas
-            </FilterOption>
             {OPEN_STATUSES.map((status) => (
               <FilterOption
                 key={status}
                 active={filters.status === status}
-                onClick={() => onChange({ ...filters, status })}
+                onClick={() =>
+                  onChange({
+                    ...filters,
+                    status: filters.status === status ? "todas" : status,
+                  })
+                }
                 count={counts[status]}
                 icon={<StatusDot status={status} />}
               >
@@ -87,20 +83,18 @@ export function TaskToolbar({
 
           {projects.length > 1 && (
             <FilterGroup label="Proyecto" divided>
-              <FilterOption
-                active={filters.projectId === ALL_PROJECTS}
-                onClick={() =>
-                  onChange({ ...filters, projectId: ALL_PROJECTS })
-                }
-              >
-                Todos
-              </FilterOption>
               {projects.map((project) => (
                 <FilterOption
                   key={project.id}
                   active={filters.projectId === project.id}
                   onClick={() =>
-                    onChange({ ...filters, projectId: project.id })
+                    onChange({
+                      ...filters,
+                      projectId:
+                        filters.projectId === project.id
+                          ? ALL_PROJECTS
+                          : project.id,
+                    })
                   }
                 >
                   {project.name}
