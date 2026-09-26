@@ -1,25 +1,21 @@
 import { cookies } from "next/headers";
-import Link from "next/link";
 import { LocalDate } from "@/components/local-date";
+import { TaskSection } from "@/components/task-section";
 import { ButtonLink } from "@/components/ui/button";
-import { EmptyState, Panel } from "@/components/ui/panel";
+import { EmptyState } from "@/components/ui/panel";
+import { groupEventsByTask } from "@/lib/activity";
+import { getActivitySince } from "@/lib/data/activity";
+import { getUserTaskOverview } from "@/lib/data/overview";
 import {
-  type GroupActivity,
-  nestRecentCommentsByGroup,
-  type TaskActivity,
-} from "@/lib/activity";
-import { taskHref } from "@/lib/back-navigation";
-import { getRecentComments } from "@/lib/data/activity";
-import { getUserTaskOverview, type OverviewTask } from "@/lib/data/overview";
-import { formatRelativeTime } from "@/lib/format";
-import { dayKeyInTimeZone, TIME_ZONE_COOKIE } from "@/lib/time-zone";
+  dayKeyInTimeZone,
+  startOfDayInTimeZone,
+  TIME_ZONE_COOKIE,
+} from "@/lib/time-zone";
 import { buildTodaySections, dueAroundDay } from "@/lib/today";
+import { ActivityFeed } from "./activity-feed";
 import { DueTodaySection } from "./due-today-section";
 import { TodayMetrics } from "./today-metrics";
 import { TopTasks } from "./top-tasks";
-
-const UNPLANNED_PREVIEW_LIMIT = 3;
-const ACTIVITY_LIMIT = 5;
 
 export async function TodayDashboard({
   userId,
@@ -29,18 +25,16 @@ export async function TodayDashboard({
   name: string | null;
 }) {
   const now = new Date();
-  const [{ tasks, groupCount }, comments, cookieStore] = await Promise.all([
+  const cookieStore = await cookies();
+  const timeZone = cookieStore.get(TIME_ZONE_COOKIE)?.value;
+  const [{ tasks, groupCount }, events] = await Promise.all([
     getUserTaskOverview(userId, now),
-    getRecentComments(userId, ACTIVITY_LIMIT),
-    cookies(),
+    getActivitySince(userId, startOfDayInTimeZone(now, timeZone)),
   ]);
   const { top } = buildTodaySections(tasks, now);
-  const serverToday = dayKeyInTimeZone(
-    now,
-    cookieStore.get(TIME_ZONE_COOKIE)?.value,
-  );
+  const serverToday = dayKeyInTimeZone(now, timeZone);
   const utcToday = dayKeyInTimeZone(now, "UTC");
-  const activity = nestRecentCommentsByGroup(comments);
+  const activity = groupEventsByTask(events);
   const firstName = name?.split(" ")[0];
 
   const openTasks = tasks.filter((t) => t.status !== "completada");
@@ -111,98 +105,17 @@ export async function TodayDashboard({
         />
       )}
 
-      {unplanned.length > 0 && <UnplannedNotice tasks={unplanned} />}
+      {unplanned.length > 0 && (
+        <TaskSection
+          title="Sin fecha ni prioridad"
+          tasks={unplanned}
+          empty=""
+          tone="neutral"
+          from="hoy"
+        />
+      )}
 
-      {activity.length > 0 && <ActivityFeed groups={activity} />}
+      {activity.length > 0 && <ActivityFeed tasks={activity} />}
     </>
-  );
-}
-
-function UnplannedNotice({ tasks }: { tasks: OverviewTask[] }) {
-  const preview = tasks.slice(0, UNPLANNED_PREVIEW_LIMIT);
-  const rest = tasks.length - preview.length;
-
-  return (
-    <Panel className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 py-3 text-meta">
-      <span className="font-medium">
-        {tasks.length} {tasks.length === 1 ? "tarea" : "tareas"} sin fecha ni
-        prioridad
-      </span>
-      <span className="text-muted">— quizá deberías planearlas:</span>
-      {preview.map((task, i) => (
-        <span key={task.id} className="text-muted">
-          <Link
-            href={taskHref(task.groupId, task.id, "hoy")}
-            className="text-ink hover:text-accent"
-          >
-            {task.title}
-          </Link>
-          {i < preview.length - 1 && ","}
-        </span>
-      ))}
-      {rest > 0 && <span className="text-muted">+{rest} más</span>}
-    </Panel>
-  );
-}
-
-function ActivityFeed({ groups }: { groups: GroupActivity[] }) {
-  return (
-    <section className="flex flex-col gap-2">
-      <h2 className="font-semibold">Actividad reciente</h2>
-      <div className="flex flex-col gap-4">
-        {groups.map((group) => (
-          <div key={group.groupId} className="flex flex-col gap-2">
-            <h3 className="text-meta font-medium text-muted">
-              {group.groupName}
-            </h3>
-            <Panel>
-              <ul className="divide-y divide-line">
-                {group.tasks.map((task) => (
-                  <li key={task.taskId}>
-                    <ActivityTaskRow groupId={group.groupId} task={task} />
-                  </li>
-                ))}
-              </ul>
-            </Panel>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ActivityTaskRow({
-  groupId,
-  task,
-}: {
-  groupId: string;
-  task: TaskActivity;
-}) {
-  return (
-    <Link
-      href={taskHref(groupId, task.taskId, "hoy")}
-      className="flex min-w-0 flex-col gap-2 px-4 py-3 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken"
-    >
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="truncate font-medium">{task.taskTitle}</p>
-        {task.comments.length > 1 && (
-          <span className="tabular shrink-0 text-meta text-muted">
-            {task.comments.length} comentarios
-          </span>
-        )}
-      </div>
-      <ul className="flex flex-col gap-1.5 border-l-2 border-line pl-3">
-        {task.comments.map((comment) => (
-          <li key={comment.id} className="flex items-baseline gap-3">
-            <span className="min-w-0 flex-1 truncate text-muted">
-              {comment.body}
-            </span>
-            <span className="tabular shrink-0 text-meta text-muted">
-              {formatRelativeTime(comment.createdAt)}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </Link>
   );
 }

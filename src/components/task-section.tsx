@@ -3,6 +3,7 @@ import type { ComponentType, CSSProperties } from "react";
 import {
   CalendarIcon,
   CheckIcon,
+  InboxIcon,
   LockIcon,
   RefreshIcon,
   TriangleAlertIcon,
@@ -20,7 +21,12 @@ export const STATUS_COLOR: Record<OverviewTask["status"], string> = {
   completada: "var(--status-done)",
 };
 
-export type TaskSectionTone = "danger" | "blocked" | "accent" | "progress";
+export type TaskSectionTone =
+  | "danger"
+  | "blocked"
+  | "accent"
+  | "progress"
+  | "neutral";
 
 type ToneConfig = {
   icon: ComponentType<{ className?: string; style?: CSSProperties }>;
@@ -47,6 +53,12 @@ const TONE: Record<TaskSectionTone, ToneConfig> = {
     color: "var(--accent)",
     tintLight: "rgba(53, 83, 199, 0.12)",
     tintDark: "rgba(143, 164, 245, 0.16)",
+  },
+  neutral: {
+    icon: InboxIcon,
+    color: "var(--muted)",
+    tintLight: "rgba(91, 102, 120, 0.14)",
+    tintDark: "rgba(170, 180, 200, 0.16)",
   },
   progress: {
     icon: RefreshIcon,

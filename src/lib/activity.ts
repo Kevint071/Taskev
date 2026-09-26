@@ -1,75 +1,42 @@
-import type { RecentComment } from "@/lib/data/activity";
-
-export type ActivityComment = {
-  id: string;
-  body: string;
-  createdAt: Date;
-};
+import type { ActivityEvent } from "@/lib/data/activity";
 
 export type TaskActivity = {
   taskId: string;
   taskTitle: string;
-  comments: ActivityComment[];
-  latestAt: Date;
-};
-
-export type GroupActivity = {
   groupId: string;
   groupName: string;
-  tasks: TaskActivity[];
+  /** Newest first. */
+  events: ActivityEvent[];
   latestAt: Date;
 };
 
 /**
- * Nests recent comments by group, then by task within each group, so a
- * burst of activity reads as group → task → thread instead of repeating
- * the group and task names on every comment. Comments, tasks and groups
- * are all ordered newest first.
+ * Groups audit events by task so a burst of activity reads as one entry per
+ * task instead of repeating the task name on every event. Events within a
+ * task and tasks themselves are ordered newest first.
  */
-export function nestRecentCommentsByGroup(
-  items: RecentComment[],
-): GroupActivity[] {
-  const groups = new Map<string, GroupActivity>();
-
-  for (const item of items) {
-    const comment = { id: item.id, body: item.body, createdAt: item.createdAt };
-
-    let group = groups.get(item.groupId);
-    if (!group) {
-      group = {
-        groupId: item.groupId,
-        groupName: item.groupName,
-        tasks: [],
-        latestAt: comment.createdAt,
-      };
-      groups.set(item.groupId, group);
-    }
-
-    let task = group.tasks.find((t) => t.taskId === item.taskId);
-    if (!task) {
-      task = {
-        taskId: item.taskId,
-        taskTitle: item.taskTitle,
-        comments: [],
-        latestAt: comment.createdAt,
-      };
-      group.tasks.push(task);
-    }
-
-    task.comments.push(comment);
+export function groupEventsByTask(events: ActivityEvent[]): TaskActivity[] {
+  const byTask = new Map<string, ActivityEvent[]>();
+  for (const item of events) {
+    const list = byTask.get(item.taskId);
+    if (list) list.push(item);
+    else byTask.set(item.taskId, [item]);
   }
 
-  return [...groups.values()]
-    .map((group) => {
-      const tasks = group.tasks
-        .map((task) => {
-          const comments = [...task.comments].sort(
-            (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-          );
-          return { ...task, comments, latestAt: comments[0].createdAt };
-        })
-        .sort((a, b) => b.latestAt.getTime() - a.latestAt.getTime());
-      return { ...group, tasks, latestAt: tasks[0].latestAt };
+  return [...byTask.values()]
+    .map((list) => {
+      const sorted = [...list].sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+      );
+      const { taskId, taskTitle, groupId, groupName } = sorted[0];
+      return {
+        taskId,
+        taskTitle,
+        groupId,
+        groupName,
+        events: sorted,
+        latestAt: sorted[0].createdAt,
+      };
     })
     .sort((a, b) => b.latestAt.getTime() - a.latestAt.getTime());
 }

@@ -443,3 +443,21 @@ export function FilterIcon({ className }: { className?: string } = {}) {
     </svg>
   );
 }
+
+export function NoteIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h9A1.5 1.5 0 0 1 16 5.5v6a1.5 1.5 0 0 1-1.5 1.5H9l-3.5 3v-3h0A1.5 1.5 0 0 1 4 11.5z" />
+      <path d="M7 7.5h6M7 10h3.5" />
+    </svg>
+  );
+}
