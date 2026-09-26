@@ -85,8 +85,12 @@ export function NewTaskView({
   const groupHref = `/groups/${group.id}`;
   const canSave = draft.title.trim() !== "" && !saving;
 
+  // Read after mount: the server can't know the platform.
+  const [modKey, setModKey] = useState("Ctrl");
+
   useEffect(() => {
     titleRef.current?.focus();
+    if (/Mac|iPhone|iPad/.test(navigator.platform)) setModKey("⌘");
   }, []);
 
   // Re-fit when the width changes (fonts loading, rotation, resizing).
@@ -232,8 +236,7 @@ export function NewTaskView({
         className="flex flex-1 flex-col"
       >
         <div className="flex flex-col gap-6 pt-4 pb-10">
-          <p className="text-meta font-medium text-muted">Nueva tarea</p>
-          <header className="-mt-4 flex flex-col gap-4">
+          <header className="flex flex-col gap-4">
             <label className="block">
               <span className="sr-only">Título de la tarea</span>
               <textarea
@@ -378,26 +381,28 @@ export function NewTaskView({
           </section>
         </div>
 
-        <div className="sticky bottom-0 z-10 mt-auto flex items-center justify-end gap-2 bg-linear-to-t from-surface from-65% to-transparent pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <p className="mr-auto hidden text-meta text-muted md:block">
-            <kbd className="font-sans font-medium text-ink">Ctrl</kbd> +{" "}
-            <kbd className="font-sans font-medium text-ink">Enter</kbd> para
-            crear
-          </p>
-          <Link
-            href={groupHref}
-            className="inline-flex h-11 items-center rounded-full px-4 text-ui font-medium text-muted transition-colors hover:bg-sunken hover:text-ink"
-          >
-            Cancelar
-          </Link>
-          <button
-            type="submit"
-            disabled={!canSave}
-            className="inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-ui font-semibold text-accent-ink shadow-sm shadow-accent/25 transition-[background-color,opacity,transform] hover:bg-accent/90 active:scale-[0.97] disabled:opacity-40"
-          >
-            <CheckIcon />
-            {saving ? "Creando…" : "Crear tarea"}
-          </button>
+        <div className="sticky bottom-0 z-10 mt-auto flex justify-end pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="flex items-center gap-1 rounded-full border border-line bg-raised/80 p-1 shadow-lg shadow-black/5 backdrop-blur-md">
+            <Link
+              href={groupHref}
+              className="inline-flex h-8 items-center rounded-full px-3.5 text-meta font-medium text-muted transition-colors hover:bg-sunken hover:text-ink"
+            >
+              Cancelar
+            </Link>
+            <button
+              type="submit"
+              disabled={!canSave}
+              aria-keyshortcuts="Control+Enter Meta+Enter"
+              className="inline-flex h-8 items-center gap-2 rounded-full bg-accent pr-1.5 pl-3.5 text-meta font-semibold text-accent-ink transition-[background-color,opacity,transform] hover:bg-accent/90 active:scale-[0.97] disabled:pr-3.5 disabled:opacity-40"
+            >
+              {saving ? "Creando…" : "Crear tarea"}
+              {canSave && (
+                <kbd className="hidden h-5 items-center rounded-[5px] bg-accent-ink/20 px-1.5 font-sans text-[11px] font-semibold md:inline-flex">
+                  {modKey} ↵
+                </kbd>
+              )}
+            </button>
+          </div>
         </div>
       </form>
 
