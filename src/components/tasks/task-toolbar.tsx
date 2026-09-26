@@ -4,7 +4,7 @@ import { type ReactNode, useState } from "react";
 import { STATUS_LABELS } from "@/components/project-types";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
-import { CheckIcon, FilterIcon, SearchIcon } from "@/components/ui/icons";
+import { FilterIcon, SearchIcon } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { StatusDot } from "@/components/ui/status-badge";
 import {
@@ -63,55 +63,59 @@ export function TaskToolbar({
         title="Filtrar tareas"
         onClose={() => setOpen(false)}
       >
-        <div className="flex flex-col gap-5 pb-2">
-          <fieldset className="m-0 flex min-w-0 flex-col gap-0.5 border-0 p-0">
-            <legend className="px-1 pb-1 text-meta font-semibold text-muted uppercase tracking-wide">
+        <div className="flex flex-col gap-4 pb-2">
+          <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
+            <legend className="px-0.5 text-meta font-semibold text-muted uppercase tracking-wide">
               Estado
             </legend>
-            <FilterOption
-              active={filters.status === "todas"}
-              onClick={() => onChange({ ...filters, status: "todas" })}
-              count={total}
-            >
-              Todas
-            </FilterOption>
-            {OPEN_STATUSES.map((status) => (
-              <FilterOption
-                key={status}
-                active={filters.status === status}
-                onClick={() => onChange({ ...filters, status })}
-                count={counts[status]}
+            <div className="flex flex-wrap gap-1.5">
+              <FilterChip
+                active={filters.status === "todas"}
+                onClick={() => onChange({ ...filters, status: "todas" })}
+                count={total}
               >
-                <StatusDot status={status} />
-                {STATUS_LABELS[status]}
-              </FilterOption>
-            ))}
+                Todas
+              </FilterChip>
+              {OPEN_STATUSES.map((status) => (
+                <FilterChip
+                  key={status}
+                  active={filters.status === status}
+                  onClick={() => onChange({ ...filters, status })}
+                  count={counts[status]}
+                  icon={<StatusDot status={status} />}
+                >
+                  {STATUS_LABELS[status]}
+                </FilterChip>
+              ))}
+            </div>
           </fieldset>
 
           {projects.length > 1 && (
-            <fieldset className="m-0 flex min-w-0 flex-col gap-0.5 border-0 p-0">
-              <legend className="px-1 pb-1 text-meta font-semibold text-muted uppercase tracking-wide">
+            <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
+              <legend className="px-0.5 text-meta font-semibold text-muted uppercase tracking-wide">
                 Proyecto
               </legend>
-              <FilterOption
-                active={filters.projectId === ALL_PROJECTS}
-                onClick={() =>
-                  onChange({ ...filters, projectId: ALL_PROJECTS })
-                }
-              >
-                Todos
-              </FilterOption>
-              {projects.map((project) => (
-                <FilterOption
-                  key={project.id}
-                  active={filters.projectId === project.id}
+              <div className="flex flex-wrap gap-1.5">
+                <FilterChip
+                  active={filters.projectId === ALL_PROJECTS}
                   onClick={() =>
-                    onChange({ ...filters, projectId: project.id })
+                    onChange({ ...filters, projectId: ALL_PROJECTS })
                   }
                 >
-                  {project.name}
-                </FilterOption>
-              ))}
+                  Todos
+                </FilterChip>
+                {projects.map((project) => (
+                  <FilterChip
+                    key={project.id}
+                    active={filters.projectId === project.id}
+                    onClick={() =>
+                      onChange({ ...filters, projectId: project.id })
+                    }
+                  >
+                    {project.name}
+                  </FilterChip>
+                ))}
+              </div>
             </fieldset>
           )}
         </div>
@@ -120,15 +124,17 @@ export function TaskToolbar({
   );
 }
 
-function FilterOption({
+function FilterChip({
   active,
   onClick,
   count,
+  icon,
   children,
 }: {
   active: boolean;
   onClick: () => void;
   count?: number;
+  icon?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -136,17 +142,21 @@ function FilterOption({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`flex min-h-11 items-center gap-2.5 rounded-2xl px-3 text-left transition-colors ${
-        active ? "bg-accent-soft text-accent" : "hover:bg-sunken"
+      className={`inline-flex h-8 max-w-full items-center gap-1.5 rounded-full border px-3 text-meta font-medium transition-colors ${
+        active
+          ? "border-accent-soft bg-accent-soft text-accent"
+          : "border-line text-ink hover:border-line-strong hover:bg-sunken"
       }`}
     >
-      <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-[15px] font-medium">
-        {children}
-      </span>
+      {icon}
+      <span className="max-w-40 truncate">{children}</span>
       {count !== undefined && (
-        <span className="tabular text-meta opacity-80">{count}</span>
+        <span
+          className={`tabular shrink-0 text-[11px] ${active ? "text-accent/75" : "text-muted"}`}
+        >
+          {count}
+        </span>
       )}
-      {active && <CheckIcon className="shrink-0" />}
     </button>
   );
 }
