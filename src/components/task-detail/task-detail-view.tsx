@@ -160,7 +160,7 @@ function FlashWrap({
  * One property of the task as a pill under the title, tinted by `tone` when
  * it has one. Opens its sheet when tapped.
  */
-function PropertyChip({
+export function PropertyChip({
   icon,
   tone,
   label,
@@ -207,7 +207,7 @@ function PropertyChip({
   );
 }
 
-function autosize(el: HTMLTextAreaElement | null) {
+export function autosize(el: HTMLTextAreaElement | null) {
   if (!el) return;
   // Measure without a scrollbar: at the collapsed "auto" height one appears,
   // narrows the text, and the extra wrapping leaves a phantom blank line.

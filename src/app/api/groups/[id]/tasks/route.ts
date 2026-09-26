@@ -1,10 +1,10 @@
 import { desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireOwnedGroup } from "@/lib/auth-guard";
-import { MAX_TASK_TITLE_LENGTH } from "@/lib/constraints";
 import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
 import { positionAtEnd } from "@/lib/ordering";
+import { parseTaskFields, statusRuleError } from "@/lib/task-input";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -14,21 +14,27 @@ export async function POST(request: Request, { params }: Params) {
   if ("response" in guard) return guard.response;
 
   const body = await request.json().catch(() => null);
-  const title = typeof body?.title === "string" ? body.title.trim() : "";
+  const parsed = parseTaskFields(body, "El título de la tarea es requerido");
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+  const { title, ...fields } = parsed.value;
   if (!title) {
     return NextResponse.json(
       { error: "El título de la tarea es requerido" },
       { status: 400 },
     );
   }
-  if (title.length > MAX_TASK_TITLE_LENGTH) {
-    return NextResponse.json(
-      {
-        error: `El título no puede tener más de ${MAX_TASK_TITLE_LENGTH} caracteres`,
-      },
-      { status: 400 },
+  if (fields.status !== undefined) {
+    const error = statusRuleError(
+      fields.status,
+      fields.progressPct ?? 0,
+      fields.completedAt,
     );
+    if (error) return NextResponse.json({ error }, { status: 400 });
   }
+  // Only a task created as "completada" carries a completion date.
+  if (fields.status !== "completada") fields.completedAt = null;
 
   const [lastTask] = await db
     .select({ position: tasks.position })
@@ -41,6 +47,7 @@ export async function POST(request: Request, { params }: Params) {
     .insert(tasks)
     .values({
       groupId,
+      ...fields,
       title,
       position: positionAtEnd(lastTask?.position ?? null),
     })

@@ -1,20 +1,20 @@
 "use client";
 
-import { useParams, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  focusTaskComposer,
   isNewTaskShortcut,
   NewTaskButton,
   NewTaskFab,
-  TaskComposer,
+  newTaskHref,
 } from "@/components/groups/add-task-form";
 import { BackLink } from "@/components/groups/back-link";
 import { GroupDetailHeader } from "@/components/groups/group-detail-header";
 import { GroupTaskList } from "@/components/groups/group-task-list";
 import { GroupTaskTabs } from "@/components/groups/group-task-tabs";
 import { useGroupDetail } from "@/components/groups/use-group-detail";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClass } from "@/components/ui/button";
 import { PlusIcon } from "@/components/ui/icons";
 import { EmptyState, LoadingRows } from "@/components/ui/panel";
 import { Toast } from "@/components/ui/toast";
@@ -28,6 +28,7 @@ import {
 
 export default function GroupDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const {
     group,
     tasks,
@@ -35,11 +36,10 @@ export default function GroupDetailPage() {
     toast,
     showToast,
     dismissToast,
-    addTask,
     updateTask,
   } = useGroupDetail(id);
   const [rowNow] = useState(() => new Date());
-  const [composing, setComposing] = useState(false);
+  const createHref = newTaskHref(id);
   // The URL holds the view, so a reload or the browser's back button keeps it.
   const searchParams = useSearchParams();
   const view = parseGroupTaskView(searchParams.get(GROUP_TASK_VIEW_PARAM));
@@ -48,28 +48,15 @@ export default function GroupDetailPage() {
     function handleKeyDown(event: KeyboardEvent) {
       if (!isNewTaskShortcut(event)) return;
       event.preventDefault();
-      setComposing(true);
-      focusTaskComposer();
+      router.push(createHref);
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  function openComposer() {
-    setComposing(true);
-    focusTaskComposer();
-  }
+  }, [router, createHref]);
 
   function selectView(next: GroupTaskView) {
     // Replace rather than push: switching tabs shouldn't fill the back stack.
     window.history.replaceState(null, "", groupTaskViewHref(id, next));
-  }
-
-  function handleAdd(title: string): boolean {
-    if (!addTask(title)) return false;
-    // New tasks have no due date or priority yet: follow them to where they land.
-    selectView("no_programadas");
-    return true;
   }
 
   if (!group) {
@@ -85,11 +72,11 @@ export default function GroupDetailPage() {
 
   const openCount = tasks.filter((t) => t.status !== "completada").length;
   const byView = splitGroupTasks(tasks);
-  const newTaskAction = composing ? undefined : (
-    <Button variant="primary" onClick={openComposer}>
+  const newTaskAction = (
+    <Link href={createHref} className={buttonClass("primary")}>
       <PlusIcon />
       Nueva tarea
-    </Button>
+    </Link>
   );
 
   return (
@@ -99,7 +86,7 @@ export default function GroupDetailPage() {
         taskCount={tasks.length}
         openCount={openCount}
         syncState={syncState}
-        action={<NewTaskButton onClick={openComposer} />}
+        action={<NewTaskButton href={createHref} />}
       />
 
       {/* Tabs sit closer to the list they filter than to the header. */}
@@ -113,14 +100,6 @@ export default function GroupDetailPage() {
               no_programadas: byView.no_programadas.length,
             }}
             onChange={selectView}
-          />
-        )}
-
-        {composing && (
-          <TaskComposer
-            onAdd={handleAdd}
-            onTitleTooLong={showToast}
-            onClose={() => setComposing(false)}
           />
         )}
 
@@ -153,7 +132,7 @@ export default function GroupDetailPage() {
       {/* Room so the floating button never covers the last row. */}
       <div aria-hidden="true" className="h-1 md:hidden" />
       {/* An empty group already offers its own call to action. */}
-      {!composing && tasks.length > 0 && <NewTaskFab onClick={openComposer} />}
+      {tasks.length > 0 && <NewTaskFab href={createHref} />}
 
       <Toast toast={toast} onDismiss={dismissToast} />
     </>

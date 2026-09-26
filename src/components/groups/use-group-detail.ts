@@ -14,7 +14,6 @@ import {
   createSyncQueue,
   type SyncQueue,
   sendJson,
-  tempId,
 } from "@/lib/sync-queue";
 
 type GroupDetail = Group & { tasks: Task[] };
@@ -145,65 +144,6 @@ export function useGroupDetail(id: string) {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [syncState]);
 
-  /** Adds the task optimistically; returns false when it could not be queued. */
-  function addTask(title: string): boolean {
-    // Offline the creation can only fail: keep the title typed instead of
-    // showing a row that would never be saved.
-    if (!navigator.onLine) {
-      showToast("Sin conexión. La tarea no se añadió.", "error");
-      return false;
-    }
-    const key = tempId();
-    const now = new Date().toISOString();
-    updateTasks((prev) => [
-      ...prev,
-      {
-        key,
-        id: key,
-        groupId: id,
-        title,
-        description: null,
-        status: "disponible",
-        progressPct: 0,
-        priority: "0",
-        dueDate: null,
-        completedAt: null,
-        position: Number.MAX_SAFE_INTEGER,
-        pinnedToday: false,
-        createdAt: now,
-        updatedAt: now,
-      },
-    ]);
-
-    queue.create(key, async () => {
-      let created: Task;
-      try {
-        created = await sendJson<Task>(`/api/groups/${id}/tasks`, "POST", {
-          title,
-        });
-      } catch (err) {
-        // The row was never stored: drop it rather than leave it pending.
-        updateTasks((prev) => prev.filter((t) => t.key !== key));
-        throw err;
-      }
-      const withCreatedTask = updateTasks((prev) =>
-        prev.map((t) =>
-          t.key === key
-            ? {
-                ...t,
-                id: created.id,
-                position: created.position,
-                createdAt: created.createdAt,
-              }
-            : t,
-        ),
-      );
-      applyGroupOrder(withCreatedTask, orderGroupTasks(withCreatedTask));
-      return created.id;
-    });
-    return true;
-  }
-
   function applyLocal(key: string, updates: TaskUpdates) {
     const { priority, ...rest } = updates;
     updateTasks((prev) =>
@@ -238,7 +178,6 @@ export function useGroupDetail(id: string) {
     toast,
     showToast,
     dismissToast,
-    addTask,
     updateTask,
   };
 }
