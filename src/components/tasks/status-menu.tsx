@@ -229,7 +229,8 @@ function useDrain(): number {
     const start = performance.now() + DRAIN_DELAY_MS;
     const tick = (time: number) => {
       const t = Math.min(Math.max((time - start) / DRAIN_DURATION_MS, 0), 1);
-      setLeft(1 - easeInSine(t));
+      // Snap the end: 1 - easeInSine(1) is ~1e-16, not 0, and would round up to 1 %.
+      setLeft(t < 1 ? 1 - easeInSine(t) : 0);
       if (t < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
