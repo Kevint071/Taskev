@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireOwnedGroup } from "@/lib/auth-guard";
+import { recordTaskEvent } from "@/lib/data/activity";
 import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
 import { positionAtEnd } from "@/lib/ordering";
@@ -52,6 +53,8 @@ export async function POST(request: Request, { params }: Params) {
       position: positionAtEnd(lastTask?.position ?? null),
     })
     .returning();
+
+  await recordTaskEvent({ taskId: created.id, type: "task_created" });
 
   return NextResponse.json(created, { status: 201 });
 }

@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireOwnedTask } from "@/lib/auth-guard";
+import { recordTaskEvent } from "@/lib/data/activity";
 import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
 import { parseTaskFields, statusRuleError } from "@/lib/task-input";
@@ -54,6 +55,15 @@ export async function PATCH(request: Request, { params }: Params) {
     .set(updates)
     .where(eq(tasks.id, id))
     .returning();
+
+  if (updated.status !== guard.task.status) {
+    await recordTaskEvent({
+      taskId: id,
+      type: "status_changed",
+      fromStatus: guard.task.status,
+      toStatus: updated.status,
+    });
+  }
 
   return NextResponse.json(updated);
 }

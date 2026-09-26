@@ -1,6 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireOwnedTask } from "@/lib/auth-guard";
+import { recordTaskEvent } from "@/lib/data/activity";
 import { db } from "@/lib/db";
 import { taskComments } from "@/lib/db/schema";
 
@@ -38,6 +39,12 @@ export async function POST(request: Request, { params }: Params) {
     .insert(taskComments)
     .values({ taskId, body: commentBody })
     .returning();
+
+  await recordTaskEvent({
+    taskId,
+    type: "comment_added",
+    body: commentBody,
+  });
 
   return NextResponse.json(created, { status: 201 });
 }
