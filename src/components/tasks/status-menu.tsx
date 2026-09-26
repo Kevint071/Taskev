@@ -214,8 +214,10 @@ export function StatusMenu({
 const DRAIN_DELAY_MS = 550;
 const DRAIN_DURATION_MS = 1500;
 
-function easeInOutCubic(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+// Accelerates into the end instead of easing out: an ease-out crawls through
+// the last fraction of a percent, leaving a sliver of bar hanging at the start.
+function easeInSine(t: number): number {
+  return 1 - Math.cos((t * Math.PI) / 2);
 }
 
 /** `from` counting down to 0 over the drain, as a fraction of it left (1 → 0). */
@@ -227,7 +229,7 @@ function useDrain(): number {
     const start = performance.now() + DRAIN_DELAY_MS;
     const tick = (time: number) => {
       const t = Math.min(Math.max((time - start) / DRAIN_DURATION_MS, 0), 1);
-      setLeft(1 - easeInOutCubic(t));
+      setLeft(1 - easeInSine(t));
       if (t < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -276,7 +278,7 @@ function ProgressDrain({ from }: { from: number }) {
         />
       </div>
       <span className="tabular w-10 text-right text-meta font-semibold">
-        {Math.round(width)} %
+        {Math.ceil(width)} %
       </span>
     </div>
   );
