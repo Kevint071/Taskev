@@ -50,6 +50,13 @@
       "when": 1790391812153,
       "tag": "0006_rename_projects_to_groups",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790397192758,
+      "tag": "0007_serious_iron_fist",
+      "breakpoints": true
     }
   ]
 }

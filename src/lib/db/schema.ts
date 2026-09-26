@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   doublePrecision,
+  index,
   integer,
   numeric,
   pgEnum,
@@ -87,3 +88,30 @@ export const taskComments = pgTable("task_comments", {
     .notNull()
     .defaultNow(),
 });
+
+export const taskEventTypeEnum = pgEnum("task_event_type", [
+  "task_created",
+  "status_changed",
+  "comment_added",
+]);
+
+/** Audit log of what happened to a task; feeds the "Actividad de hoy" feed. */
+export const taskEvents = pgTable(
+  "task_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    type: taskEventTypeEnum("type").notNull(),
+    /** Set on `status_changed`. */
+    fromStatus: taskStatusEnum("from_status"),
+    toStatus: taskStatusEnum("to_status"),
+    /** Snapshot of the note text on `comment_added`. */
+    body: text("body"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("task_events_created_at_idx").on(table.createdAt)],
+);
