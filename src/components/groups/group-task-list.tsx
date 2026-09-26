@@ -1,74 +1,82 @@
 import type { ReactNode } from "react";
+import {
+  groupTaskPanelId,
+  groupTaskTabId,
+} from "@/components/groups/group-task-tabs";
 import type {
   LocalTask,
   TaskUpdates,
 } from "@/components/task-detail/task-detail-view";
 import { TaskRow } from "@/components/tasks/task-row";
 import { EmptyState } from "@/components/ui/panel";
+import type { GroupTaskView } from "@/lib/group-task-views";
 
-/** The group's tasks split into incomplete and completed sections. */
+const EMPTY_VIEW: Record<
+  GroupTaskView,
+  { title: string; description: string }
+> = {
+  pendientes: {
+    title: "Nada pendiente con fecha",
+    description: "Las tareas abiertas con fecha límite aparecerán aquí.",
+  },
+  completadas: {
+    title: "Aún no hay tareas completadas",
+    description: "Lo que termines en este grupo quedará aquí.",
+  },
+  no_programadas: {
+    title: "Todo tiene fecha",
+    description: "Las tareas abiertas sin fecha límite aparecerán aquí.",
+  },
+};
+
+/** The tasks of one view (pendientes, completadas or no programadas). */
 export function GroupTaskList({
+  view,
   tasks,
   now,
   onTaskChange,
   onBlocked,
   emptyAction,
 }: {
+  view: GroupTaskView;
+  /** Already filtered to `view`. */
   tasks: LocalTask[];
   now: Date;
   onTaskChange: (key: string, updates: TaskUpdates) => void;
   onBlocked: (message: string) => void;
+  /** Call to action shown when the view is empty. */
   emptyAction?: ReactNode;
 }) {
-  if (tasks.length === 0) {
-    return (
-      <EmptyState
-        title="Este grupo no tiene tareas"
-        description="Crea la primera y empieza a avanzar."
-        action={emptyAction}
-      />
-    );
-  }
-
-  const incompleteTasks = tasks.filter((t) => t.status !== "completada");
-  const completedTasks = tasks.filter((t) => t.status === "completada");
-
-  function renderTaskRow(task: LocalTask) {
-    return (
-      <TaskRow
-        key={task.key}
-        task={task}
-        now={now}
-        showGroup={false}
-        centerProgressOnDesktop
-        inlineGroupStatus
-        onStatusChange={(change) => onTaskChange(task.key, change)}
-        onBlocked={onBlocked}
-      />
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-5">
-      {incompleteTasks.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <h2 className="text-meta font-medium text-muted">
-            Tareas incompletas
-          </h2>
-          <ul className="flex flex-col gap-2">
-            {incompleteTasks.map((task) => renderTaskRow(task))}
-          </ul>
-        </div>
-      )}
-      {completedTasks.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <h2 className="text-meta font-medium text-muted">
-            Tareas completadas
-          </h2>
-          <ul className="flex flex-col gap-2">
-            {completedTasks.map((task) => renderTaskRow(task))}
-          </ul>
-        </div>
+    // Keyed by view so switching tabs replays the reveal animation.
+    <div
+      key={view}
+      role="tabpanel"
+      id={groupTaskPanelId(view)}
+      aria-labelledby={groupTaskTabId(view)}
+      className="animate-reveal"
+    >
+      {tasks.length === 0 ? (
+        <EmptyState
+          title={EMPTY_VIEW[view].title}
+          description={EMPTY_VIEW[view].description}
+          action={emptyAction}
+        />
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {tasks.map((task) => (
+            <TaskRow
+              key={task.key}
+              task={task}
+              now={now}
+              showGroup={false}
+              centerProgressOnDesktop
+              inlineGroupStatus
+              onStatusChange={(change) => onTaskChange(task.key, change)}
+              onBlocked={onBlocked}
+            />
+          ))}
+        </ul>
       )}
     </div>
   );

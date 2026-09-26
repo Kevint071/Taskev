@@ -52,6 +52,25 @@ export function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
+/** Undated work waiting to be scheduled. */
+export function InboxIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`size-4 shrink-0 ${className ?? ""}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 11l2.2-5.6A1.5 1.5 0 0 1 6.6 4.5h6.8a1.5 1.5 0 0 1 1.4.9L17 11" />
+      <path d="M3 11v3.5A1.5 1.5 0 0 0 4.5 16h11a1.5 1.5 0 0 0 1.5-1.5V11h-3.5l-1 2h-5l-1-2H3z" />
+    </svg>
+  );
+}
+
 export function ProgressGaugeIcon({ className }: { className?: string }) {
   return (
     <svg
