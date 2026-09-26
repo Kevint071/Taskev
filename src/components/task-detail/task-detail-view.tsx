@@ -901,14 +901,17 @@ export function TaskDetailView({
       {onDelete && (
         <ConfirmDialog
           open={confirmDelete}
+          layout="compact"
+          icon={<TrashIcon className="size-4" />}
           title="¿Eliminar esta tarea?"
           description={
             <>
-              Se borrará <strong className="text-ink">{task.title}</strong> y
+              Se borrará{" "}
+              <strong className="font-medium text-ink">{task.title}</strong> y
               toda su bitácora. No se puede deshacer.
             </>
           }
-          confirmLabel="Eliminar tarea"
+          confirmLabel="Eliminar"
           onConfirm={() => {
             setConfirmDelete(false);
             onDelete();
