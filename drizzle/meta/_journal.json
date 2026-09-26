@@ -43,6 +43,13 @@
       "when": 1790043814316,
       "tag": "0005_thin_hairball",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790391812153,
+      "tag": "0006_rename_projects_to_groups",
+      "breakpoints": true
     }
   ]
 }

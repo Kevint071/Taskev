@@ -49,7 +49,7 @@ export async function DELETE(request: Request) {
     );
   }
 
-  // Projects, tasks, comments and reset tokens go with it via ON DELETE CASCADE.
+  // Groups, tasks, comments and reset tokens go with it via ON DELETE CASCADE.
   await db.delete(users).where(eq(users.id, user.id));
 
   return new NextResponse(null, { status: 204 });

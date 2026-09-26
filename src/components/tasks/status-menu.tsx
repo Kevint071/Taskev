@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { STATUS_LABELS, type Task } from "@/components/project-types";
+import { STATUS_LABELS, type Task } from "@/components/group-types";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CheckIcon, LockIcon, RefreshIcon } from "@/components/ui/icons";
 import { Popover } from "@/components/ui/popover";
@@ -29,7 +29,7 @@ export type StatusMenuTrigger = {
 };
 
 /**
- * The status dropdown shared by project task rows and the task detail. It owns
+ * The status dropdown shared by group task rows and the task detail. It owns
  * the transition rules: "completada" stays dimmed below 100% and only warns,
  * and going back to "disponible" with leftover progress asks to reset it first.
  */

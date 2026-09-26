@@ -1,26 +1,26 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { projects, tasks } from "@/lib/db/schema";
+import { groups, tasks } from "@/lib/db/schema";
 
 /**
  * Unfiltered by owner so callers (see auth-guard's requireOwned* helpers)
  * can run this alongside the user lookup instead of after it.
  */
-export async function getProjectById(projectId: string) {
-  const [project] = await db
+export async function getGroupById(groupId: string) {
+  const [group] = await db
     .select()
-    .from(projects)
-    .where(eq(projects.id, projectId))
+    .from(groups)
+    .where(eq(groups.id, groupId))
     .limit(1);
-  return project ?? null;
+  return group ?? null;
 }
 
-/** Returns the task with its project, unfiltered by owner — see getProjectById. */
-export async function getTaskWithProject(taskId: string) {
+/** Returns the task with its group, unfiltered by owner — see getGroupById. */
+export async function getTaskWithGroup(taskId: string) {
   const [row] = await db
-    .select({ task: tasks, project: projects })
+    .select({ task: tasks, group: groups })
     .from(tasks)
-    .innerJoin(projects, eq(tasks.projectId, projects.id))
+    .innerJoin(groups, eq(tasks.groupId, groups.id))
     .where(eq(tasks.id, taskId))
     .limit(1);
   return row ?? null;

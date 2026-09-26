@@ -52,7 +52,7 @@ export default function RegisterPage() {
   return (
     <AuthCard
       title="Crear cuenta"
-      subtitle="Tus proyectos y tareas, ordenados por lo que importa hoy."
+      subtitle="Tus grupos y tareas, ordenados por lo que importa hoy."
       footer={
         <>
           ¿Ya tienes cuenta? <TextLink href="/login">Iniciar sesión</TextLink>

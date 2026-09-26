@@ -7,21 +7,21 @@ const SOURCES: Record<BackSource, { href: string; label: string }> = {
 };
 
 export function taskHref(
-  projectId: string,
+  groupId: string,
   taskId: string,
   from?: BackSource,
 ): string {
-  const base = `/projects/${projectId}/tasks/${taskId}`;
+  const base = `/groups/${groupId}/tasks/${taskId}`;
   return from ? `${base}?from=${from}` : base;
 }
 
-/** Where a task's back arrow leads: the screen it was opened from, else its project. */
+/** Where a task's back arrow leads: the screen it was opened from, else its group. */
 export function resolveBack(
   from: string | string[] | undefined,
-  project: { id: string; name: string },
+  group: { id: string; name: string },
 ): { href: string; label: string } {
   if (typeof from === "string" && Object.hasOwn(SOURCES, from)) {
     return SOURCES[from as BackSource];
   }
-  return { href: `/projects/${project.id}`, label: project.name };
+  return { href: `/groups/${group.id}`, label: group.name };
 }

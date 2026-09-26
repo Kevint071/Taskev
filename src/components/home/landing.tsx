@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import { Brand } from "@/components/brand";
-import { STATUS_LABELS, type Task } from "@/components/project-types";
+import { STATUS_LABELS, type Task } from "@/components/group-types";
 import { ButtonLink } from "@/components/ui/button";
 import {
   CalendarIcon,
@@ -15,8 +15,8 @@ const container = "mx-auto w-full max-w-[1120px] px-4 md:px-8";
 
 const STEPS = [
   {
-    title: "Crea un proyecto",
-    text: "Un proyecto agrupa las tareas que comparten un objetivo: un cliente, la casa, un viaje.",
+    title: "Crea un grupo",
+    text: "Un grupo reúne las tareas que comparten un objetivo: un cliente, la casa, un viaje.",
   },
   {
     title: "Añade tus tareas",
@@ -39,38 +39,38 @@ const STATES: { status: Task["status"]; meaning: string }[] = [
   },
 ];
 
-type GroupIcon = ComponentType<{ className?: string }>;
+type BucketIcon = ComponentType<{ className?: string }>;
 
-const TASK_GROUPS: {
-  group: string;
+const TASK_BUCKETS: {
+  bucket: string;
   color: string;
-  icon: GroupIcon;
+  icon: BucketIcon;
   task: string;
   detail: string;
 }[] = [
   {
-    group: "Vencidas",
+    bucket: "Vencidas",
     color: "var(--danger)",
     icon: TriangleAlertIcon,
     task: "Renovar dominio",
     detail: "venció ayer",
   },
   {
-    group: "Hoy",
+    bucket: "Hoy",
     color: "var(--accent)",
     icon: CalendarIcon,
     task: "Enviar propuesta al cliente",
     detail: "hoy",
   },
   {
-    group: "Próximas",
+    bucket: "Próximas",
     color: "var(--muted)",
     icon: CalendarIcon,
     task: "Revisar contrato de alquiler",
     detail: "en 5 días",
   },
   {
-    group: "Completadas",
+    bucket: "Completadas",
     color: "var(--status-done)",
     icon: CheckIcon,
     task: "Preparar factura de agosto",
@@ -141,8 +141,8 @@ export function Landing() {
               Un gestor de tareas que te dice cuál hacer primero.
             </h1>
             <p className="text-[17px] leading-[1.55] text-muted md:text-[18px] md:leading-[1.6]">
-              Organiza tus tareas por proyecto y ponles prioridad y fecha
-              límite. Taskev las junta en una sola lista ordenada: las tres de{" "}
+              Organiza tus tareas por grupo y ponles prioridad y fecha límite.
+              Taskev las junta en una sola lista ordenada: las tres de{" "}
               <span className="whitespace-nowrap">
                 arriba <TopThree /> son tu día.
               </span>
@@ -225,10 +225,10 @@ export function Landing() {
                 </h3>
                 <div className="mt-4 overflow-hidden rounded-panel border border-line bg-surface">
                   <ul className="divide-y divide-line">
-                    {TASK_GROUPS.map(
-                      ({ group, color, icon: Icon, task, detail }) => (
+                    {TASK_BUCKETS.map(
+                      ({ bucket, color, icon: Icon, task, detail }) => (
                         <li
-                          key={group}
+                          key={bucket}
                           className="flex items-center gap-3 px-3 py-3 sm:px-4"
                         >
                           <span
@@ -241,7 +241,7 @@ export function Landing() {
                             <Icon className="size-[18px]" />
                           </span>
                           <div className="min-w-0 flex-1">
-                            <p className="font-medium">{group}</p>
+                            <p className="font-medium">{bucket}</p>
                             <p className="truncate text-meta text-muted">
                               {task}
                             </p>
@@ -280,7 +280,7 @@ export function Landing() {
                 id="empezar"
                 className="text-headline font-semibold text-balance"
               >
-                Crea tu primer proyecto y deja que Taskev ordene el resto.
+                Crea tu primer grupo y deja que Taskev ordene el resto.
               </h2>
               <p className="mt-3 opacity-85">
                 Añade unas tareas, abre Hoy y la siguiente ya estará marcada.

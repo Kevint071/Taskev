@@ -1,33 +1,32 @@
 "use client";
 
 import { type ReactNode, useState } from "react";
-import { STATUS_LABELS } from "@/components/project-types";
+import { STATUS_LABELS } from "@/components/group-types";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { CheckIcon, FilterIcon, SearchIcon } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { StatusDot } from "@/components/ui/status-badge";
 import {
-  ALL_PROJECTS,
+  ALL_GROUPS,
   OPEN_STATUSES,
   type OpenStatus,
   type TaskFilters,
-} from "@/lib/task-groups";
+} from "@/lib/task-buckets";
 
 export function TaskToolbar({
   filters,
   onChange,
-  projects,
+  groups,
   counts,
 }: {
   filters: TaskFilters;
   onChange: (next: TaskFilters) => void;
-  projects: { id: string; name: string }[];
+  groups: { id: string; name: string }[];
   counts: Record<OpenStatus, number>;
 }) {
   const [open, setOpen] = useState(false);
-  const filtered =
-    filters.status !== "todas" || filters.projectId !== ALL_PROJECTS;
+  const filtered = filters.status !== "todas" || filters.groupId !== ALL_GROUPS;
 
   return (
     <div className="flex gap-2">
@@ -36,7 +35,7 @@ export function TaskToolbar({
         <Input
           type="search"
           aria-label="Buscar tareas"
-          placeholder="Buscar tarea o proyecto"
+          placeholder="Buscar tarea o grupo"
           value={filters.query}
           onChange={(e) => onChange({ ...filters, query: e.target.value })}
           className="w-full pl-9"
@@ -62,7 +61,7 @@ export function TaskToolbar({
         onClose={() => setOpen(false)}
       >
         <div className="flex flex-col gap-3 pb-1">
-          <FilterGroup label="Estado">
+          <FilterSection label="Estado">
             {OPEN_STATUSES.map((status) => (
               <FilterOption
                 key={status}
@@ -79,28 +78,26 @@ export function TaskToolbar({
                 {STATUS_LABELS[status]}
               </FilterOption>
             ))}
-          </FilterGroup>
+          </FilterSection>
 
-          {projects.length > 1 && (
-            <FilterGroup label="Proyecto" divided>
-              {projects.map((project) => (
+          {groups.length > 1 && (
+            <FilterSection label="Grupo" divided>
+              {groups.map((group) => (
                 <FilterOption
-                  key={project.id}
-                  active={filters.projectId === project.id}
+                  key={group.id}
+                  active={filters.groupId === group.id}
                   onClick={() =>
                     onChange({
                       ...filters,
-                      projectId:
-                        filters.projectId === project.id
-                          ? ALL_PROJECTS
-                          : project.id,
+                      groupId:
+                        filters.groupId === group.id ? ALL_GROUPS : group.id,
                     })
                   }
                 >
-                  {project.name}
+                  {group.name}
                 </FilterOption>
               ))}
-            </FilterGroup>
+            </FilterSection>
           )}
         </div>
       </BottomSheet>
@@ -108,7 +105,7 @@ export function TaskToolbar({
   );
 }
 
-function FilterGroup({
+function FilterSection({
   label,
   divided = false,
   children,

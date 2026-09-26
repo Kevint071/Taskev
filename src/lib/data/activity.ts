@@ -1,18 +1,18 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { projects, taskComments, tasks } from "@/lib/db/schema";
+import { groups, taskComments, tasks } from "@/lib/db/schema";
 
 export type RecentComment = {
   id: string;
   taskId: string;
   taskTitle: string;
-  projectId: string;
-  projectName: string;
+  groupId: string;
+  groupName: string;
   body: string;
   createdAt: Date;
 };
 
-/** Most recent comments across the user's non-archived projects. */
+/** Most recent comments across the user's non-archived groups. */
 export async function getRecentComments(
   userId: string,
   limit = 5,
@@ -22,15 +22,15 @@ export async function getRecentComments(
       id: taskComments.id,
       taskId: taskComments.taskId,
       taskTitle: tasks.title,
-      projectId: projects.id,
-      projectName: projects.name,
+      groupId: groups.id,
+      groupName: groups.name,
       body: taskComments.body,
       createdAt: taskComments.createdAt,
     })
     .from(taskComments)
     .innerJoin(tasks, eq(taskComments.taskId, tasks.id))
-    .innerJoin(projects, eq(tasks.projectId, projects.id))
-    .where(and(eq(projects.userId, userId), isNull(projects.archivedAt)))
+    .innerJoin(groups, eq(tasks.groupId, groups.id))
+    .where(and(eq(groups.userId, userId), isNull(groups.archivedAt)))
     .orderBy(desc(taskComments.createdAt))
     .limit(limit);
 }

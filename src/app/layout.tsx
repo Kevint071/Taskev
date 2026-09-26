@@ -15,7 +15,7 @@ const instrumentSans = Instrument_Sans({
 
 export const metadata: Metadata = {
   title: "Taskev",
-  description: "Proyectos y tareas ordenados por lo que más importa hoy",
+  description: "Grupos y tareas ordenados por lo que más importa hoy",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -1,4 +1,4 @@
-import { STATUS_LABELS, type Task } from "@/components/project-types";
+import { STATUS_LABELS, type Task } from "@/components/group-types";
 
 export const STATUS_DOT: Record<Task["status"], string> = {
   disponible: "bg-status-open",

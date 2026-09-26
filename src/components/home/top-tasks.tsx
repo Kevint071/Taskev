@@ -58,7 +58,7 @@ function TaskStackRow({
 
   return (
     <Link
-      href={taskHref(task.projectId, task.id, "hoy")}
+      href={taskHref(task.groupId, task.id, "hoy")}
       className={`group flex min-w-0 items-center gap-3 rounded-panel border px-3.5 py-3 transition-[border-color,background-color,box-shadow] duration-200 ${
         lead
           ? "border-accent/60 bg-accent-soft shadow-[0_14px_32px_-18px_color-mix(in_srgb,var(--accent)_55%,transparent)] hover:border-accent"
@@ -79,7 +79,7 @@ function TaskStackRow({
           {task.pinnedToday && (
             <PinIcon filled className="size-3 text-accent" />
           )}
-          <span className="truncate">{task.projectName}</span>
+          <span className="truncate">{task.groupName}</span>
           {task.dueDate && (
             <>
               <span aria-hidden="true">·</span>

@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   compareByRelevance,
-  compareForProjectOrder,
+  compareForGroupOrder,
   computeRelevance,
   computeUrgency,
   isActionable,
-  orderProjectTasks,
+  orderGroupTasks,
   positionRank,
   sameTaskIdSequence,
 } from "./relevance";
@@ -135,7 +135,7 @@ test("isActionable: blocked and paused tasks are not, the rest are", () => {
   assert.equal(isActionable("en_curso"), true);
 });
 
-test("compareForProjectOrder: workable tasks go before blocked or paused ones, even with lower relevance", () => {
+test("compareForGroupOrder: workable tasks go before blocked or paused ones, even with lower relevance", () => {
   const list = [
     { id: "blocked-hot", status: "bloqueada", relevance: 120, progressPct: 0 },
     { id: "paused-warm", status: "pausada", relevance: 80, progressPct: 50 },
@@ -148,7 +148,7 @@ test("compareForProjectOrder: workable tasks go before blocked or paused ones, e
     { id: "workable-hot", status: "en_curso", relevance: 90, progressPct: 0 },
   ];
   assert.deepEqual(
-    list.sort(compareForProjectOrder).map((t) => t.id),
+    list.sort(compareForGroupOrder).map((t) => t.id),
     ["workable-hot", "workable-cold", "blocked-hot", "paused-warm"],
   );
 });
@@ -164,7 +164,7 @@ test("sameTaskIdSequence: detects matching and differing task orders", () => {
   );
 });
 
-test("orderProjectTasks: sorts actionable, blocked, paused, and completed tasks", () => {
+test("orderGroupTasks: sorts actionable, blocked, paused, and completed tasks", () => {
   const tasks = [
     {
       id: "completed-old",
@@ -217,7 +217,7 @@ test("orderProjectTasks: sorts actionable, blocked, paused, and completed tasks"
   ];
 
   assert.deepEqual(
-    orderProjectTasks(tasks, NOW).map((task) => task.id),
+    orderGroupTasks(tasks, NOW).map((task) => task.id),
     [
       "actionable-hot",
       "actionable-cold",

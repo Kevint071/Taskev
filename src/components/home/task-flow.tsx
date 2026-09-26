@@ -7,7 +7,7 @@ import { StatusDot } from "@/components/ui/status-badge";
 type Chip = {
   id: string;
   title: string;
-  project: string;
+  group: string;
   due: string;
   progress: number;
   status: "en_curso" | "disponible";
@@ -23,7 +23,7 @@ const CHIPS: Chip[] = [
   {
     id: "propuesta",
     title: "Enviar propuesta al cliente",
-    project: "Trabajo",
+    group: "Trabajo",
     due: "hoy",
     progress: 60,
     status: "en_curso",
@@ -35,7 +35,7 @@ const CHIPS: Chip[] = [
   {
     id: "contrato",
     title: "Revisar contrato de alquiler",
-    project: "Casa",
+    group: "Casa",
     due: "mañana",
     progress: 20,
     status: "en_curso",
@@ -47,7 +47,7 @@ const CHIPS: Chip[] = [
   {
     id: "charla",
     title: "Preparar charla de octubre",
-    project: "Comunidad",
+    group: "Comunidad",
     due: "3 días",
     progress: 35,
     status: "en_curso",
@@ -59,7 +59,7 @@ const CHIPS: Chip[] = [
   {
     id: "dentista",
     title: "Pedir cita con el dentista",
-    project: "Personal",
+    group: "Personal",
     due: "5 días",
     progress: 0,
     status: "disponible",
@@ -71,7 +71,7 @@ const CHIPS: Chip[] = [
   {
     id: "dominio",
     title: "Renovar dominio",
-    project: "Web personal",
+    group: "Web personal",
     due: "6 días",
     progress: 0,
     status: "disponible",
@@ -83,7 +83,7 @@ const CHIPS: Chip[] = [
   {
     id: "objetivos",
     title: "Definir objetivos del mes",
-    project: "Planificación",
+    group: "Planificación",
     due: "8 días",
     progress: 0,
     status: "disponible",
@@ -320,7 +320,7 @@ export function TaskFlow() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-ui font-semibold">{chip.title}</p>
                   <p className="truncate text-[12px] leading-4 text-muted">
-                    {chip.project}
+                    {chip.group}
                   </p>
                 </div>
                 {isLead ? (

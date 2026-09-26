@@ -7,7 +7,7 @@ import {
   STATUS_LABELS,
   type Task,
   type TaskComment,
-} from "@/components/project-types";
+} from "@/components/group-types";
 import { type StatusChange, StatusMenu } from "@/components/tasks/status-menu";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -262,7 +262,7 @@ export function TaskDetailView({
 }: {
   task: LocalTask;
   queue: SyncQueue;
-  /** Where the top-left arrow leads (usually the task's project). */
+  /** Where the top-left arrow leads (usually the task's group). */
   back?: { href: string; label: string };
   onUpdate: (updates: TaskUpdates) => void;
   onBlocked: (message: string) => void;

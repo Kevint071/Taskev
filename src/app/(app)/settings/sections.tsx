@@ -221,7 +221,7 @@ export function DeleteAccountSection({ email }: { email: string }) {
   return (
     <Section
       title="Eliminar cuenta"
-      description="Borra tu cuenta y todos tus proyectos, tareas y comentarios."
+      description="Borra tu cuenta y todos tus grupos, tareas y comentarios."
     >
       <div className="flex flex-col items-start gap-3 rounded-panel border border-danger/40 p-4">
         <p>
@@ -236,7 +236,7 @@ export function DeleteAccountSection({ email }: { email: string }) {
       <ConfirmDialog
         open={open}
         title="¿Eliminar tu cuenta?"
-        description="Se borrarán tu cuenta y todos tus proyectos, tareas y comentarios. No se puede deshacer."
+        description="Se borrarán tu cuenta y todos tus grupos, tareas y comentarios. No se puede deshacer."
         confirmLabel="Eliminar cuenta"
         confirmText={email}
         confirmTextLabel={

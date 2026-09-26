@@ -15,7 +15,7 @@
 ## Riesgos y convenciones
 
 - `openspec/`, `.github/`, `.claude/` y `scripts/` están ignorados por Git. Las propuestas OpenSpec y scripts auxiliares (incluido `seed-demo-tasks.ts`) son locales; no asumas que están disponibles en otros entornos.
-- No hay middleware de autenticación. La protección de páginas vive en `src/app/(app)/layout.tsx`; cada route handler de `src/app/api` debe validar propiedad con `requireOwnedProject`, `requireOwnedTask` o `requireUserId` de `src/lib/auth-guard.ts`. Una sesión JWT puede sobrevivir al borrado de una cuenta, por lo que el guard también comprueba que el usuario exista.
+- No hay middleware de autenticación. La protección de páginas vive en `src/app/(app)/layout.tsx`; cada route handler de `src/app/api` debe validar propiedad con `requireOwnedGroup`, `requireOwnedTask` o `requireUserId` de `src/lib/auth-guard.ts`. Una sesión JWT puede sobrevivir al borrado de una cuenta, por lo que el guard también comprueba que el usuario exista.
 - Las actualizaciones optimistas de tareas se serializan por tarea en `src/lib/sync-queue.ts`. Los IDs temporales `tmp-*` deben resolverse con `idFor` antes de llamar a la API.
 - Mantén en español los textos de UI y valores de dominio (por ejemplo, `disponible`, `en_curso`, `bloqueada`, `pausada`, `completada`); escribe el código y los comentarios en inglés.
 

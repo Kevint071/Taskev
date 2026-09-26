@@ -1,24 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { GlobalTask } from "@/components/project-types";
-import { TaskGroupSection } from "@/components/tasks/task-group-section";
+import type { GlobalTask } from "@/components/group-types";
+import { TaskBucketSection } from "@/components/tasks/task-bucket-section";
 import { TaskToolbar } from "@/components/tasks/task-toolbar";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { EmptyState, LoadingRows, PageHeader } from "@/components/ui/panel";
 import { handleUnauthenticated } from "@/lib/api-client";
 import {
-  ALL_PROJECTS,
-  buildTaskGroups,
+  ALL_GROUPS,
+  buildTaskBuckets,
   countByStatus,
   filterTasks,
   type TaskFilters,
-} from "@/lib/task-groups";
+} from "@/lib/task-buckets";
 
 const NO_FILTERS: TaskFilters = {
   query: "",
   status: "todas",
-  projectId: ALL_PROJECTS,
+  groupId: ALL_GROUPS,
 };
 
 export default function GlobalTasksPage() {
@@ -36,13 +36,16 @@ export default function GlobalTasksPage() {
   const scoped = tasks
     ? filterTasks(tasks, { ...filters, status: "todas" })
     : [];
-  const groups = buildTaskGroups(tasks ? filterTasks(tasks, filters) : [], now);
+  const buckets = buildTaskBuckets(
+    tasks ? filterTasks(tasks, filters) : [],
+    now,
+  );
   const overdueCount = tasks
-    ? (buildTaskGroups(tasks, now).find((g) => g.key === "vencidas")?.tasks
+    ? (buildTaskBuckets(tasks, now).find((g) => g.key === "vencidas")?.tasks
         .length ?? 0)
     : 0;
-  const projects = tasks
-    ? [...new Map(tasks.map((t) => [t.projectId, t.projectName]))]
+  const groups = tasks
+    ? [...new Map(tasks.map((t) => [t.groupId, t.groupName]))]
         .map(([id, name]) => ({ id, name }))
         .sort((a, b) => a.name.localeCompare(b.name, "es"))
     : [];
@@ -68,10 +71,10 @@ export default function GlobalTasksPage() {
       ) : tasks.length === 0 ? (
         <EmptyState
           title="Todavía no tienes tareas"
-          description="Las tareas viven dentro de un proyecto. Crea uno y añade la primera."
+          description="Las tareas viven dentro de un grupo. Crea uno y añade la primera."
           action={
-            <ButtonLink href="/projects" variant="primary">
-              Ir a proyectos
+            <ButtonLink href="/groups" variant="primary">
+              Ir a grupos
             </ButtonLink>
           }
         />
@@ -80,10 +83,10 @@ export default function GlobalTasksPage() {
           <TaskToolbar
             filters={filters}
             onChange={setFilters}
-            projects={projects}
+            groups={groups}
             counts={countByStatus(scoped)}
           />
-          {groups.length === 0 ? (
+          {buckets.length === 0 ? (
             <EmptyState
               title="Ninguna tarea coincide"
               description="Prueba con otra búsqueda o quita algún filtro."
@@ -98,11 +101,11 @@ export default function GlobalTasksPage() {
             />
           ) : (
             <div className="flex flex-col gap-6">
-              {groups.map((group) => (
-                <TaskGroupSection
-                  key={group.key}
-                  groupKey={group.key}
-                  tasks={group.tasks}
+              {buckets.map((bucket) => (
+                <TaskBucketSection
+                  key={bucket.key}
+                  bucketKey={bucket.key}
+                  tasks={bucket.tasks}
                   now={now}
                   forceOpen={searching}
                   from="tasks"

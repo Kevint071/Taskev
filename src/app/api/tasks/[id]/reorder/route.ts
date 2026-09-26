@@ -16,22 +16,22 @@ export async function POST(request: Request, { params }: Params) {
   const guard = await requireOwnedTask(taskId);
   if ("response" in guard) return guard.response;
 
-  const projectId = guard.task.projectId;
+  const groupId = guard.task.groupId;
   const body = await request.json().catch(() => null);
   const beforeTaskId =
     typeof body?.beforeTaskId === "string" ? body.beforeTaskId : null;
   const afterTaskId =
     typeof body?.afterTaskId === "string" ? body.afterTaskId : null;
 
-  const projectTasks = await db
+  const groupTasks = await db
     .select({ id: tasks.id, position: tasks.position })
     .from(tasks)
-    .where(eq(tasks.projectId, projectId))
+    .where(eq(tasks.groupId, groupId))
     .orderBy(asc(tasks.position));
 
   const findPosition = (neighbourId: string | null) =>
     neighbourId
-      ? (projectTasks.find((t) => t.id === neighbourId)?.position ?? null)
+      ? (groupTasks.find((t) => t.id === neighbourId)?.position ?? null)
       : null;
 
   let beforePosition = findPosition(beforeTaskId);
@@ -53,7 +53,7 @@ export async function POST(request: Request, { params }: Params) {
     afterPosition - beforePosition < MIN_GAP;
 
   if (gapExhausted) {
-    const ordered = projectTasks.filter((t) => t.id !== taskId);
+    const ordered = groupTasks.filter((t) => t.id !== taskId);
     const spaced = renormalizedPositions(ordered.length);
     for (let i = 0; i < ordered.length; i++) {
       await db

@@ -29,7 +29,7 @@ export function computeRelevance(
 /**
  * Sort comparator, most relevant first. Equal relevance (same priority and
  * same due date) is broken first by `positionRank` — where the task sits in
- * its project's manual order, as a 0 (first) to 1 (last) percentile, so a
+ * its group's manual order, as a 0 (first) to 1 (last) percentile, so a
  * task you dragged up wins a tie before one you didn't — then by progress:
  * the task further along goes first, so you finish what you started.
  */
@@ -53,7 +53,7 @@ export function compareByRelevance(
 }
 
 /**
- * Percentile position within a same-project, manually ordered group: 0 for
+ * Percentile position within a same-group, manually ordered list: 0 for
  * the first item, 1 for the last, 0 when there's nothing to rank against.
  * Feeds `compareByRelevance`'s `positionRank` tie-break.
  */
@@ -69,10 +69,10 @@ export function isActionable(status: string): boolean {
 }
 
 /**
- * Sort comparator for a project's automatic order: workable tasks first by
+ * Sort comparator for a group's automatic order: workable tasks first by
  * relevance, then blocked and paused ones (also by relevance) at the end.
  */
-export function compareForProjectOrder(
+export function compareForGroupOrder(
   a: { status: string; relevance: number | null; progressPct: number },
   b: { status: string; relevance: number | null; progressPct: number },
 ): number {
@@ -82,7 +82,7 @@ export function compareForProjectOrder(
   );
 }
 
-export function orderProjectTasks<
+export function orderGroupTasks<
   T extends {
     status: string;
     relevance?: number | null;
@@ -104,7 +104,7 @@ export function orderProjectTasks<
       progressPct: task.progressPct,
       status: task.status,
     }))
-    .sort(compareForProjectOrder)
+    .sort(compareForGroupOrder)
     .map(({ task }) => task);
   const completed = tasks
     .filter((task) => task.status === "completada")

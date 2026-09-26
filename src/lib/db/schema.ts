@@ -22,7 +22,7 @@ export const users = pgTable("users", {
     .defaultNow(),
 });
 
-export const projects = pgTable("projects", {
+export const groups = pgTable("groups", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
     .notNull()
@@ -47,9 +47,9 @@ export const tasks = pgTable(
   "tasks",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
+    groupId: uuid("group_id")
       .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+      .references(() => groups.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     description: text("description"),
     status: taskStatusEnum("status").notNull().default("disponible"),

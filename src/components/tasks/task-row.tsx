@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useState } from "react";
-import { STATUS_LABELS, type Task } from "@/components/project-types";
+import { STATUS_LABELS, type Task } from "@/components/group-types";
 import { ProgressRing } from "@/components/task-section";
 import { CalendarPanel } from "@/components/ui/calendar-panel";
 import { CalendarIcon, FlagIcon } from "@/components/ui/icons";
@@ -19,23 +19,23 @@ const DUE_CHIP_TONE = {
 } as const;
 
 // `first:-ml-2` cancels the chip's own left padding when it's the line's
-// first element (e.g. the project page hides the project name), so its
+// first element (e.g. the group page hides the group name), so its
 // icon lines up flush with the title above instead of sitting ~8px in.
 const CHIP =
   "inline-flex h-6 items-center gap-1 whitespace-nowrap rounded-full px-2 text-meta font-medium tabular first:-ml-2";
 
-export type TaskRowTask = Task & { projectName?: string };
+export type TaskRowTask = Task & { groupName?: string };
 
 export type TaskStatusChange = StatusChange;
 
 /**
- * One task: title, then a project/due-date/priority line, on the left,
+ * One task: title, then a group/due-date/priority line, on the left,
  * with the priority flag always last (rightmost). `showProgress` also
  * renders a small progress ring in the top-right corner of the row.
  *
  * The whole row is clickable through the title link's stretched `::after`.
  *
- * Passing `onStatusChange` adds an inline status control on the project detail
+ * Passing `onStatusChange` adds an inline status control on the group detail
  * page; the global task list omits it and stays read-only.
  */
 export function TaskRow({
@@ -43,9 +43,9 @@ export function TaskRow({
   now,
   from,
   showProgress = true,
-  showProject = true,
+  showGroup = true,
   centerProgressOnDesktop = false,
-  inlineProjectStatus = false,
+  inlineGroupStatus = false,
   onStatusChange,
   onBlocked,
 }: {
@@ -55,10 +55,10 @@ export function TaskRow({
   showProgress?: boolean;
   /** Vertically centers the progress ring at desktop widths. */
   centerProgressOnDesktop?: boolean;
-  /** Project page layout: wrapping meta line, no strike-through when done. */
-  inlineProjectStatus?: boolean;
-  /** Hides the project-name meta text, e.g. inside that project's own page. */
-  showProject?: boolean;
+  /** Group page layout: wrapping meta line, no strike-through when done. */
+  inlineGroupStatus?: boolean;
+  /** Hides the group-name meta text, e.g. inside that group's own page. */
+  showGroup?: boolean;
   onStatusChange?: (change: TaskStatusChange) => void;
   onBlocked?: (message: string) => void;
 }) {
@@ -151,7 +151,7 @@ export function TaskRow({
     <span
       className={`block truncate text-body font-medium lg:text-ui ${
         done
-          ? `text-muted ${inlineProjectStatus ? "" : "line-through decoration-line-strong"}`
+          ? `text-muted ${inlineGroupStatus ? "" : "line-through decoration-line-strong"}`
           : ""
       }`}
     >
@@ -161,7 +161,7 @@ export function TaskRow({
 
   return (
     <li
-      className={`relative flex items-center gap-x-2 pr-4 pl-3.5 transition-colors lg:gap-x-3 ${inlineProjectStatus ? "rounded-lg border border-line bg-raised py-2 shadow-panel lg:py-3 dark:border-white/10 dark:bg-[#101217] dark:hover:bg-[#1b2028]" : "py-3 first:rounded-t-panel last:rounded-b-panel"} ${creating ? "" : "hover:bg-sunken"}`}
+      className={`relative flex items-center gap-x-2 pr-4 pl-3.5 transition-colors lg:gap-x-3 ${inlineGroupStatus ? "rounded-lg border border-line bg-raised py-2 shadow-panel lg:py-3 dark:border-white/10 dark:bg-[#101217] dark:hover:bg-[#1b2028]" : "py-3 first:rounded-t-panel last:rounded-b-panel"} ${creating ? "" : "hover:bg-sunken"}`}
     >
       <span
         aria-hidden="true"
@@ -175,7 +175,7 @@ export function TaskRow({
           titleEl
         ) : (
           <Link
-            href={taskHref(task.projectId, task.id, from)}
+            href={taskHref(task.groupId, task.id, from)}
             title={task.title}
             className="block after:absolute after:inset-0"
           >
@@ -184,13 +184,13 @@ export function TaskRow({
         )}
         <div
           className={`flex min-w-0 items-center gap-1.5 text-meta text-muted ${
-            inlineProjectStatus
+            inlineGroupStatus
               ? "flex-wrap gap-y-0.5 lg:gap-y-1 lg:mt-0.5"
               : "mt-0.5"
           }`}
         >
-          {showProject && task.projectName ? (
-            <span className="truncate">{task.projectName}</span>
+          {showGroup && task.groupName ? (
+            <span className="truncate">{task.groupName}</span>
           ) : null}
           {creating ? (
             <span
@@ -203,7 +203,7 @@ export function TaskRow({
           {editable ? renderStatusControl() : null}
           {task.dueDate ? (
             <span
-              className={`${CHIP} ${inlineProjectStatus ? "h-5 lg:h-6" : ""} shrink-0 ${DUE_CHIP_TONE[dueTone]}`}
+              className={`${CHIP} ${inlineGroupStatus ? "h-5 lg:h-6" : ""} shrink-0 ${DUE_CHIP_TONE[dueTone]}`}
             >
               <CalendarIcon className="size-3.5" />
               {formatDueRelative(task.dueDate, now)}
@@ -212,7 +212,7 @@ export function TaskRow({
           {hasPriority ? (
             <span
               title={`Prioridad ${formatPriority(priority)}`}
-              className={`${CHIP} ${inlineProjectStatus ? "h-5 lg:h-6" : ""} ${task.dueDate ? "-ml-2" : ""} shrink-0 text-muted`}
+              className={`${CHIP} ${inlineGroupStatus ? "h-5 lg:h-6" : ""} ${task.dueDate ? "-ml-2" : ""} shrink-0 text-muted`}
             >
               <FlagIcon className="size-3.5" />
               {formatPriority(priority)}

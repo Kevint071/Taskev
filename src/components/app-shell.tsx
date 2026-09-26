@@ -39,9 +39,9 @@ const NAV: NavItem[] = [
     ),
   },
   {
-    href: "/projects",
-    label: "Proyectos",
-    match: (p) => p.startsWith("/projects"),
+    href: "/groups",
+    label: "Grupos",
+    match: (p) => p.startsWith("/groups"),
     icon: (
       <svg {...iconProps} aria-hidden="true">
         <path d="M2.8 5.8c0-.9.7-1.6 1.6-1.6h3.3l1.6 1.8h6.3c.9 0 1.6.7 1.6 1.6v6.6c0 .9-.7 1.6-1.6 1.6H4.4c-.9 0-1.6-.7-1.6-1.6V5.8Z" />
@@ -70,8 +70,8 @@ export function AppShell({
   const pathname = usePathname();
   // A single task is a focus screen: it pins its own composer to the bottom
   // edge, so the phone tab bar steps aside.
-  const focusScreen = /^\/projects\/[^/]+\/tasks\/[^/]+/.test(pathname);
-  const projectDetailScreen = /^\/projects\/[^/]+\/?$/.test(pathname);
+  const focusScreen = /^\/groups\/[^/]+\/tasks\/[^/]+/.test(pathname);
+  const groupDetailScreen = /^\/groups\/[^/]+\/?$/.test(pathname);
 
   // The focus screen is pinned to the window instead of sized with `h-dvh`:
   // installed Android apps resolve `dvh` too tall on a fresh load (until the
@@ -115,7 +115,7 @@ export function AppShell({
             focusScreen
               ? "min-h-0 overflow-y-auto overscroll-contain px-0 pt-0 pb-0"
               : `mx-auto max-w-[880px] px-4 pb-28 md:px-10 md:pb-16 ${
-                  projectDetailScreen ? "pt-4 md:pt-7" : "pt-6 md:pt-10"
+                  groupDetailScreen ? "pt-4 md:pt-7" : "pt-6 md:pt-10"
                 }`
           }`}
         >

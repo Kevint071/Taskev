@@ -6,46 +6,46 @@ export type ActivityComment = {
   createdAt: Date;
 };
 
-export type TaskActivityGroup = {
+export type TaskActivity = {
   taskId: string;
   taskTitle: string;
   comments: ActivityComment[];
   latestAt: Date;
 };
 
-export type ProjectActivityGroup = {
-  projectId: string;
-  projectName: string;
-  tasks: TaskActivityGroup[];
+export type GroupActivity = {
+  groupId: string;
+  groupName: string;
+  tasks: TaskActivity[];
   latestAt: Date;
 };
 
 /**
- * Groups recent comments by project, then by task within each project, so a
- * burst of activity reads as project → task → thread instead of repeating
- * the project and task names on every comment. Comments, tasks and projects
+ * Nests recent comments by group, then by task within each group, so a
+ * burst of activity reads as group → task → thread instead of repeating
+ * the group and task names on every comment. Comments, tasks and groups
  * are all ordered newest first.
  */
-export function groupRecentCommentsByProject(
+export function nestRecentCommentsByGroup(
   items: RecentComment[],
-): ProjectActivityGroup[] {
-  const projects = new Map<string, ProjectActivityGroup>();
+): GroupActivity[] {
+  const groups = new Map<string, GroupActivity>();
 
   for (const item of items) {
     const comment = { id: item.id, body: item.body, createdAt: item.createdAt };
 
-    let project = projects.get(item.projectId);
-    if (!project) {
-      project = {
-        projectId: item.projectId,
-        projectName: item.projectName,
+    let group = groups.get(item.groupId);
+    if (!group) {
+      group = {
+        groupId: item.groupId,
+        groupName: item.groupName,
         tasks: [],
         latestAt: comment.createdAt,
       };
-      projects.set(item.projectId, project);
+      groups.set(item.groupId, group);
     }
 
-    let task = project.tasks.find((t) => t.taskId === item.taskId);
+    let task = group.tasks.find((t) => t.taskId === item.taskId);
     if (!task) {
       task = {
         taskId: item.taskId,
@@ -53,15 +53,15 @@ export function groupRecentCommentsByProject(
         comments: [],
         latestAt: comment.createdAt,
       };
-      project.tasks.push(task);
+      group.tasks.push(task);
     }
 
     task.comments.push(comment);
   }
 
-  return [...projects.values()]
-    .map((project) => {
-      const tasks = project.tasks
+  return [...groups.values()]
+    .map((group) => {
+      const tasks = group.tasks
         .map((task) => {
           const comments = [...task.comments].sort(
             (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
@@ -69,7 +69,7 @@ export function groupRecentCommentsByProject(
           return { ...task, comments, latestAt: comments[0].createdAt };
         })
         .sort((a, b) => b.latestAt.getTime() - a.latestAt.getTime());
-      return { ...project, tasks, latestAt: tasks[0].latestAt };
+      return { ...group, tasks, latestAt: tasks[0].latestAt };
     })
     .sort((a, b) => b.latestAt.getTime() - a.latestAt.getTime());
 }

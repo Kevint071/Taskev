@@ -119,14 +119,14 @@ export function TaskSection({
                   style={{ backgroundColor: STATUS_COLOR[task.status] }}
                 />
                 <Link
-                  href={taskHref(task.projectId, task.id, from)}
+                  href={taskHref(task.groupId, task.id, from)}
                   className="flex min-w-0 items-center gap-2.5 px-4 py-2.5 pl-5 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken sm:gap-3"
                 >
                   <span className="min-w-0 flex-1 truncate font-medium">
                     {task.title}
                   </span>
                   <span className="shrink-0 truncate max-w-[7rem] text-meta text-muted">
-                    {task.projectName}
+                    {task.groupName}
                   </span>
                   {tone === "progress" ? (
                     <ProgressRing

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getProjectById, getTaskWithProject } from "@/lib/data/access";
+import { getGroupById, getTaskWithGroup } from "@/lib/data/access";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 
@@ -24,7 +24,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 }
 
 /**
- * Guard used by every projects/tasks/comments route handler.
+ * Guard used by every groups/tasks/comments route handler.
  * Returns the authenticated user's id, or null if there is no valid session.
  */
 export async function requireUserId(): Promise<string | null> {
@@ -37,38 +37,38 @@ const UNAUTHENTICATED = {
 } as const;
 
 /**
- * Fetches the current user and the target project concurrently instead of
- * sequentially, since the project lookup doesn't actually need the user id
+ * Fetches the current user and the target group concurrently instead of
+ * sequentially, since the group lookup doesn't actually need the user id
  * until the ownership check below — each is a separate network round trip
  * to the DB, so running them in parallel halves that part of the latency.
  */
-export async function requireOwnedProject(projectId: string) {
-  const [userId, project] = await Promise.all([
+export async function requireOwnedGroup(groupId: string) {
+  const [userId, group] = await Promise.all([
     requireUserId(),
-    getProjectById(projectId),
+    getGroupById(groupId),
   ]);
 
   if (!userId) return UNAUTHENTICATED;
-  if (!project || project.userId !== userId) {
+  if (!group || group.userId !== userId) {
     return {
       response: NextResponse.json(
-        { error: "Proyecto no encontrado" },
+        { error: "Grupo no encontrado" },
         { status: 404 },
       ),
     } as const;
   }
-  return { userId, project } as const;
+  return { userId, group } as const;
 }
 
-/** Same idea as requireOwnedProject, for a task and its parent project. */
+/** Same idea as requireOwnedGroup, for a task and its parent group. */
 export async function requireOwnedTask(taskId: string) {
   const [userId, owned] = await Promise.all([
     requireUserId(),
-    getTaskWithProject(taskId),
+    getTaskWithGroup(taskId),
   ]);
 
   if (!userId) return UNAUTHENTICATED;
-  if (!owned || owned.project.userId !== userId) {
+  if (!owned || owned.group.userId !== userId) {
     return {
       response: NextResponse.json(
         { error: "Tarea no encontrada" },
@@ -76,5 +76,5 @@ export async function requireOwnedTask(taskId: string) {
       ),
     } as const;
   }
-  return { userId, task: owned.task, project: owned.project } as const;
+  return { userId, task: owned.task, group: owned.group } as const;
 }

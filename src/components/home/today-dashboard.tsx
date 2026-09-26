@@ -4,9 +4,9 @@ import { LocalDate } from "@/components/local-date";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState, Panel } from "@/components/ui/panel";
 import {
-  groupRecentCommentsByProject,
-  type ProjectActivityGroup,
-  type TaskActivityGroup,
+  type GroupActivity,
+  nestRecentCommentsByGroup,
+  type TaskActivity,
 } from "@/lib/activity";
 import { taskHref } from "@/lib/back-navigation";
 import { getRecentComments } from "@/lib/data/activity";
@@ -29,7 +29,7 @@ export async function TodayDashboard({
   name: string | null;
 }) {
   const now = new Date();
-  const [{ tasks, projectCount }, comments, cookieStore] = await Promise.all([
+  const [{ tasks, groupCount }, comments, cookieStore] = await Promise.all([
     getUserTaskOverview(userId, now),
     getRecentComments(userId, ACTIVITY_LIMIT),
     cookies(),
@@ -40,7 +40,7 @@ export async function TodayDashboard({
     cookieStore.get(TIME_ZONE_COOKIE)?.value,
   );
   const utcToday = dayKeyInTimeZone(now, "UTC");
-  const activity = groupRecentCommentsByProject(comments);
+  const activity = nestRecentCommentsByGroup(comments);
   const firstName = name?.split(" ")[0];
 
   const openTasks = tasks.filter((t) => t.status !== "completada");
@@ -76,29 +76,29 @@ export async function TodayDashboard({
       ) : (
         <EmptyState
           title={
-            projectCount === 0
-              ? "Empieza creando un proyecto"
+            groupCount === 0
+              ? "Empieza creando un grupo"
               : allStalled
                 ? "Nada listo para trabajar"
                 : "No tienes tareas abiertas"
           }
           description={
-            projectCount === 0
-              ? "Un proyecto agrupa tareas con un mismo objetivo. Después añade tareas y Taskev te dirá cuál va primero."
+            groupCount === 0
+              ? "Un grupo reúne tareas con un mismo objetivo. Después añade tareas y Taskev te dirá cuál va primero."
               : allStalled
                 ? "Tus tareas abiertas están bloqueadas o en pausa. Desbloquea o reanuda alguna y aparecerá aquí."
-                : "Añade una tarea a cualquier proyecto y aparecerá aquí según su prioridad y fecha límite."
+                : "Añade una tarea a cualquier grupo y aparecerá aquí según su prioridad y fecha límite."
           }
           action={
             <ButtonLink
-              href={allStalled ? "/tasks" : "/projects"}
+              href={allStalled ? "/tasks" : "/groups"}
               variant="primary"
             >
-              {projectCount === 0
-                ? "Crear un proyecto"
+              {groupCount === 0
+                ? "Crear un grupo"
                 : allStalled
                   ? "Ver tareas"
-                  : "Ir a proyectos"}
+                  : "Ir a grupos"}
             </ButtonLink>
           }
         />
@@ -132,7 +132,7 @@ function UnplannedNotice({ tasks }: { tasks: OverviewTask[] }) {
       {preview.map((task, i) => (
         <span key={task.id} className="text-muted">
           <Link
-            href={taskHref(task.projectId, task.id, "hoy")}
+            href={taskHref(task.groupId, task.id, "hoy")}
             className="text-ink hover:text-accent"
           >
             {task.title}
@@ -145,24 +145,21 @@ function UnplannedNotice({ tasks }: { tasks: OverviewTask[] }) {
   );
 }
 
-function ActivityFeed({ groups }: { groups: ProjectActivityGroup[] }) {
+function ActivityFeed({ groups }: { groups: GroupActivity[] }) {
   return (
     <section className="flex flex-col gap-2">
       <h2 className="font-semibold">Actividad reciente</h2>
       <div className="flex flex-col gap-4">
-        {groups.map((project) => (
-          <div key={project.projectId} className="flex flex-col gap-2">
+        {groups.map((group) => (
+          <div key={group.groupId} className="flex flex-col gap-2">
             <h3 className="text-meta font-medium text-muted">
-              {project.projectName}
+              {group.groupName}
             </h3>
             <Panel>
               <ul className="divide-y divide-line">
-                {project.tasks.map((task) => (
+                {group.tasks.map((task) => (
                   <li key={task.taskId}>
-                    <ActivityTaskRow
-                      projectId={project.projectId}
-                      task={task}
-                    />
+                    <ActivityTaskRow groupId={group.groupId} task={task} />
                   </li>
                 ))}
               </ul>
@@ -175,15 +172,15 @@ function ActivityFeed({ groups }: { groups: ProjectActivityGroup[] }) {
 }
 
 function ActivityTaskRow({
-  projectId,
+  groupId,
   task,
 }: {
-  projectId: string;
-  task: TaskActivityGroup;
+  groupId: string;
+  task: TaskActivity;
 }) {
   return (
     <Link
-      href={taskHref(projectId, task.taskId, "hoy")}
+      href={taskHref(groupId, task.taskId, "hoy")}
       className="flex min-w-0 flex-col gap-2 px-4 py-3 transition-colors first:rounded-t-panel last:rounded-b-panel hover:bg-sunken"
     >
       <div className="flex items-baseline justify-between gap-2">
