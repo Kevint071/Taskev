@@ -2,51 +2,76 @@
 
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { type ReactNode, useState } from "react";
+import { type ComponentProps, type ReactNode, useState } from "react";
+import { useTheme } from "@/components/theme-provider";
+import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Field, FormError } from "@/components/ui/field";
+import {
+  CheckIcon,
+  EyeIcon,
+  EyeOffIcon,
+  LockIcon,
+  LogOutIcon,
+  MailIcon,
+  TrashIcon,
+} from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { MAX_NAME_LENGTH, MIN_PASSWORD_LENGTH } from "@/lib/constraints";
+import { getAvatarColor } from "@/lib/avatar";
+import { MAX_NAME_LENGTH } from "@/lib/constraints";
+import { passwordChecks } from "@/lib/password-checks";
+import { THEME_OPTIONS, type ThemePreference } from "@/lib/theme";
 
-function Section({
-  title,
-  description,
+function Card({
   children,
+  className = "",
 }: {
-  title: string;
-  description: string;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <section className="flex flex-col gap-6">
-      <div className="border-b border-line pb-4">
-        <h2 className="text-section font-semibold">{title}</h2>
-        <p className="mt-1 text-muted">{description}</p>
-      </div>
-      <div className="flex min-w-0 max-w-[480px] flex-col gap-4">
-        {children}
-      </div>
+    <section
+      className={`overflow-hidden rounded-2xl border border-line bg-raised shadow-panel ${className}`}
+    >
+      {children}
     </section>
+  );
+}
+
+function CardHeader({
+  title,
+  description,
+}: {
+  title: string;
+  description: ReactNode;
+}) {
+  return (
+    <div className="px-5 pt-5">
+      <h3 className="text-body font-semibold">{title}</h3>
+      <p className="mt-0.5 text-muted">{description}</p>
+    </div>
+  );
+}
+
+/** Tinted bar closing a form card: status on the left, actions on the right. */
+function CardFooter({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex min-h-14 flex-wrap items-center justify-end gap-x-3 gap-y-2 border-t border-line bg-sunken/60 px-5 py-2.5">
+      {children}
+    </div>
   );
 }
 
 function Saved({ message }: { message: string | null }) {
   if (!message) return null;
-  return <output className="text-meta text-status-done">{message}</output>;
-}
-
-export function AppearanceSection() {
   return (
-    <Section
-      title="Apariencia"
-      description="Sistema sigue la configuración de tu dispositivo."
-    >
-      <div>
-        <ThemeToggle />
-      </div>
-    </Section>
+    <output className="animate-caption-in mr-auto flex items-center gap-1.5 text-meta font-medium text-status-done">
+      <span className="flex size-4 items-center justify-center rounded-full bg-status-done text-raised">
+        <CheckIcon className="size-3" />
+      </span>
+      {message}
+    </output>
   );
 }
 
@@ -64,8 +89,12 @@ export function ProfileSection({
   const [saved, setSaved] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const tooLong = name.trim().length > MAX_NAME_LENGTH;
-  const unchanged = name.trim() === (initialName ?? "");
+  const trimmed = name.trim();
+  const tooLong = trimmed.length > MAX_NAME_LENGTH;
+  const unchanged = trimmed === (initialName ?? "");
+  // The card previews the name as it is typed, before it is saved.
+  const identity = trimmed || email;
+  const color = getAvatarColor(identity);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -90,52 +119,277 @@ export function ProfileSection({
   }
 
   return (
-    <Section
-      title="Perfil"
-      description="Tu nombre aparece en la navegación en lugar del correo."
-    >
-      <Field label="Correo electrónico">
-        <Input value={email} readOnly disabled />
-      </Field>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <Field
-          label="Nombre"
-          error={tooLong ? `Máximo ${MAX_NAME_LENGTH} caracteres` : error}
-          hint="Déjalo vacío para mostrar tu correo."
-        >
-          <Input
-            value={name}
-            autoComplete="name"
-            onChange={(e) => {
-              setName(e.target.value);
-              setSaved(null);
-            }}
+    <div className="flex flex-col gap-4">
+      <Card>
+        <div
+          aria-hidden="true"
+          className="h-20 transition-colors duration-300"
+          style={{
+            background: `linear-gradient(120deg, color-mix(in srgb, ${color} 34%, var(--raised)), color-mix(in srgb, ${color} 8%, var(--raised)))`,
+          }}
+        />
+        <div className="flex items-end gap-4 px-5 pb-5">
+          <Avatar
+            identity={identity}
+            className="-mt-9 size-18 text-2xl ring-4 ring-raised"
           />
-        </Field>
-        <div className="flex items-center gap-3">
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={pending || tooLong || unchanged}
-          >
-            {pending ? "Guardando…" : "Guardar nombre"}
-          </Button>
-          <Saved message={saved} />
+          <div className="min-w-0 pb-0.5">
+            <p className="truncate text-section font-semibold">
+              {trimmed || "Sin nombre"}
+            </p>
+            <p className="truncate text-muted">{email}</p>
+          </div>
         </div>
-      </form>
-    </Section>
+      </Card>
+
+      <Card>
+        <form onSubmit={handleSubmit}>
+          <CardHeader
+            title="Nombre visible"
+            description="Aparece en tu avatar y en la navegación. Si lo dejas vacío, se usa tu correo."
+          />
+          <div className="px-5 pt-4 pb-5">
+            <Field
+              label="Nombre"
+              error={tooLong ? `Máximo ${MAX_NAME_LENGTH} caracteres` : error}
+            >
+              <Input
+                value={name}
+                autoComplete="name"
+                placeholder="Cómo quieres que te llamemos"
+                className="h-11 w-full"
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setSaved(null);
+                }}
+              />
+            </Field>
+          </div>
+          <CardFooter>
+            <Saved message={saved} />
+            {!unchanged && !pending ? (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setName(initialName ?? "");
+                  setError(null);
+                }}
+              >
+                Descartar
+              </Button>
+            ) : null}
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={pending || tooLong || unchanged}
+            >
+              {pending ? "Guardando…" : "Guardar"}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+
+      <Card>
+        <div className="flex items-center gap-3 px-5 py-4">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sunken text-muted">
+            <MailIcon />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-meta text-muted">Correo electrónico</p>
+            <p className="truncate font-medium">{email}</p>
+          </div>
+          <span
+            title="El correo no se puede cambiar"
+            className="flex items-center gap-1 rounded-full bg-sunken px-2.5 py-1 text-meta text-muted"
+          >
+            <LockIcon className="size-3.5" />
+            Fijo
+          </span>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/** Hand-drawn miniature of the app in a given palette. */
+function ThemeMock({ dark }: { dark: boolean }) {
+  const p = dark
+    ? {
+        surface: "#0a0c10",
+        raised: "#14171d",
+        line: "#23272f",
+        ink: "#f2f4f8",
+        accent: "#8fa4f5",
+      }
+    : {
+        surface: "#f4f6f9",
+        raised: "#ffffff",
+        line: "#e0e5ec",
+        ink: "#1a2332",
+        accent: "#3553c7",
+      };
+  return (
+    <span
+      className="absolute inset-0 flex gap-1.5 p-2"
+      style={{ background: p.surface }}
+    >
+      <span
+        className="flex w-1/4 flex-col gap-1 rounded-[4px] p-1"
+        style={{ background: p.raised }}
+      >
+        <span
+          className="h-1 w-3/4 rounded-full"
+          style={{ background: p.accent }}
+        />
+        <span
+          className="h-1 w-full rounded-full"
+          style={{ background: p.line }}
+        />
+        <span
+          className="h-1 w-2/3 rounded-full"
+          style={{ background: p.line }}
+        />
+      </span>
+      <span className="flex flex-1 flex-col gap-1.5">
+        <span
+          className="h-1.5 w-1/2 rounded-full"
+          style={{ background: p.ink }}
+        />
+        <span
+          className="flex flex-1 flex-col gap-1 rounded-[4px] border p-1.5"
+          style={{ background: p.raised, borderColor: p.line }}
+        >
+          <span
+            className="h-1 w-full rounded-full"
+            style={{ background: p.line }}
+          />
+          <span
+            className="h-1 w-3/4 rounded-full"
+            style={{ background: p.line }}
+          />
+          <span
+            className="mt-auto h-1.5 w-1/3 rounded-full"
+            style={{ background: p.accent }}
+          />
+        </span>
+      </span>
+    </span>
+  );
+}
+
+function ThemePreview({ theme }: { theme: ThemePreference }) {
+  if (theme !== "system") return <ThemeMock dark={theme === "dark"} />;
+  return (
+    <>
+      <ThemeMock dark={false} />
+      <span
+        className="absolute inset-0"
+        style={{ clipPath: "polygon(100% 0, 100% 100%, 0 100%)" }}
+      >
+        <ThemeMock dark />
+      </span>
+    </>
+  );
+}
+
+export function AppearanceSection() {
+  const { theme, setTheme } = useTheme();
+
+  return (
+    <Card>
+      <CardHeader
+        title="Tema"
+        description="Elige cómo se ve Taskev en este dispositivo."
+      />
+      <fieldset className="grid grid-cols-3 gap-3 p-5 sm:gap-4">
+        <legend className="sr-only">Tema</legend>
+        {THEME_OPTIONS.map((option) => {
+          const selected = option.value === theme;
+          return (
+            <label
+              key={option.value}
+              className="group flex cursor-pointer flex-col gap-2"
+            >
+              <input
+                type="radio"
+                name="theme"
+                value={option.value}
+                checked={selected}
+                onChange={() => setTheme(option.value)}
+                className="peer sr-only"
+              />
+              <span
+                className={`relative block aspect-[4/3] overflow-hidden rounded-xl border-2 transition-all peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent ${
+                  selected
+                    ? "border-accent shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent)_16%,transparent)]"
+                    : "border-line group-hover:border-line-strong"
+                }`}
+              >
+                <ThemePreview theme={option.value} />
+                {selected ? (
+                  <span className="animate-fab-in absolute right-1.5 bottom-1.5 flex size-5 items-center justify-center rounded-full bg-accent text-accent-ink shadow-sm">
+                    <CheckIcon className="size-3.5" />
+                  </span>
+                ) : null}
+              </span>
+              <span
+                className={`text-center font-medium sm:text-left ${
+                  selected ? "text-ink" : "text-muted"
+                }`}
+              >
+                {option.label}
+              </span>
+            </label>
+          );
+        })}
+      </fieldset>
+      <p className="border-t border-line bg-sunken/60 px-5 py-3 text-meta text-muted">
+        «Sistema» cambia solo entre claro y oscuro según tu dispositivo.
+      </p>
+    </Card>
+  );
+}
+
+function PasswordInput(props: ComponentProps<typeof Input>) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <span className="relative flex">
+      <Input
+        {...props}
+        type={visible ? "text" : "password"}
+        className="h-11 w-full pr-11"
+      />
+      <button
+        type="button"
+        aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+        aria-pressed={visible}
+        onClick={() => setVisible((current) => !current)}
+        className="absolute inset-y-1 right-1 flex w-9 items-center justify-center rounded-control text-muted transition-colors hover:bg-sunken hover:text-ink"
+      >
+        {visible ? <EyeOffIcon /> : <EyeIcon />}
+      </button>
+    </span>
   );
 }
 
 export function PasswordSection() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  const checks = passwordChecks({
+    current: currentPassword,
+    next: newPassword,
+    confirm: confirmPassword,
+  });
+  const ready = currentPassword.length > 0 && checks.every((c) => c.ok);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!ready) return;
     setError(null);
     setSaved(null);
     setPending(true);
@@ -152,50 +406,92 @@ export function PasswordSection() {
     }
     setCurrentPassword("");
     setNewPassword("");
-    setSaved("Contraseña cambiada");
+    setConfirmPassword("");
+    setSaved("Contraseña actualizada");
+  }
+
+  function edit(setter: (value: string) => void) {
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
+      setter(e.target.value);
+      setSaved(null);
+      setError(null);
+    };
   }
 
   return (
-    <Section
-      title="Contraseña"
-      description="Necesitas tu contraseña actual para cambiarla."
-    >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <Field label="Contraseña actual">
-          <Input
-            type="password"
-            required
-            autoComplete="current-password"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-          />
-        </Field>
-        <Field
-          label="Nueva contraseña"
-          hint={`Al menos ${MIN_PASSWORD_LENGTH} caracteres`}
-        >
-          <Input
-            type="password"
-            required
-            minLength={MIN_PASSWORD_LENGTH}
-            autoComplete="new-password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
-        </Field>
-        <FormError message={error} />
-        <div className="flex items-center gap-3">
-          <Button type="submit" variant="primary" disabled={pending}>
-            {pending ? "Cambiando…" : "Cambiar contraseña"}
-          </Button>
-          <Saved message={saved} />
+    <Card>
+      <form onSubmit={handleSubmit}>
+        <CardHeader
+          title="Cambiar contraseña"
+          description="Primero confirma la actual; después elige una nueva."
+        />
+        <div className="flex flex-col gap-4 px-5 pt-4 pb-5">
+          <Field label="Contraseña actual">
+            <PasswordInput
+              required
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={edit(setCurrentPassword)}
+            />
+          </Field>
+          <div className="h-px bg-line" />
+          <Field label="Nueva contraseña">
+            <PasswordInput
+              required
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={edit(setNewPassword)}
+            />
+          </Field>
+          <Field label="Repite la nueva contraseña">
+            <PasswordInput
+              required
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={edit(setConfirmPassword)}
+            />
+          </Field>
+          <ul
+            aria-label="Requisitos de la nueva contraseña"
+            className="flex flex-col gap-1.5 rounded-xl bg-sunken/70 p-3"
+          >
+            {checks.map((check) => (
+              <li
+                key={check.id}
+                className={`flex items-center gap-2 text-meta transition-colors ${
+                  check.ok ? "text-ink" : "text-muted"
+                }`}
+              >
+                <span
+                  className={`flex size-4 items-center justify-center rounded-full transition-colors ${
+                    check.ok
+                      ? "bg-status-done text-raised"
+                      : "border border-line-strong"
+                  }`}
+                >
+                  {check.ok ? <CheckIcon className="size-3" /> : null}
+                </span>
+                {check.label}
+                <span className="sr-only">
+                  {check.ok ? "(cumplido)" : "(pendiente)"}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <FormError message={error} />
         </div>
+        <CardFooter>
+          <Saved message={saved} />
+          <Button type="submit" variant="primary" disabled={pending || !ready}>
+            {pending ? "Actualizando…" : "Actualizar contraseña"}
+          </Button>
+        </CardFooter>
       </form>
-    </Section>
+    </Card>
   );
 }
 
-export function DeleteAccountSection({ email }: { email: string }) {
+export function AccountSection({ email }: { email: string }) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -219,20 +515,54 @@ export function DeleteAccountSection({ email }: { email: string }) {
   }
 
   return (
-    <Section
-      title="Eliminar cuenta"
-      description="Borra tu cuenta y todos tus grupos, tareas y comentarios."
-    >
-      <div className="flex flex-col items-start gap-3 rounded-panel border border-danger/40 p-4">
-        <p>
-          Esta acción es permanente. No hay forma de recuperar los datos
-          después.
-        </p>
-        <Button variant="danger" onClick={() => setOpen(true)}>
-          Eliminar mi cuenta
-        </Button>
-        <FormError message={error} />
-      </div>
+    <div className="flex flex-col gap-4">
+      <Card>
+        <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-4 p-5 sm:grid-cols-[auto_1fr_auto]">
+          <span className="flex size-9 items-center justify-center rounded-xl bg-sunken text-muted">
+            <LogOutIcon />
+          </span>
+          <div className="min-w-0">
+            <p className="font-medium">Cerrar sesión</p>
+            <p className="text-meta text-muted">
+              Sal de Taskev en este dispositivo.
+            </p>
+          </div>
+          <Button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="col-span-2 sm:col-span-1"
+          >
+            Cerrar sesión
+          </Button>
+        </div>
+      </Card>
+
+      <Card className="border-danger/30">
+        <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-4 p-5 sm:grid-cols-[auto_1fr_auto]">
+          <span className="flex size-9 items-center justify-center rounded-xl bg-danger/10 text-danger">
+            <TrashIcon />
+          </span>
+          <div className="min-w-0">
+            <p className="font-medium text-danger">Eliminar cuenta</p>
+            <p className="text-meta text-muted">
+              Borra tu cuenta y todos tus grupos, tareas y comentarios. No se
+              puede deshacer.
+            </p>
+          </div>
+          <Button
+            variant="danger"
+            onClick={() => setOpen(true)}
+            className="col-span-2 sm:col-span-1"
+          >
+            Eliminar cuenta
+          </Button>
+        </div>
+        {error ? (
+          <div className="border-t border-danger/20 bg-danger/5 px-5 py-3">
+            <FormError message={error} />
+          </div>
+        ) : null}
+      </Card>
+
       <ConfirmDialog
         open={open}
         title="¿Eliminar tu cuenta?"
@@ -248,6 +578,6 @@ export function DeleteAccountSection({ email }: { email: string }) {
         onConfirm={handleDelete}
         onClose={() => setOpen(false)}
       />
-    </Section>
+    </div>
   );
 }
