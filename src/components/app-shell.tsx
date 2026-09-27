@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Brand } from "@/components/brand";
+import { SETTINGS_ICONS } from "@/components/settings-icons";
+import { Avatar } from "@/components/ui/avatar";
+import { LogOutIcon } from "@/components/ui/icons";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { SETTINGS_TABS, settingsHref } from "@/lib/settings-tabs";
 
@@ -44,7 +47,10 @@ const NAV: NavItem[] = [
     match: (p) => p.startsWith("/groups"),
     icon: (
       <svg {...iconProps} aria-hidden="true">
-        <path d="M2.8 5.8c0-.9.7-1.6 1.6-1.6h3.3l1.6 1.8h6.3c.9 0 1.6.7 1.6 1.6v6.6c0 .9-.7 1.6-1.6 1.6H4.4c-.9 0-1.6-.7-1.6-1.6V5.8Z" />
+        <rect x="3" y="3" width="6" height="6" rx="1.6" />
+        <rect x="11" y="3" width="6" height="6" rx="1.6" />
+        <rect x="3" y="11" width="6" height="6" rx="1.6" />
+        <rect x="11" y="11" width="6" height="6" rx="1.6" />
       </svg>
     ),
   },
@@ -187,14 +193,12 @@ const MENU_SETTINGS_TABS = SETTINGS_TABS.filter(
 );
 
 const menuItemClass =
-  "flex w-full rounded-control px-3 py-2 text-left text-ui text-muted hover:bg-sunken hover:text-ink";
+  "flex w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left text-ui text-muted hover:bg-sunken hover:text-ink";
 
 function UserMenu({ user }: { user: { email: string; name: string | null } }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const identity = user.name?.trim() || user.email;
-  const initials = getInitials(identity);
-  const color = getAvatarColor(identity);
 
   useEffect(() => {
     if (!open) return;
@@ -223,10 +227,9 @@ function UserMenu({ user }: { user: { email: string; name: string | null } }) {
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((current) => !current)}
-        className="flex size-9 items-center justify-center rounded-full text-sm font-semibold text-white shadow-sm transition-transform hover:scale-105 focus-visible:outline-offset-2"
-        style={{ backgroundColor: color }}
+        className="rounded-full shadow-sm transition-transform hover:scale-105 focus-visible:outline-offset-2"
       >
-        {initials}
+        <Avatar identity={identity} />
       </button>
       {open ? (
         <div
@@ -234,11 +237,16 @@ function UserMenu({ user }: { user: { email: string; name: string | null } }) {
           aria-label="Menú de usuario"
           className="animate-reveal absolute right-0 top-11 z-30 w-56 rounded-panel border border-line bg-raised p-2 shadow-lg"
         >
-          <div className="border-b border-line px-3 pb-2 pt-1">
-            <p className="truncate text-ui font-medium text-ink">{identity}</p>
-            {user.name ? (
-              <p className="truncate text-meta text-muted">{user.email}</p>
-            ) : null}
+          <div className="flex items-center gap-2.5 border-b border-line px-2.5 pb-2.5 pt-1">
+            <Avatar identity={identity} className="size-8 text-meta" />
+            <div className="min-w-0">
+              <p className="truncate text-ui font-medium text-ink">
+                {identity}
+              </p>
+              {user.name ? (
+                <p className="truncate text-meta text-muted">{user.email}</p>
+              ) : null}
+            </div>
           </div>
           <div className="border-b border-line py-1">
             {MENU_SETTINGS_TABS.map((tab) => (
@@ -249,6 +257,7 @@ function UserMenu({ user }: { user: { email: string; name: string | null } }) {
                 onClick={() => setOpen(false)}
                 className={menuItemClass}
               >
+                {SETTINGS_ICONS[tab.value]}
                 {tab.label}
               </Link>
             ))}
@@ -259,29 +268,11 @@ function UserMenu({ user }: { user: { email: string; name: string | null } }) {
             onClick={() => signOut({ callbackUrl: "/" })}
             className={`mt-1 ${menuItemClass}`}
           >
+            <LogOutIcon className="size-[18px]" />
             Cerrar sesión
           </button>
         </div>
       ) : null}
     </div>
   );
-}
-
-function getInitials(identity: string) {
-  const words = identity.trim().split(/\s+/).filter(Boolean);
-  if (words.length > 1)
-    return `${words[0][0]}${words.at(-1)?.[0]}`.toUpperCase();
-  return identity.slice(0, 2).toUpperCase();
-}
-
-function getAvatarColor(identity: string) {
-  const normalized = identity
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-  let hash = 0;
-  for (const character of normalized)
-    hash = (hash * 31 + character.charCodeAt(0)) | 0;
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue} 58% 42%)`;
 }

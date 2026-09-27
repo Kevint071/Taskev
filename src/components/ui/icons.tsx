@@ -461,3 +461,75 @@ export function NoteIcon({ className }: { className?: string } = {}) {
     </svg>
   );
 }
+
+export function EyeIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2.5 10s2.7-5 7.5-5 7.5 5 7.5 5-2.7 5-7.5 5-7.5-5-7.5-5Z" />
+      <circle cx="10" cy="10" r="2.3" />
+    </svg>
+  );
+}
+
+export function EyeOffIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M8.2 5.2A7.6 7.6 0 0 1 10 5c4.8 0 7.5 5 7.5 5a13 13 0 0 1-2 2.6M5.4 6.4C3.5 7.8 2.5 10 2.5 10s2.7 5 7.5 5a7.3 7.3 0 0 0 3.6-.9" />
+      <path d="M8.4 8.4a2.3 2.3 0 0 0 3.2 3.2M3.5 3.5l13 13" />
+    </svg>
+  );
+}
+
+export function LogOutIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M8 16.5H5.5A1.5 1.5 0 0 1 4 15V5a1.5 1.5 0 0 1 1.5-1.5H8" />
+      <path d="M12.5 13.5 16 10l-3.5-3.5M16 10H8" />
+    </svg>
+  );
+}
+
+export function MailIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="4.5" width="14" height="11" rx="2" />
+      <path d="m3.5 6 6.5 5 6.5-5" />
+    </svg>
+  );
+}
