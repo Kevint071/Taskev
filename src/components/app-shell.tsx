@@ -47,7 +47,10 @@ const NAV: NavItem[] = [
     match: (p) => p.startsWith("/groups"),
     icon: (
       <svg {...iconProps} aria-hidden="true">
-        <path d="M2.8 5.8c0-.9.7-1.6 1.6-1.6h3.3l1.6 1.8h6.3c.9 0 1.6.7 1.6 1.6v6.6c0 .9-.7 1.6-1.6 1.6H4.4c-.9 0-1.6-.7-1.6-1.6V5.8Z" />
+        <rect x="3" y="3" width="6" height="6" rx="1.6" />
+        <rect x="11" y="3" width="6" height="6" rx="1.6" />
+        <rect x="3" y="11" width="6" height="6" rx="1.6" />
+        <rect x="11" y="11" width="6" height="6" rx="1.6" />
       </svg>
     ),
   },
