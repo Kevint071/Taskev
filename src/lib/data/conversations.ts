@@ -68,16 +68,24 @@ export async function getOwnedConversation(
   return (row as Conversation | undefined) ?? null;
 }
 
+export type Turn = {
+  provider: Provider;
+  history: HistoryStep[];
+  transcript: TranscriptItem[];
+  pending: PendingAction | null;
+};
+
+/** Created with its first turn, so a failed first message leaves nothing. */
 export async function createConversation(
   userId: string,
   title: string,
-  provider: Provider,
-): Promise<Conversation> {
+  turn: Turn,
+): Promise<ConversationSummary> {
   const [row] = await db
     .insert(assistantConversations)
-    .values({ userId, title, provider, history: [], transcript: [] })
-    .returning();
-  return { ...row, provider } as Conversation;
+    .values({ userId, title, ...turn })
+    .returning(summaryFields);
+  return row as ConversationSummary;
 }
 
 /**
@@ -89,12 +97,7 @@ export async function saveTurn(
   userId: string,
   id: string,
   version: number,
-  turn: {
-    provider: Provider;
-    history: HistoryStep[];
-    transcript: TranscriptItem[];
-    pending: PendingAction | null;
-  },
+  turn: Turn,
 ): Promise<ConversationSummary | null> {
   const [row] = await db
     .update(assistantConversations)
