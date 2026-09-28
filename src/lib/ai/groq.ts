@@ -19,7 +19,6 @@ const BASE_URL = "https://api.groq.com/openai/v1";
 
 /** Open-weight GPT model on Groq, the most reliable of the two at tool use. */
 export const GROQ_MODEL = "openai/gpt-oss-120b";
-export const GROQ_LABEL = "GPT-OSS 120B · Groq";
 
 /** Steps a model produces; consecutive ones form one assistant message. */
 const MODEL_STEPS = new Set(["model_output", "function_call", "reasoning"]);

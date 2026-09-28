@@ -12,6 +12,12 @@ export const PROVIDER_NAMES: Record<Provider, string> = {
   groq: "Groq",
 };
 
+/** What the model picker shows; keep in step with GEMINI_MODEL and GROQ_MODEL. */
+export const MODEL_LABELS: Record<Provider, string> = {
+  gemini: "Gemini 3.7 Flash",
+  groq: "GPT-OSS 120B · Groq",
+};
+
 export function isProvider(value: unknown): value is Provider {
   return PROVIDERS.includes(value as Provider);
 }

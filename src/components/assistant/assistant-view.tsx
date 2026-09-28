@@ -1,23 +1,35 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
-import { CheckIcon, SendIcon, TriangleAlertIcon } from "@/components/ui/icons";
-import { PageHeader } from "@/components/ui/panel";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  CheckIcon,
+  PlusIcon,
+  SendIcon,
+  TriangleAlertIcon,
+} from "@/components/ui/icons";
+import { Select } from "@/components/ui/input";
+import { LoadingRows, PageHeader } from "@/components/ui/panel";
 import type { DisplayItem, PendingAction } from "@/lib/ai/agent";
-import type { HistoryStep } from "@/lib/ai/provider";
+import { pickProvider } from "@/lib/ai/conversations";
+import { MODEL_LABELS, type Provider } from "@/lib/ai/provider";
 import { handleUnauthenticated } from "@/lib/api-client";
+import type { TranscriptItem } from "@/lib/db/schema";
 import { settingsHref } from "@/lib/settings-tabs";
+import { type ConversationItem, ConversationList } from "./conversation-list";
 
 type ChatItem =
   | { kind: "user"; text: string }
   | { kind: "assistant"; text: string }
   | { kind: "action"; text: string; isError: boolean }
-  | { kind: "error"; text: string; settingsLink: boolean };
+  | { kind: "error"; text: string; settingsLink: boolean; reload: boolean };
 
 type AssistantResponse = {
-  history: HistoryStep[];
+  conversation: ConversationItem;
   display: DisplayItem[];
   pending: PendingAction | null;
 };
@@ -25,6 +37,10 @@ type AssistantResponse = {
 type RequestBody =
   | { message: string }
   | { confirmation: { callId: string; approved: boolean } };
+
+const ASSISTANT_PATH = "/asistente";
+/** The open conversation lives in the URL, so a reload keeps it. */
+const CONVERSATION_PARAM = "c";
 
 const SUGGESTIONS = [
   "¿Qué tareas tengo bloqueadas?",
@@ -41,18 +57,65 @@ function toChatItem(item: DisplayItem): ChatItem {
     : { kind: "action", text: item.text, isError: item.isError };
 }
 
+function fromTranscript(item: TranscriptItem): ChatItem {
+  return item.kind === "action"
+    ? { kind: "action", text: item.text, isError: item.isError === true }
+    : { kind: item.kind, text: item.text };
+}
+
+function errorItem(
+  text: string,
+  code?: string,
+): Extract<ChatItem, { kind: "error" }> {
+  return {
+    kind: "error",
+    text,
+    settingsLink: KEY_ERRORS.has(code ?? ""),
+    reload: code === "conflict",
+  };
+}
+
+function conversationHref(id: string | null) {
+  return id
+    ? `${ASSISTANT_PATH}?${CONVERSATION_PARAM}=${encodeURIComponent(id)}`
+    : ASSISTANT_PATH;
+}
+
 /**
- * The conversation lives only in this component's state: reloading or
- * leaving the page starts over, and nothing is stored on the server.
+ * The chat plus the user's saved conversations. The server keeps each
+ * conversation's model context; this view only holds what the user sees.
  */
-export function AssistantView() {
-  const [history, setHistory] = useState<HistoryStep[]>([]);
+export function AssistantView({
+  providers,
+  initialConversations,
+}: {
+  /** Providers with a configured key, at least one. */
+  providers: Provider[];
+  initialConversations: ConversationItem[];
+}) {
+  const searchParams = useSearchParams();
+  const urlId = searchParams.get(CONVERSATION_PARAM);
+
+  const [conversations, setConversations] = useState(initialConversations);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [items, setItems] = useState<ChatItem[]>([]);
   const [pending, setPending] = useState<PendingAction | null>(null);
+  const [provider, setProvider] = useState<Provider>(
+    () =>
+      pickProvider([initialConversations[0]?.provider], providers) ??
+      providers[0],
+  );
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
-  // Bumped by "Nueva conversación" so a reply still in flight is dropped.
-  const conversation = useRef(0);
+  const [loading, setLoading] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<ConversationItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  // Bumped whenever the open conversation changes, so a reply or a load
+  // still in flight for the previous one is dropped.
+  const generation = useRef(0);
+  // The conversation whose content is on screen (or being loaded).
+  const shownId = useRef<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -61,51 +124,148 @@ export function AssistantView() {
     endRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [items.length, pending, busy]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: load only when the URL points elsewhere
+  useEffect(() => {
+    if (urlId === shownId.current) return;
+    if (urlId) void load(urlId);
+    else clear();
+  }, [urlId]);
+
+  function upsert(conversation: ConversationItem) {
+    setConversations((prev) => [
+      conversation,
+      ...prev.filter((c) => c.id !== conversation.id),
+    ]);
+  }
+
+  function clear() {
+    generation.current++;
+    shownId.current = null;
+    setActiveId(null);
+    setItems([]);
+    setPending(null);
+    setBusy(false);
+    setLoading(false);
+    setProvider(
+      (current) =>
+        pickProvider([conversations[0]?.provider, current], providers) ??
+        current,
+    );
+  }
+
+  async function load(id: string) {
+    const token = ++generation.current;
+    shownId.current = id;
+    setActiveId(id);
+    setItems([]);
+    setPending(null);
+    setBusy(false);
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/assistant/conversations/${id}`);
+      if (handleUnauthenticated(res)) return;
+      const data = await res.json().catch(() => ({}));
+      if (token !== generation.current) return;
+      if (!res.ok) {
+        // Gone (deleted elsewhere) or never ours: start over from an empty chat.
+        shownId.current = null;
+        setActiveId(null);
+        setConversations((prev) => prev.filter((c) => c.id !== id));
+        window.history.replaceState(null, "", ASSISTANT_PATH);
+        setItems([
+          errorItem(
+            res.status === 404
+              ? "Esta conversación ya no existe."
+              : "No se pudo abrir la conversación.",
+          ),
+        ]);
+        return;
+      }
+      setItems((data.transcript as TranscriptItem[]).map(fromTranscript));
+      setPending(data.pending ?? null);
+      setProvider(
+        (current) =>
+          pickProvider([data.provider, current], providers) ?? current,
+      );
+    } catch {
+      if (token !== generation.current) return;
+      setItems([
+        errorItem(
+          "No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.",
+        ),
+      ]);
+    } finally {
+      if (token === generation.current) setLoading(false);
+    }
+  }
+
+  function open(id: string) {
+    setListOpen(false);
+    window.history.replaceState(null, "", conversationHref(id));
+    if (id === shownId.current && !loading) void load(id);
+  }
+
+  function startNew() {
+    setListOpen(false);
+    window.history.replaceState(null, "", ASSISTANT_PATH);
+    clear();
+    setDraft("");
+    inputRef.current?.focus();
+  }
+
   async function request(body: RequestBody) {
-    const id = conversation.current;
+    const token = generation.current;
     setBusy(true);
     try {
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ history, ...body }),
+        body: JSON.stringify({
+          conversationId: shownId.current,
+          ...("message" in body ? { provider } : {}),
+          ...body,
+        }),
       });
       if (handleUnauthenticated(res)) return;
       const data = await res.json().catch(() => ({}));
-      if (id !== conversation.current) return;
+      if (token !== generation.current) return;
       if (!res.ok) {
         setItems((prev) => [
           ...prev,
-          {
-            kind: "error",
-            text: data.error ?? "El asistente no pudo responder.",
-            settingsLink: KEY_ERRORS.has(data.code),
-          },
+          errorItem(data.error ?? "El asistente no pudo responder.", data.code),
         ]);
         return;
       }
       const reply = data as AssistantResponse;
-      setHistory(reply.history);
+      if (shownId.current === null) {
+        // The first message created the conversation.
+        shownId.current = reply.conversation.id;
+        setActiveId(reply.conversation.id);
+        window.history.replaceState(
+          null,
+          "",
+          conversationHref(reply.conversation.id),
+        );
+      }
+      upsert(reply.conversation);
       setPending(reply.pending);
       setItems((prev) => [...prev, ...reply.display.map(toChatItem)]);
     } catch {
-      if (id !== conversation.current) return;
+      if (token !== generation.current) return;
       setItems((prev) => [
         ...prev,
-        {
-          kind: "error",
-          text: "No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.",
-          settingsLink: false,
-        },
+        errorItem(
+          "No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.",
+        ),
       ]);
     } finally {
-      if (id === conversation.current) setBusy(false);
+      if (token === generation.current) setBusy(false);
     }
   }
 
   function send(text: string) {
     const message = text.trim();
-    if (!message || busy) return;
+    if (!message || busy || loading) return;
     setDraft("");
     setItems((prev) => [
       ...prev,
@@ -133,14 +293,51 @@ export function AssistantView() {
     request({ confirmation: { callId, approved } });
   }
 
-  function reset() {
-    conversation.current++;
-    setHistory([]);
-    setItems([]);
-    setPending(null);
-    setDraft("");
-    setBusy(false);
-    inputRef.current?.focus();
+  async function rename(id: string, title: string): Promise<string | null> {
+    try {
+      const res = await fetch(`/api/assistant/conversations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+      if (handleUnauthenticated(res)) return null;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return data.error ?? "No se pudo renombrar la conversación";
+      setConversations((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, title: data.title } : c)),
+      );
+      return null;
+    } catch {
+      return "No se pudo conectar. Inténtalo de nuevo.";
+    }
+  }
+
+  async function confirmDelete() {
+    if (!toDelete) return;
+    const { id } = toDelete;
+    setDeleting(true);
+    let ok = false;
+    try {
+      const res = await fetch(`/api/assistant/conversations/${id}`, {
+        method: "DELETE",
+      });
+      if (handleUnauthenticated(res)) return;
+      // Already gone counts as deleted.
+      ok = res.ok || res.status === 404;
+    } catch {
+      ok = false;
+    }
+    setDeleting(false);
+    setToDelete(null);
+    if (!ok) {
+      setItems((prev) => [
+        ...prev,
+        errorItem("No se pudo eliminar la conversación. Inténtalo de nuevo."),
+      ]);
+      return;
+    }
+    setConversations((prev) => prev.filter((c) => c.id !== id));
+    if (id === shownId.current) startNew();
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -154,110 +351,207 @@ export function AssistantView() {
     }
   }
 
-  const empty = items.length === 0 && !busy;
+  const empty = items.length === 0 && !busy && !loading;
+  const canPickModel = providers.length > 1;
+  const list = (
+    <ConversationList
+      conversations={conversations}
+      activeId={activeId}
+      onOpen={open}
+      onRename={rename}
+      onDelete={setToDelete}
+    />
+  );
 
   return (
-    <div className="flex flex-1 flex-col gap-6">
-      <PageHeader
-        title="Asistente"
-        description="Consulta y gestiona tus grupos y tareas conversando."
-        actions={
-          items.length > 0 ? (
-            <Button onClick={reset}>Nueva conversación</Button>
-          ) : null
-        }
-      />
-
-      <section
-        aria-label="Conversación"
-        aria-live="polite"
-        className="flex flex-1 flex-col gap-3"
+    <div className="flex flex-1 gap-8">
+      <aside
+        aria-label="Conversaciones"
+        className="hidden w-56 shrink-0 flex-col gap-3 lg:sticky lg:top-10 lg:flex lg:max-h-[calc(100dvh-5rem)] lg:self-start"
       >
-        {empty ? (
-          <div className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-line-strong px-5 py-6">
-            <p className="text-muted">
-              Pregunta por tus tareas o pide cambios: crear, editar, cambiar de
-              estado, comentar… Borrar o archivar siempre te pedirá
-              confirmación.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {SUGGESTIONS.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  onClick={() => send(suggestion)}
-                  className="rounded-full border border-line bg-raised px-3 py-1.5 text-meta font-medium text-ink transition-colors hover:border-line-strong hover:bg-sunken"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {items.map((item, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: append-only transcript
-          <ChatRow key={i} item={item} />
-        ))}
-
-        {pending ? (
-          <PendingCard
-            action={pending}
-            disabled={busy}
-            onConfirm={() => resolvePending(true)}
-            onCancel={() => resolvePending(false)}
-          />
-        ) : null}
-
-        {busy ? (
-          <p className="flex items-center gap-2 self-start text-muted">
-            <span className="flex gap-1" aria-hidden="true">
-              <span className="size-1.5 animate-pulse rounded-full bg-muted" />
-              <span className="size-1.5 animate-pulse rounded-full bg-muted [animation-delay:150ms]" />
-              <span className="size-1.5 animate-pulse rounded-full bg-muted [animation-delay:300ms]" />
-            </span>
-            Pensando…
-          </p>
-        ) : null}
-        <div ref={endRef} />
-      </section>
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          send(draft);
-        }}
-        className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] flex items-end gap-2 rounded-2xl border border-line bg-raised p-2 shadow-panel md:bottom-6"
-      >
-        <label htmlFor="assistant-input" className="sr-only">
-          Mensaje para el asistente
-        </label>
-        <textarea
-          id="assistant-input"
-          ref={inputRef}
-          rows={1}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Escribe un mensaje…"
-          maxLength={4000}
-          className="field-sizing-content max-h-40 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-ink outline-none placeholder:text-muted"
-        />
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={busy || draft.trim() === ""}
-          aria-label="Enviar"
-          className="size-10 px-0"
-        >
-          <SendIcon />
+        <Button onClick={startNew} className="justify-start">
+          <PlusIcon className="size-4" />
+          Nueva conversación
         </Button>
-      </form>
+        <div className="-mx-1 min-h-0 overflow-y-auto px-1">{list}</div>
+      </aside>
+
+      <div className="flex min-w-0 flex-1 flex-col gap-6">
+        <PageHeader
+          title="Asistente"
+          description="Consulta y gestiona tus grupos y tareas conversando."
+          actions={
+            <>
+              <Button className="lg:hidden" onClick={() => setListOpen(true)}>
+                Conversaciones
+              </Button>
+              {activeId || items.length > 0 ? (
+                <Button className="lg:hidden" onClick={startNew}>
+                  Nueva conversación
+                </Button>
+              ) : null}
+            </>
+          }
+        />
+
+        <section
+          aria-label="Conversación"
+          aria-live="polite"
+          className="flex flex-1 flex-col gap-3"
+        >
+          {loading ? <LoadingRows rows={3} /> : null}
+
+          {empty ? (
+            <div className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-line-strong px-5 py-6">
+              <p className="text-muted">
+                Pregunta por tus tareas o pide cambios: crear, editar, cambiar
+                de estado, comentar… Borrar o archivar siempre te pedirá
+                confirmación.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {SUGGESTIONS.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => send(suggestion)}
+                    className="rounded-full border border-line bg-raised px-3 py-1.5 text-meta font-medium text-ink transition-colors hover:border-line-strong hover:bg-sunken"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {items.map((item, i) => (
+            <ChatRow
+              // biome-ignore lint/suspicious/noArrayIndexKey: append-only transcript
+              key={i}
+              item={item}
+              onReload={() => activeId && void load(activeId)}
+            />
+          ))}
+
+          {pending ? (
+            <PendingCard
+              action={pending}
+              disabled={busy}
+              onConfirm={() => resolvePending(true)}
+              onCancel={() => resolvePending(false)}
+            />
+          ) : null}
+
+          {busy ? (
+            <p className="flex items-center gap-2 self-start text-muted">
+              <span className="flex gap-1" aria-hidden="true">
+                <span className="size-1.5 animate-pulse rounded-full bg-muted" />
+                <span className="size-1.5 animate-pulse rounded-full bg-muted [animation-delay:150ms]" />
+                <span className="size-1.5 animate-pulse rounded-full bg-muted [animation-delay:300ms]" />
+              </span>
+              Pensando…
+            </p>
+          ) : null}
+          <div ref={endRef} />
+        </section>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            send(draft);
+          }}
+          className={`sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] flex gap-2 rounded-2xl border border-line bg-raised p-2 shadow-panel md:bottom-6 ${
+            canPickModel ? "flex-col" : "items-end"
+          }`}
+        >
+          <label htmlFor="assistant-input" className="sr-only">
+            Mensaje para el asistente
+          </label>
+          <textarea
+            id="assistant-input"
+            ref={inputRef}
+            rows={1}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Escribe un mensaje…"
+            maxLength={4000}
+            className="field-sizing-content max-h-40 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-ink outline-none placeholder:text-muted"
+          />
+          <div
+            className={
+              canPickModel ? "flex items-center justify-between gap-2" : ""
+            }
+          >
+            {canPickModel ? (
+              <>
+                <label htmlFor="assistant-model" className="sr-only">
+                  Modelo
+                </label>
+                <Select
+                  id="assistant-model"
+                  value={provider}
+                  onChange={(e) => setProvider(e.target.value as Provider)}
+                  disabled={busy || pending !== null}
+                  title={
+                    pending
+                      ? "Confirma o cancela la acción pendiente para cambiar de modelo"
+                      : undefined
+                  }
+                  className="h-8 max-w-[60%] text-meta"
+                >
+                  {providers.map((p) => (
+                    <option key={p} value={p}>
+                      {MODEL_LABELS[p]}
+                    </option>
+                  ))}
+                </Select>
+              </>
+            ) : null}
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={busy || loading || draft.trim() === ""}
+              aria-label="Enviar"
+              className="size-10 px-0"
+            >
+              <SendIcon />
+            </Button>
+          </div>
+        </form>
+      </div>
+
+      <BottomSheet
+        open={listOpen}
+        title="Conversaciones"
+        onClose={() => setListOpen(false)}
+      >
+        <div className="flex flex-col gap-3">
+          <Button onClick={startNew} className="justify-start">
+            <PlusIcon className="size-4" />
+            Nueva conversación
+          </Button>
+          {list}
+        </div>
+      </BottomSheet>
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        title="¿Eliminar esta conversación?"
+        description={
+          toDelete
+            ? `«${toDelete.title}» y todos sus mensajes se borrarán para siempre.`
+            : ""
+        }
+        confirmLabel="Eliminar"
+        pending={deleting}
+        onConfirm={confirmDelete}
+        onClose={() => setToDelete(null)}
+      />
     </div>
   );
 }
 
-function ChatRow({ item }: { item: ChatItem }) {
+function ChatRow({ item, onReload }: { item: ChatItem; onReload: () => void }) {
   switch (item.kind) {
     case "user":
       return (
@@ -310,6 +604,18 @@ function ChatRow({ item }: { item: ChatItem }) {
                 >
                   Ir a Ajustes
                 </Link>
+              </>
+            ) : null}
+            {item.reload ? (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  onClick={onReload}
+                  className="font-medium text-accent underline-offset-2 hover:underline"
+                >
+                  Recargar conversación
+                </button>
               </>
             ) : null}
           </p>

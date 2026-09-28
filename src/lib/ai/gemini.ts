@@ -22,7 +22,6 @@ const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
  * so a model change is a one-line, reviewed edit.
  */
 export const GEMINI_MODEL = "gemini-3.7-flash";
-export const GEMINI_LABEL = "Gemini 3.7 Flash";
 
 /** Wire schema revision used by the official REST examples. */
 const API_REVISION = "2026-05-20";
