@@ -18,6 +18,7 @@ import {
   TrashIcon,
 } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
+import { PROVIDER_NAMES, PROVIDERS, type Provider } from "@/lib/ai/provider";
 import { getAvatarColor } from "@/lib/avatar";
 import { MAX_NAME_LENGTH } from "@/lib/constraints";
 import { passwordChecks } from "@/lib/password-checks";
@@ -494,13 +495,71 @@ export function PasswordSection() {
   );
 }
 
-export type GeminiKeyStatus = { configured: boolean; last4?: string };
+export type KeyStatus = { configured: boolean; last4?: string };
 
-export function AssistantKeySection({
+const KEY_PROVIDERS: Record<
+  Provider,
+  { endpoint: string; consoleName: string; consoleUrl: string; account: string }
+> = {
+  gemini: {
+    endpoint: "/api/account/gemini-key",
+    consoleName: "Google AI Studio",
+    consoleUrl: "https://aistudio.google.com/apikey",
+    account: "tu cuenta de Google",
+  },
+  groq: {
+    endpoint: "/api/account/groq-key",
+    consoleName: "GroqCloud",
+    consoleUrl: "https://console.groq.com/keys",
+    account: "tu cuenta de Groq",
+  },
+};
+
+export function AssistantSection({
+  keys,
+}: {
+  keys: Record<Provider, KeyStatus>;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      {PROVIDERS.map((provider) => (
+        <AssistantKeyCard
+          key={provider}
+          provider={provider}
+          initialStatus={keys[provider]}
+        />
+      ))}
+
+      <Card>
+        <div className="flex gap-3 px-5 py-4">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sunken text-muted">
+            <LockIcon />
+          </span>
+          <div className="min-w-0 text-meta text-muted">
+            <p className="font-medium text-ink">Privacidad</p>
+            <p className="mt-0.5">
+              Cuando usas el asistente, los grupos, tareas y comentarios que
+              consulta se envían al proveedor del modelo que elijas (Google o
+              Groq) usando tu key. Las conversaciones se guardan en Taskev hasta
+              que las borres. Las keys se guardan cifradas y nunca se vuelven a
+              mostrar completas.
+            </p>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function AssistantKeyCard({
+  provider,
   initialStatus,
 }: {
-  initialStatus: GeminiKeyStatus;
+  provider: Provider;
+  initialStatus: KeyStatus;
 }) {
+  const meta = KEY_PROVIDERS[provider];
+  const name = PROVIDER_NAMES[provider];
   const [status, setStatus] = useState(initialStatus);
   const [apiKey, setApiKey] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -514,7 +573,7 @@ export function AssistantKeySection({
     setError(null);
     setSaved(null);
     setPending(true);
-    const res = await fetch("/api/account/gemini-key", {
+    const res = await fetch(meta.endpoint, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ apiKey }),
@@ -535,7 +594,7 @@ export function AssistantKeySection({
     setDeleting(true);
     setError(null);
     setSaved(null);
-    const res = await fetch("/api/account/gemini-key", { method: "DELETE" });
+    const res = await fetch(meta.endpoint, { method: "DELETE" });
     setDeleting(false);
     setConfirmOpen(false);
     if (!res.ok) {
@@ -547,22 +606,22 @@ export function AssistantKeySection({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <>
       <Card>
         <form onSubmit={handleSubmit}>
           <CardHeader
-            title="API key de Gemini"
+            title={`API key de ${name}`}
             description={
               <>
-                El asistente usa tu propia key, así que el uso y la cuota van a
-                tu cuenta de Google. Puedes crear una gratis en{" "}
+                El asistente usa tu propia key, así que el uso y la cuota van a{" "}
+                {meta.account}. Puedes crear una gratis en{" "}
                 <a
-                  href="https://aistudio.google.com/apikey"
+                  href={meta.consoleUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="font-medium text-accent underline-offset-2 hover:underline"
                 >
-                  Google AI Studio
+                  {meta.consoleName}
                 </a>
                 .
               </>
@@ -589,8 +648,8 @@ export function AssistantKeySection({
                 </p>
                 <p className="text-meta text-muted">
                   {status.configured
-                    ? "El asistente está disponible."
-                    : "Guarda una key para usar el asistente."}
+                    ? `Puedes hablar con ${name} en el asistente.`
+                    : `Guarda una key para usar ${name} en el asistente.`}
                 </p>
               </div>
               {status.configured && status.last4 ? (
@@ -643,32 +702,16 @@ export function AssistantKeySection({
         </form>
       </Card>
 
-      <Card>
-        <div className="flex gap-3 px-5 py-4">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sunken text-muted">
-            <LockIcon />
-          </span>
-          <div className="min-w-0 text-meta text-muted">
-            <p className="font-medium text-ink">Privacidad</p>
-            <p className="mt-0.5">
-              Cuando usas el asistente, los grupos, tareas y comentarios que
-              consulta se envían a Google usando tu key. La key se guarda
-              cifrada y nunca se vuelve a mostrar completa.
-            </p>
-          </div>
-        </div>
-      </Card>
-
       <ConfirmDialog
         open={confirmOpen}
-        title="¿Eliminar tu API key?"
-        description="El asistente dejará de estar disponible hasta que guardes otra key."
+        title={`¿Eliminar tu API key de ${name}?`}
+        description={`No podrás usar ${name} en el asistente hasta que guardes otra key.`}
         confirmLabel="Eliminar key"
         pending={deleting}
         onConfirm={handleDelete}
         onClose={() => setConfirmOpen(false)}
       />
-    </div>
+    </>
   );
 }
 

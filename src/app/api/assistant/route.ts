@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { AgentInputError, runAgent } from "@/lib/ai/agent";
 import { gemini } from "@/lib/ai/gemini";
-import { getStoredGeminiKey } from "@/lib/ai/key-store";
+import { getStoredKey } from "@/lib/ai/key-store";
 import {
   PROVIDER_NAMES,
   type Provider,
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Petición inválida" }, { status: 400 });
   }
 
-  const apiKey = await getStoredGeminiKey(userId);
+  const apiKey = await getStoredKey(userId, "gemini");
   if (!apiKey) {
     return NextResponse.json(
       { error: "Configura tu API key de Gemini en Ajustes", code: "no_key" },

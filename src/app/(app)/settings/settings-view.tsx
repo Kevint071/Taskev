@@ -7,6 +7,7 @@ import { useTheme } from "@/components/theme-provider";
 import { Avatar } from "@/components/ui/avatar";
 import { BackIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/panel";
+import type { Provider } from "@/lib/ai/provider";
 import {
   DEFAULT_SETTINGS_TAB,
   parseSettingsSection,
@@ -20,8 +21,8 @@ import { THEME_OPTIONS } from "@/lib/theme";
 import {
   AccountSection,
   AppearanceSection,
-  AssistantKeySection,
-  type GeminiKeyStatus,
+  AssistantSection,
+  type KeyStatus,
   PasswordSection,
   ProfileSection,
 } from "./sections";
@@ -34,11 +35,11 @@ import {
 export function SettingsView({
   email,
   name,
-  geminiKey,
+  aiKeys,
 }: {
   email: string;
   name: string | null;
-  geminiKey: GeminiKeyStatus;
+  aiKeys: Record<Provider, KeyStatus>;
 }) {
   const searchParams = useSearchParams();
   const section = parseSettingsSection(searchParams.get(SETTINGS_TAB_PARAM));
@@ -93,7 +94,7 @@ export function SettingsView({
     perfil: <ProfileSection email={email} name={name} />,
     apariencia: <AppearanceSection />,
     seguridad: <PasswordSection />,
-    asistente: <AssistantKeySection initialStatus={geminiKey} />,
+    asistente: <AssistantSection keys={aiKeys} />,
     cuenta: <AccountSection email={email} />,
   };
 

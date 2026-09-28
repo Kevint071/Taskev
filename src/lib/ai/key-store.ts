@@ -2,42 +2,81 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { decryptApiKey, encryptApiKey } from "./crypto";
+import { PROVIDERS, type Provider } from "./provider";
+
+const FIELDS = {
+  gemini: "geminiApiKeyEncrypted",
+  groq: "groqApiKeyEncrypted",
+} as const satisfies Record<Provider, keyof typeof users.$inferSelect>;
 
 /**
- * The user's Gemini key in the clear, for server-side use only. A value that
- * no longer decrypts (lost or rotated secret) counts as "not configured", so
- * the user is asked to enter it again instead of hitting a 500.
+ * A value that no longer decrypts (lost or rotated secret) counts as "not
+ * configured", so the user is asked to enter it again instead of hitting a 500.
  */
-export async function getStoredGeminiKey(
+function decrypt(
+  encrypted: string | null,
   userId: string,
-): Promise<string | null> {
-  const [row] = await db
-    .select({ encrypted: users.geminiApiKeyEncrypted })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
-  if (!row?.encrypted) return null;
+  provider: Provider,
+): string | null {
+  if (!encrypted) return null;
   try {
-    return decryptApiKey(row.encrypted, userId);
+    return decryptApiKey(encrypted, userId);
   } catch (error) {
-    console.warn("Stored Gemini key could not be decrypted", {
+    console.warn("Stored API key could not be decrypted", {
       userId,
+      provider,
       reason: error instanceof Error ? error.message : "unknown",
     });
     return null;
   }
 }
 
-export async function saveGeminiKey(userId: string, apiKey: string) {
+/** The user's keys in the clear, for server-side use only. */
+export async function getStoredKeys(
+  userId: string,
+): Promise<Record<Provider, string | null>> {
+  const [row] = await db
+    .select({
+      gemini: users.geminiApiKeyEncrypted,
+      groq: users.groqApiKeyEncrypted,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return {
+    gemini: decrypt(row?.gemini ?? null, userId, "gemini"),
+    groq: decrypt(row?.groq ?? null, userId, "groq"),
+  };
+}
+
+export async function getStoredKey(
+  userId: string,
+  provider: Provider,
+): Promise<string | null> {
+  return (await getStoredKeys(userId))[provider];
+}
+
+/** Providers the user can talk to, in the order they're offered. */
+export function configuredProviders(
+  keys: Record<Provider, string | null>,
+): Provider[] {
+  return PROVIDERS.filter((provider) => keys[provider] !== null);
+}
+
+export async function saveKey(
+  userId: string,
+  provider: Provider,
+  apiKey: string,
+) {
   await db
     .update(users)
-    .set({ geminiApiKeyEncrypted: encryptApiKey(apiKey, userId) })
+    .set({ [FIELDS[provider]]: encryptApiKey(apiKey, userId) })
     .where(eq(users.id, userId));
 }
 
-export async function clearGeminiKey(userId: string) {
+export async function clearKey(userId: string, provider: Provider) {
   await db
     .update(users)
-    .set({ geminiApiKeyEncrypted: null })
+    .set({ [FIELDS[provider]]: null })
     .where(eq(users.id, userId));
 }

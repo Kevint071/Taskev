@@ -1,7 +1,7 @@
-import { gemini } from "@/lib/ai/gemini";
+import { groq } from "@/lib/ai/groq";
 import { keyRoutes } from "@/lib/ai/key-routes";
 
-const routes = keyRoutes("gemini", gemini);
+const routes = keyRoutes("groq", groq);
 
 export const GET = routes.GET;
 export const PUT = routes.PUT;

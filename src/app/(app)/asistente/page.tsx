@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { AssistantView } from "@/components/assistant/assistant-view";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/panel";
-import { getStoredGeminiKey } from "@/lib/ai/key-store";
+import { getStoredKey } from "@/lib/ai/key-store";
 import { getCurrentUser } from "@/lib/auth-guard";
 import { settingsHref } from "@/lib/settings-tabs";
 
@@ -13,7 +13,7 @@ export default async function AssistantPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const configured = (await getStoredGeminiKey(user.id)) !== null;
+  const configured = (await getStoredKey(user.id, "gemini")) !== null;
 
   if (!configured) {
     return (
