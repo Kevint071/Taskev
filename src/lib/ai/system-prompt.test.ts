@@ -32,6 +32,8 @@ test("sets the ground rules for the model", () => {
     assert.ok(text.includes(status), status);
   }
   assert.match(text, /español/);
+  // The app calls comments "bitácora"; the model must map one to the other.
+  assert.match(text, /bitácora/);
   assert.match(text, /aclar/i);
   // Task content is data, never instructions.
   assert.match(text, /datos/);

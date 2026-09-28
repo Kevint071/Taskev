@@ -64,6 +64,12 @@ const NAV: NavItem[] = [
       </svg>
     ),
   },
+  {
+    href: "/asistente",
+    label: "Asistente",
+    match: (p) => p.startsWith("/asistente"),
+    icon: SETTINGS_ICONS.asistente,
+  },
 ];
 
 export function AppShell({
@@ -139,7 +145,7 @@ export function AppShell({
       <nav
         aria-label="Principal"
         data-bottom-bar=""
-        className={`fixed inset-x-0 bottom-0 z-10 grid-cols-3 border-t border-line bg-raised/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden ${
+        className={`fixed inset-x-0 bottom-0 z-10 grid-cols-4 border-t border-line bg-raised/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden ${
           focusScreen ? "hidden" : "grid"
         }`}
       >

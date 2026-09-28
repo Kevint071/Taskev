@@ -11,7 +11,7 @@ const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
  * Stable Flash model with a free tier, built for multi-step tool use. Pinned
  * so a model change is a one-line, reviewed edit.
  */
-export const GEMINI_MODEL = "gemini-3.8-flash";
+export const GEMINI_MODEL = "gemini-3.7-flash";
 
 /** Wire schema revision used by the official REST examples. */
 const API_REVISION = "2026-05-20";
@@ -51,6 +51,8 @@ export class GeminiError extends Error {
   constructor(
     readonly kind: GeminiErrorKind,
     readonly status?: number,
+    /** Network error code (e.g. ECONNRESET) for logs; never request data. */
+    readonly reason?: string,
   ) {
     super(`Gemini request failed: ${kind}${status ? ` (${status})` : ""}`);
     this.name = "GeminiError";
@@ -74,10 +76,10 @@ export function createGeminiClient(fetchImpl: typeof fetch = fetch) {
           "x-goog-api-key": apiKey,
         },
       });
-    } catch {
-      // Network and TLS failures (e.g. a proxy without its CA) land here; the
-      // original error is dropped because it may echo request details.
-      throw new GeminiError("unavailable");
+    } catch (error) {
+      // Network and TLS failures (e.g. a proxy without its CA) land here. Only
+      // the error code is kept: the message may echo request details.
+      throw new GeminiError("unavailable", undefined, networkCode(error));
     }
   }
 
@@ -164,6 +166,12 @@ async function errorFor(response: Response): Promise<GeminiError> {
     );
   }
   return new GeminiError(status >= 500 ? "unavailable" : "bad_request", status);
+}
+
+function networkCode(error: unknown): string {
+  const cause = (error as { cause?: { code?: unknown } } | null)?.cause;
+  if (typeof cause?.code === "string") return cause.code;
+  return error instanceof Error ? error.name : "unknown";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

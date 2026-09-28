@@ -87,7 +87,7 @@ export const TOOL_DECLARATIONS = [
     type: "function",
     name: "get_task",
     description:
-      "Detalle de una tarea, con su descripción completa y sus últimos comentarios.",
+      "Detalle de una tarea, con su descripción completa y sus últimas notas de la bitácora (comentarios).",
     parameters: object({ taskId: id("de la tarea") }, ["taskId"]),
   },
   {
@@ -143,7 +143,8 @@ export const TOOL_DECLARATIONS = [
   {
     type: "function",
     name: "add_comment",
-    description: "Añade un comentario a una tarea.",
+    description:
+      "Añade una nota a la bitácora de una tarea (sus comentarios). Úsala cuando el usuario pida anotar, comentar o registrar algo en la bitácora.",
     parameters: object(
       { taskId: id("de la tarea"), body: { type: "string" } },
       ["taskId", "body"],
