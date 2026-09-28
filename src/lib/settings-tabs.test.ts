@@ -5,6 +5,7 @@ import { parseSettingsSection, settingsHref } from "./settings-tabs";
 test("parseSettingsSection keeps known sections", () => {
   assert.equal(parseSettingsSection("apariencia"), "apariencia");
   assert.equal(parseSettingsSection("cuenta"), "cuenta");
+  assert.equal(parseSettingsSection("asistente"), "asistente");
 });
 
 test("parseSettingsSection returns null for missing or unknown values", () => {
@@ -17,4 +18,5 @@ test("parseSettingsSection returns null for missing or unknown values", () => {
 
 test("settingsHref builds the query link", () => {
   assert.equal(settingsHref("seguridad"), "/settings?seccion=seguridad");
+  assert.equal(settingsHref("asistente"), "/settings?seccion=asistente");
 });

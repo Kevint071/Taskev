@@ -1,4 +1,9 @@
-export type SettingsTab = "perfil" | "apariencia" | "seguridad" | "cuenta";
+export type SettingsTab =
+  | "perfil"
+  | "apariencia"
+  | "seguridad"
+  | "asistente"
+  | "cuenta";
 
 export const SETTINGS_TABS: {
   value: SettingsTab;
@@ -15,6 +20,11 @@ export const SETTINGS_TABS: {
     value: "seguridad",
     label: "Seguridad",
     description: "Contraseña de acceso",
+  },
+  {
+    value: "asistente",
+    label: "Asistente IA",
+    description: "Tu API key de Gemini",
   },
   {
     value: "cuenta",

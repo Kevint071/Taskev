@@ -350,7 +350,10 @@ export function AppearanceSection() {
   );
 }
 
-function PasswordInput(props: ComponentProps<typeof Input>) {
+function PasswordInput({
+  revealNoun = "contraseña",
+  ...props
+}: ComponentProps<typeof Input> & { revealNoun?: string }) {
   const [visible, setVisible] = useState(false);
   return (
     <span className="relative flex">
@@ -361,7 +364,7 @@ function PasswordInput(props: ComponentProps<typeof Input>) {
       />
       <button
         type="button"
-        aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+        aria-label={`${visible ? "Ocultar" : "Mostrar"} ${revealNoun}`}
         aria-pressed={visible}
         onClick={() => setVisible((current) => !current)}
         className="absolute inset-y-1 right-1 flex w-9 items-center justify-center rounded-control text-muted transition-colors hover:bg-sunken hover:text-ink"
@@ -488,6 +491,184 @@ export function PasswordSection() {
         </CardFooter>
       </form>
     </Card>
+  );
+}
+
+export type GeminiKeyStatus = { configured: boolean; last4?: string };
+
+export function AssistantKeySection({
+  initialStatus,
+}: {
+  initialStatus: GeminiKeyStatus;
+}) {
+  const [status, setStatus] = useState(initialStatus);
+  const [apiKey, setApiKey] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSaved(null);
+    setPending(true);
+    const res = await fetch("/api/account/gemini-key", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ apiKey }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setPending(false);
+    if (!res.ok) {
+      setError(data.error ?? "No se pudo guardar la API key");
+      return;
+    }
+    const replaced = status.configured;
+    setStatus({ configured: true, last4: data.last4 });
+    setApiKey("");
+    setSaved(replaced ? "API key reemplazada" : "API key guardada");
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    setError(null);
+    setSaved(null);
+    const res = await fetch("/api/account/gemini-key", { method: "DELETE" });
+    setDeleting(false);
+    setConfirmOpen(false);
+    if (!res.ok) {
+      setError("No se pudo eliminar la API key");
+      return;
+    }
+    setStatus({ configured: false });
+    setSaved("API key eliminada");
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Card>
+        <form onSubmit={handleSubmit}>
+          <CardHeader
+            title="API key de Gemini"
+            description={
+              <>
+                El asistente usa tu propia key, así que el uso y la cuota van a
+                tu cuenta de Google. Puedes crear una gratis en{" "}
+                <a
+                  href="https://aistudio.google.com/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-medium text-accent underline-offset-2 hover:underline"
+                >
+                  Google AI Studio
+                </a>
+                .
+              </>
+            }
+          />
+          <div className="flex flex-col gap-4 px-5 pt-4 pb-5">
+            <div className="flex items-center gap-3 rounded-xl bg-sunken/70 p-3">
+              <span
+                className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${
+                  status.configured
+                    ? "bg-status-done text-raised"
+                    : "border border-line-strong text-muted"
+                }`}
+              >
+                {status.configured ? (
+                  <CheckIcon className="size-4" />
+                ) : (
+                  <LockIcon className="size-4" />
+                )}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">
+                  {status.configured ? "Configurada" : "Sin configurar"}
+                </p>
+                <p className="text-meta text-muted">
+                  {status.configured
+                    ? "El asistente está disponible."
+                    : "Guarda una key para usar el asistente."}
+                </p>
+              </div>
+              {status.configured && status.last4 ? (
+                <span className="rounded-full bg-raised px-2.5 py-1 font-mono text-meta text-muted ring-1 ring-line">
+                  ••••{status.last4}
+                </span>
+              ) : null}
+            </div>
+            <Field
+              label={status.configured ? "Nueva API key" : "API key"}
+              error={error}
+            >
+              <PasswordInput
+                revealNoun="API key"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="Pega aquí tu API key"
+                value={apiKey}
+                onChange={(e) => {
+                  setApiKey(e.target.value);
+                  setSaved(null);
+                  setError(null);
+                }}
+              />
+            </Field>
+          </div>
+          <CardFooter>
+            <Saved message={saved} />
+            {status.configured ? (
+              <Button
+                variant="danger"
+                disabled={pending}
+                onClick={() => setConfirmOpen(true)}
+              >
+                Eliminar
+              </Button>
+            ) : null}
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={pending || apiKey.trim() === ""}
+            >
+              {pending
+                ? "Verificando…"
+                : status.configured
+                  ? "Reemplazar"
+                  : "Guardar"}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+
+      <Card>
+        <div className="flex gap-3 px-5 py-4">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sunken text-muted">
+            <LockIcon />
+          </span>
+          <div className="min-w-0 text-meta text-muted">
+            <p className="font-medium text-ink">Privacidad</p>
+            <p className="mt-0.5">
+              Cuando usas el asistente, los grupos, tareas y comentarios que
+              consulta se envían a Google usando tu key. La key se guarda
+              cifrada y nunca se vuelve a mostrar completa.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="¿Eliminar tu API key?"
+        description="El asistente dejará de estar disponible hasta que guardes otra key."
+        confirmLabel="Eliminar key"
+        pending={deleting}
+        onConfirm={handleDelete}
+        onClose={() => setConfirmOpen(false)}
+      />
+    </div>
   );
 }
 

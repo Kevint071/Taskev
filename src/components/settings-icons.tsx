@@ -31,6 +31,12 @@ export const SETTINGS_ICONS: Record<SettingsTab, ReactNode> = {
       <path d="m7.6 10 1.7 1.7 3.2-3.4" />
     </svg>
   ),
+  asistente: (
+    <svg {...iconProps} aria-hidden="true">
+      <path d="M9 3.5 10.4 7.6 14.5 9 10.4 10.4 9 14.5 7.6 10.4 3.5 9 7.6 7.6Z" />
+      <path d="M15 3v3M13.5 4.5h3M15.5 13.5v2.5M14.25 14.75h2.5" />
+    </svg>
+  ),
   cuenta: (
     <svg {...iconProps} aria-hidden="true">
       <circle cx="10" cy="10" r="2.4" />
@@ -44,6 +50,7 @@ const SETTINGS_TONES: Record<SettingsTab, string> = {
   perfil: "var(--accent)",
   apariencia: "var(--status-paused)",
   seguridad: "var(--status-done)",
+  asistente: "var(--status-progress)",
   cuenta: "var(--status-open)",
 };
 

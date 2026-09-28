@@ -20,6 +20,8 @@ import { THEME_OPTIONS } from "@/lib/theme";
 import {
   AccountSection,
   AppearanceSection,
+  AssistantKeySection,
+  type GeminiKeyStatus,
   PasswordSection,
   ProfileSection,
 } from "./sections";
@@ -32,9 +34,11 @@ import {
 export function SettingsView({
   email,
   name,
+  geminiKey,
 }: {
   email: string;
   name: string | null;
+  geminiKey: GeminiKeyStatus;
 }) {
   const searchParams = useSearchParams();
   const section = parseSettingsSection(searchParams.get(SETTINGS_TAB_PARAM));
@@ -89,6 +93,7 @@ export function SettingsView({
     perfil: <ProfileSection email={email} name={name} />,
     apariencia: <AppearanceSection />,
     seguridad: <PasswordSection />,
+    asistente: <AssistantKeySection initialStatus={geminiKey} />,
     cuenta: <AccountSection email={email} />,
   };
 
