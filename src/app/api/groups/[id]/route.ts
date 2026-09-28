@@ -1,8 +1,9 @@
 import { asc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireOwnedGroup } from "@/lib/auth-guard";
+import { deleteGroup, updateGroup } from "@/lib/data/mutations";
 import { db } from "@/lib/db";
-import { groups, tasks } from "@/lib/db/schema";
+import { tasks } from "@/lib/db/schema";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -27,35 +28,15 @@ export async function PATCH(request: Request, { params }: Params) {
   if ("response" in guard) return guard.response;
 
   const body = await request.json().catch(() => null);
-  const updates: Partial<typeof groups.$inferInsert> = {};
-
-  if (body?.name !== undefined) {
-    const name = typeof body.name === "string" ? body.name.trim() : "";
-    if (!name) {
-      return NextResponse.json(
-        { error: "El nombre del grupo no puede estar vacío" },
-        { status: 400 },
-      );
-    }
-    updates.name = name;
+  const result = await updateGroup(id, body);
+  if (!result.ok) {
+    return NextResponse.json(
+      { error: result.error },
+      { status: result.status },
+    );
   }
 
-  if (body?.description !== undefined) {
-    updates.description =
-      typeof body.description === "string" ? body.description : null;
-  }
-
-  if (body?.archived !== undefined) {
-    updates.archivedAt = body.archived ? new Date() : null;
-  }
-
-  const [updated] = await db
-    .update(groups)
-    .set(updates)
-    .where(eq(groups.id, id))
-    .returning();
-
-  return NextResponse.json(updated);
+  return NextResponse.json(result.value);
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
@@ -63,7 +44,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   const guard = await requireOwnedGroup(id);
   if ("response" in guard) return guard.response;
 
-  await db.delete(groups).where(eq(groups.id, id));
+  await deleteGroup(id);
 
   return NextResponse.json({ message: "Grupo eliminado" });
 }

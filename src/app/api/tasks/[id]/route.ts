@@ -1,10 +1,6 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireOwnedTask } from "@/lib/auth-guard";
-import { recordTaskEvent } from "@/lib/data/activity";
-import { db } from "@/lib/db";
-import { tasks } from "@/lib/db/schema";
-import { parseTaskFields, statusRuleError } from "@/lib/task-input";
+import { deleteTask, updateTask } from "@/lib/data/mutations";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -22,50 +18,15 @@ export async function PATCH(request: Request, { params }: Params) {
   if ("response" in guard) return guard.response;
 
   const body = await request.json().catch(() => null);
-  const parsed = parseTaskFields(body, "El título no puede estar vacío");
-  if (!parsed.ok) {
-    return NextResponse.json({ error: parsed.error }, { status: 400 });
-  }
-  const updates: Partial<typeof tasks.$inferInsert> = { ...parsed.value };
-
-  if (updates.status !== undefined) {
-    const resultingProgress = updates.progressPct ?? guard.task.progressPct;
-    const resultingCompletedAt =
-      "completedAt" in updates ? updates.completedAt : guard.task.completedAt;
-
-    const error = statusRuleError(
-      updates.status,
-      resultingProgress,
-      resultingCompletedAt,
+  const result = await updateTask(guard.task, body);
+  if (!result.ok) {
+    return NextResponse.json(
+      { error: result.error },
+      { status: result.status },
     );
-    if (error) {
-      return NextResponse.json({ error }, { status: 400 });
-    }
-    // Leaving "completada" (or returning to "disponible") clears a stale
-    // completion date.
-    if (updates.status !== "completada" && !("completedAt" in updates)) {
-      updates.completedAt = null;
-    }
   }
 
-  updates.updatedAt = new Date();
-
-  const [updated] = await db
-    .update(tasks)
-    .set(updates)
-    .where(eq(tasks.id, id))
-    .returning();
-
-  if (updated.status !== guard.task.status) {
-    await recordTaskEvent({
-      taskId: id,
-      type: "status_changed",
-      fromStatus: guard.task.status,
-      toStatus: updated.status,
-    });
-  }
-
-  return NextResponse.json(updated);
+  return NextResponse.json(result.value);
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
@@ -73,7 +34,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   const guard = await requireOwnedTask(id);
   if ("response" in guard) return guard.response;
 
-  await db.delete(tasks).where(eq(tasks.id, id));
+  await deleteTask(id);
 
   return NextResponse.json({ message: "Tarea eliminada" });
 }

@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireOwnedTask } from "@/lib/auth-guard";
-import { recordTaskEvent } from "@/lib/data/activity";
+import { addComment } from "@/lib/data/mutations";
 import { db } from "@/lib/db";
 import { taskComments } from "@/lib/db/schema";
 
@@ -27,24 +27,13 @@ export async function POST(request: Request, { params }: Params) {
   if ("response" in guard) return guard.response;
 
   const body = await request.json().catch(() => null);
-  const commentBody = typeof body?.body === "string" ? body.body.trim() : "";
-  if (!commentBody) {
+  const result = await addComment(taskId, body);
+  if (!result.ok) {
     return NextResponse.json(
-      { error: "El comentario no puede estar vacío" },
-      { status: 400 },
+      { error: result.error },
+      { status: result.status },
     );
   }
 
-  const [created] = await db
-    .insert(taskComments)
-    .values({ taskId, body: commentBody })
-    .returning();
-
-  await recordTaskEvent({
-    taskId,
-    type: "comment_added",
-    body: commentBody,
-  });
-
-  return NextResponse.json(created, { status: 201 });
+  return NextResponse.json(result.value, { status: 201 });
 }

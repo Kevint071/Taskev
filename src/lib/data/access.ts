@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { groups, tasks } from "@/lib/db/schema";
+import { isUuid } from "@/lib/uuid";
 
 /**
  * Unfiltered by owner so callers (see auth-guard's requireOwned* helpers)
@@ -24,4 +25,22 @@ export async function getTaskWithGroup(taskId: string) {
     .where(eq(tasks.id, taskId))
     .limit(1);
   return row ?? null;
+}
+
+/**
+ * The group, only if `groupId` is a UUID owned by `userId`; null otherwise.
+ * For callers with untrusted ids (the assistant's tools), so an invented id
+ * reads as "not found" instead of a Postgres error.
+ */
+export async function ownedGroup(userId: string, groupId: unknown) {
+  if (!isUuid(groupId)) return null;
+  const group = await getGroupById(groupId);
+  return group && group.userId === userId ? group : null;
+}
+
+/** Same as ownedGroup, for a task and its parent group. */
+export async function ownedTask(userId: string, taskId: unknown) {
+  if (!isUuid(taskId)) return null;
+  const owned = await getTaskWithGroup(taskId);
+  return owned && owned.group.userId === userId ? owned : null;
 }

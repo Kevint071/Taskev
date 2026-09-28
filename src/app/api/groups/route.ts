@@ -10,7 +10,7 @@ import {
 } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireUserId } from "@/lib/auth-guard";
-import { MAX_GROUP_NAME_LENGTH } from "@/lib/constraints";
+import { createGroup } from "@/lib/data/mutations";
 import { db } from "@/lib/db";
 import { groups, tasks } from "@/lib/db/schema";
 
@@ -59,30 +59,13 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => null);
-  const name = typeof body?.name === "string" ? body.name.trim() : "";
-  const description =
-    typeof body?.description === "string" ? body.description : null;
-
-  if (!name) {
+  const result = await createGroup(userId, body);
+  if (!result.ok) {
     return NextResponse.json(
-      { error: "El nombre del grupo es requerido" },
-      { status: 400 },
+      { error: result.error },
+      { status: result.status },
     );
   }
 
-  if (name.length > MAX_GROUP_NAME_LENGTH) {
-    return NextResponse.json(
-      {
-        error: `El nombre no puede tener más de ${MAX_GROUP_NAME_LENGTH} caracteres`,
-      },
-      { status: 400 },
-    );
-  }
-
-  const [created] = await db
-    .insert(groups)
-    .values({ userId, name, description })
-    .returning();
-
-  return NextResponse.json(created, { status: 201 });
+  return NextResponse.json(result.value, { status: 201 });
 }
