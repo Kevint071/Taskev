@@ -5,6 +5,7 @@ import {
   doublePrecision,
   index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
@@ -20,6 +21,8 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   /** AES-256-GCM ciphertext of the user's own Gemini key; see lib/ai/crypto. */
   geminiApiKeyEncrypted: text("gemini_api_key_encrypted"),
+  /** Same scheme as the Gemini key, for Groq. */
+  groqApiKeyEncrypted: text("groq_api_key_encrypted"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -116,4 +119,51 @@ export const taskEvents = pgTable(
       .defaultNow(),
   },
   (table) => [index("task_events_created_at_idx").on(table.createdAt)],
+);
+
+/** An item of the chat as the user sees it; transient errors aren't kept. */
+export type TranscriptItem = {
+  kind: "user" | "assistant" | "action";
+  text: string;
+  isError?: boolean;
+};
+
+/**
+ * A saved assistant conversation. `history` is the provider-neutral context
+ * sent to the model (see lib/ai/history); `version` guards against two tabs
+ * overwriting each other's turns.
+ */
+export const assistantConversations = pgTable(
+  "assistant_conversations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    /** Provider of the latest turn: `gemini` or `groq`. */
+    provider: text("provider").notNull(),
+    history: jsonb("history")
+      .$type<{ type: string; [field: string]: unknown }[]>()
+      .notNull(),
+    transcript: jsonb("transcript").$type<TranscriptItem[]>().notNull(),
+    pending: jsonb("pending").$type<{
+      callId: string;
+      name: string;
+      summary: string;
+    }>(),
+    version: integer("version").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("assistant_conversations_user_updated_idx").on(
+      table.userId,
+      table.updatedAt.desc(),
+    ),
+  ],
 );

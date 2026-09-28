@@ -64,6 +64,13 @@
       "when": 1790633981562,
       "tag": "0008_rare_archangel",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790637755412,
+      "tag": "0009_deep_namorita",
+      "breakpoints": true
     }
   ]
 }
