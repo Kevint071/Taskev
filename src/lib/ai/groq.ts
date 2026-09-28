@@ -3,6 +3,7 @@
  * provider-neutral history is rebuilt as chat messages on every request;
  * nothing outside this module knows the endpoint or the wire format.
  */
+import { renderTurnsFor } from "./history";
 import {
   type FunctionCall,
   type FunctionDeclaration,
@@ -79,7 +80,7 @@ export function createGroqClient(
           model: GROQ_MODEL,
           messages: [
             { role: "system", content: system },
-            ...toMessages(history),
+            ...toMessages(renderTurnsFor("groq", history)),
           ],
           tools: tools.map(({ name, description, parameters }) => ({
             type: "function",

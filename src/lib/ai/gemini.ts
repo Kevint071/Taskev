@@ -3,6 +3,7 @@
  * (`store: false`): the caller keeps the history and resends it every turn.
  * Nothing outside this module knows the endpoint or the wire format.
  */
+import { renderTurnsFor } from "./history";
 import {
   type FunctionCall,
   type FunctionDeclaration,
@@ -67,7 +68,7 @@ export function createGeminiClient(
         body: JSON.stringify({
           model: GEMINI_MODEL,
           store: false,
-          input: history.map(toWire),
+          input: renderTurnsFor("gemini", history).map(toWire),
           tools,
           system_instruction: system,
         }),

@@ -252,3 +252,39 @@ for (const [status, expected] of verifyCases) {
     assert.ok(!message.includes(API_KEY));
   });
 }
+
+test("generate sends closed turns from another provider as text", async () => {
+  const { calls, fetchImpl } = fakeFetch(() => json(200, TEXT_RESPONSE));
+  await createGeminiClient(fetchImpl).generate(
+    API_KEY,
+    [
+      ...HISTORY,
+      {
+        type: "function_call",
+        id: "fc_1",
+        name: "list_groups",
+        arguments: {},
+        provider: "groq",
+      },
+      {
+        type: "function_result",
+        call_id: "fc_1",
+        name: "list_groups",
+        result: { groups: [] },
+      },
+      {
+        type: "model_output",
+        content: [{ type: "text", text: "No tienes grupos." }],
+        provider: "groq",
+      },
+      { type: "user_input", content: [{ type: "text", text: "crea uno" }] },
+    ],
+    TOOLS,
+    "sys",
+  );
+  const body = JSON.parse(String(calls[0].init.body));
+  assert.deepEqual(
+    body.input.map((s: { type: string }) => s.type),
+    ["user_input", "model_output", "user_input"],
+  );
+});
