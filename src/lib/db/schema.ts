@@ -18,6 +18,8 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   name: text("name"),
   passwordHash: text("password_hash").notNull(),
+  /** AES-256-GCM ciphertext of the user's own Gemini key; see lib/ai/crypto. */
+  geminiApiKeyEncrypted: text("gemini_api_key_encrypted"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
