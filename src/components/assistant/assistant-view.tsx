@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CheckIcon, SendIcon, TriangleAlertIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/panel";
 import type { DisplayItem, PendingAction } from "@/lib/ai/agent";
-import type { HistoryStep } from "@/lib/ai/gemini";
+import type { HistoryStep } from "@/lib/ai/provider";
 import { handleUnauthenticated } from "@/lib/api-client";
 import { settingsHref } from "@/lib/settings-tabs";
 

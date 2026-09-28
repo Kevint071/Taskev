@@ -6,7 +6,7 @@
 import { utcMidnight } from "@/lib/calendar";
 import { TASK_STATUSES, type TaskStatus } from "@/lib/constraints";
 import type { ParseResult } from "@/lib/task-input";
-import type { FunctionDeclaration } from "./gemini";
+import type { FunctionDeclaration } from "./provider";
 
 export const LIST_TASKS_LIMIT = 50;
 const DESCRIPTION_PREVIEW = 200;

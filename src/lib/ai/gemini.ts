@@ -1,9 +1,18 @@
 /**
  * Minimal client for the Gemini Interactions API, used statelessly
  * (`store: false`): the caller keeps the history and resends it every turn.
- * Nothing outside this module knows the endpoint or the wire format beyond
- * the opaque history steps.
+ * Nothing outside this module knows the endpoint or the wire format.
  */
+import {
+  type FunctionCall,
+  type FunctionDeclaration,
+  type GenerateResult,
+  type HistoryStep,
+  isRecord,
+  networkCode,
+  type ProviderClient,
+  ProviderError,
+} from "./provider";
 
 const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
@@ -12,56 +21,14 @@ const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
  * so a model change is a one-line, reviewed edit.
  */
 export const GEMINI_MODEL = "gemini-3.7-flash";
+export const GEMINI_LABEL = "Gemini 3.7 Flash";
 
 /** Wire schema revision used by the official REST examples. */
 const API_REVISION = "2026-05-20";
 
-/** A step as the API sends or expects it; kept verbatim in the history. */
-export type HistoryStep = { type: string; [field: string]: unknown };
-
-export type FunctionDeclaration = {
-  type: "function";
-  name: string;
-  description: string;
-  parameters: Record<string, unknown>;
-};
-
-export type FunctionCall = {
-  id: string;
-  name: string;
-  args: Record<string, unknown>;
-};
-
-export type GenerateResult = {
-  /** Model steps (thoughts included) to append to the history as-is. */
-  steps: HistoryStep[];
-  /** Text of the model output, empty when it only called functions. */
-  text: string;
-  calls: FunctionCall[];
-};
-
-export type GeminiErrorKind =
-  | "invalid_key"
-  | "quota"
-  | "unavailable"
-  | "bad_request";
-
-/** Its message never contains the key or the provider's response body. */
-export class GeminiError extends Error {
-  constructor(
-    readonly kind: GeminiErrorKind,
-    readonly status?: number,
-    /** Network error code (e.g. ECONNRESET) for logs; never request data. */
-    readonly reason?: string,
-  ) {
-    super(`Gemini request failed: ${kind}${status ? ` (${status})` : ""}`);
-    this.name = "GeminiError";
-  }
-}
-
-export type GeminiClient = ReturnType<typeof createGeminiClient>;
-
-export function createGeminiClient(fetchImpl: typeof fetch = fetch) {
+export function createGeminiClient(
+  fetchImpl: typeof fetch = fetch,
+): ProviderClient {
   async function request(
     apiKey: string,
     path: string,
@@ -79,7 +46,12 @@ export function createGeminiClient(fetchImpl: typeof fetch = fetch) {
     } catch (error) {
       // Network and TLS failures (e.g. a proxy without its CA) land here. Only
       // the error code is kept: the message may echo request details.
-      throw new GeminiError("unavailable", undefined, networkCode(error));
+      throw new ProviderError(
+        "gemini",
+        "unavailable",
+        undefined,
+        networkCode(error),
+      );
     }
   }
 
@@ -87,7 +59,7 @@ export function createGeminiClient(fetchImpl: typeof fetch = fetch) {
     async generate(
       apiKey: string,
       history: HistoryStep[],
-      tools: FunctionDeclaration[],
+      tools: readonly FunctionDeclaration[],
       system: string,
     ): Promise<GenerateResult> {
       const response = await request(apiKey, "/interactions", {
@@ -95,7 +67,7 @@ export function createGeminiClient(fetchImpl: typeof fetch = fetch) {
         body: JSON.stringify({
           model: GEMINI_MODEL,
           store: false,
-          input: history,
+          input: history.map(toWire),
           tools,
           system_instruction: system,
         }),
@@ -107,7 +79,7 @@ export function createGeminiClient(fetchImpl: typeof fetch = fetch) {
         steps?: HistoryStep[];
       } | null;
       if (!body || body.status === "failed" || !Array.isArray(body.steps)) {
-        throw new GeminiError("unavailable");
+        throw new ProviderError("gemini", "unavailable");
       }
       return parseSteps(body.steps);
     },
@@ -120,7 +92,7 @@ export function createGeminiClient(fetchImpl: typeof fetch = fetch) {
       if (response.ok) return;
       // Any 400 here can only be about the key: the request has no body.
       if (response.status === 400) {
-        throw new GeminiError("invalid_key", 400);
+        throw new ProviderError("gemini", "invalid_key", 400);
       }
       throw await errorFor(response);
     },
@@ -128,6 +100,11 @@ export function createGeminiClient(fetchImpl: typeof fetch = fetch) {
 }
 
 export const gemini = createGeminiClient();
+
+/** The provider tag is ours; the API only knows its own step fields. */
+function toWire({ provider: _provider, ...step }: HistoryStep): HistoryStep {
+  return step;
+}
 
 function parseSteps(steps: HistoryStep[]): GenerateResult {
   const text: string[] = [];
@@ -147,33 +124,32 @@ function parseSteps(steps: HistoryStep[]): GenerateResult {
       });
     }
   }
-  return { steps, text: text.join(""), calls };
+  return {
+    steps: steps.map((step) => ({ ...step, provider: "gemini" })),
+    text: text.join(""),
+    calls,
+  };
 }
 
-async function errorFor(response: Response): Promise<GeminiError> {
+async function errorFor(response: Response): Promise<ProviderError> {
   const { status } = response;
   if (status === 401 || status === 403) {
-    return new GeminiError("invalid_key", status);
+    return new ProviderError("gemini", "invalid_key", status);
   }
-  if (status === 429) return new GeminiError("quota", status);
+  if (status === 429) return new ProviderError("gemini", "quota", status);
   if (status === 400) {
     const body = await response.text().catch(() => "");
-    return new GeminiError(
+    return new ProviderError(
+      "gemini",
       /API_KEY_INVALID|API key not valid/.test(body)
         ? "invalid_key"
         : "bad_request",
       status,
     );
   }
-  return new GeminiError(status >= 500 ? "unavailable" : "bad_request", status);
-}
-
-function networkCode(error: unknown): string {
-  const cause = (error as { cause?: { code?: unknown } } | null)?.cause;
-  if (typeof cause?.code === "string") return cause.code;
-  return error instanceof Error ? error.name : "unknown";
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return new ProviderError(
+    "gemini",
+    status >= 500 ? "unavailable" : "bad_request",
+    status,
+  );
 }

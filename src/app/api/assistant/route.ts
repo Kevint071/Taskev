@@ -1,8 +1,14 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { AgentInputError, runAgent } from "@/lib/ai/agent";
-import { GeminiError, type GeminiErrorKind, gemini } from "@/lib/ai/gemini";
+import { gemini } from "@/lib/ai/gemini";
 import { getStoredGeminiKey } from "@/lib/ai/key-store";
+import {
+  PROVIDER_NAMES,
+  type Provider,
+  ProviderError,
+  type ProviderErrorKind,
+} from "@/lib/ai/provider";
 import { buildSystemInstruction } from "@/lib/ai/system-prompt";
 import { describeDestructive, executeTool } from "@/lib/ai/tool-executor";
 import { isDestructive, TOOL_DECLARATIONS } from "@/lib/ai/tools";
@@ -16,31 +22,39 @@ export const maxDuration = 60;
 const MAX_BODY_BYTES = 200_000;
 const MAX_MESSAGE_LENGTH = 4000;
 
-const GEMINI_ERRORS: Record<
-  GeminiErrorKind,
-  { status: number; error: string }
-> = {
-  invalid_key: {
-    status: 422,
-    error:
-      "Gemini rechazó tu API key; puede que la hayas revocado. Reemplázala en Ajustes.",
-  },
-  quota: {
-    status: 429,
-    error:
-      "Se alcanzó el límite de uso de tu API key de Gemini. Inténtalo de nuevo más tarde.",
-  },
-  unavailable: {
-    status: 503,
-    error:
-      "Gemini no está disponible en este momento. Inténtalo de nuevo en unos minutos.",
-  },
-  bad_request: {
-    status: 502,
-    error:
-      "Gemini no pudo procesar esta conversación. Empieza una nueva conversación.",
-  },
-};
+function providerError(
+  provider: Provider,
+  kind: ProviderErrorKind,
+): { status: number; error: string } {
+  const name = PROVIDER_NAMES[provider];
+  switch (kind) {
+    case "invalid_key":
+      return {
+        status: 422,
+        error: `${name} rechazó tu API key; puede que la hayas revocado. Reemplázala en Ajustes.`,
+      };
+    case "quota":
+      return {
+        status: 429,
+        error: `Se alcanzó el límite de uso de tu API key de ${name}. Inténtalo de nuevo más tarde o cambia de modelo.`,
+      };
+    case "too_large":
+      return {
+        status: 413,
+        error: `La conversación supera el límite de tu plan de ${name}. Cambia de modelo o empieza una nueva conversación.`,
+      };
+    case "unavailable":
+      return {
+        status: 503,
+        error: `${name} no está disponible en este momento. Inténtalo de nuevo en unos minutos.`,
+      };
+    case "bad_request":
+      return {
+        status: 502,
+        error: `${name} no pudo procesar esta conversación. Empieza una nueva conversación.`,
+      };
+  }
+}
 
 type RequestBody = {
   history: { type: string; [field: string]: unknown }[];
@@ -144,13 +158,17 @@ export async function POST(request: Request) {
     if (error instanceof AgentInputError) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
-    if (error instanceof GeminiError) {
-      console.warn("Assistant: Gemini request failed", {
+    if (error instanceof ProviderError) {
+      console.warn("Assistant: provider request failed", {
+        provider: error.provider,
         kind: error.kind,
         status: error.status,
         reason: error.reason,
       });
-      const { status, error: message } = GEMINI_ERRORS[error.kind];
+      const { status, error: message } = providerError(
+        error.provider,
+        error.kind,
+      );
       return NextResponse.json(
         { error: message, code: error.kind },
         { status },

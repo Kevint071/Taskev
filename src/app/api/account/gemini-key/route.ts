@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { maskKey } from "@/lib/ai/crypto";
-import { GeminiError, gemini } from "@/lib/ai/gemini";
+import { gemini } from "@/lib/ai/gemini";
 import {
   clearGeminiKey,
   getStoredGeminiKey,
   saveGeminiKey,
 } from "@/lib/ai/key-store";
+import { ProviderError } from "@/lib/ai/provider";
 import { getCurrentUser } from "@/lib/auth-guard";
 
 const MAX_KEY_LENGTH = 200;
@@ -41,7 +42,7 @@ export async function PUT(request: Request) {
   try {
     await gemini.verifyKey(apiKey);
   } catch (error) {
-    if (error instanceof GeminiError && error.kind === "invalid_key") {
+    if (error instanceof ProviderError && error.kind === "invalid_key") {
       return NextResponse.json(
         { error: "Gemini rechazó esta API key. Revisa que esté bien copiada" },
         { status: 400 },

@@ -6,7 +6,7 @@ import {
   MAX_TOOL_CALLS,
   runAgent,
 } from "./agent";
-import type { GenerateResult, HistoryStep } from "./gemini";
+import type { GenerateResult, HistoryStep } from "./provider";
 
 type Call = { id: string; name: string; args?: Record<string, unknown> };
 

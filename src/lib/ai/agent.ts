@@ -4,7 +4,7 @@
  * and travels with every request, so a destructive call simply stays
  * unanswered in it until the user confirms or cancels it.
  */
-import type { GenerateResult, HistoryStep } from "./gemini";
+import type { GenerateResult, HistoryStep } from "./provider";
 import type { ToolOutcome } from "./tool-executor";
 
 /** Tool calls allowed per user message, confirmed ones included. */

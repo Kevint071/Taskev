@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { createGeminiClient } from "./gemini";
 import {
-  createGeminiClient,
-  GeminiError,
-  type GeminiErrorKind,
   type HistoryStep,
-} from "./gemini";
+  ProviderError,
+  type ProviderErrorKind,
+} from "./provider";
 
 const API_KEY = "AIzaSyTEST-secret-key-9876";
 
@@ -108,8 +108,12 @@ test("generate extracts the text of the model output", async () => {
   );
   assert.equal(result.text, "Tienes 2 tareas bloqueadas.");
   assert.deepEqual(result.calls, []);
-  // Every model step, thoughts included, is kept verbatim for the history.
-  assert.deepEqual(result.steps, TEXT_RESPONSE.steps);
+  // Every model step, thoughts included, is kept for the history, tagged
+  // with its provider.
+  assert.deepEqual(
+    result.steps,
+    TEXT_RESPONSE.steps.map((s) => ({ ...s, provider: "gemini" })),
+  );
 });
 
 test("generate extracts function calls with their ids", async () => {
@@ -125,19 +129,45 @@ test("generate extracts function calls with their ids", async () => {
     { id: "gth23981", name: "list_tasks", args: { status: "bloqueada" } },
     { id: "gth23982", name: "list_groups", args: {} },
   ]);
-  assert.deepEqual(result.steps, CALL_RESPONSE.steps);
+  assert.deepEqual(
+    result.steps,
+    CALL_RESPONSE.steps.map((s) => ({ ...s, provider: "gemini" })),
+  );
+});
+
+test("generate strips the provider tag from its own steps before sending", async () => {
+  const { calls, fetchImpl } = fakeFetch(() => json(200, TEXT_RESPONSE));
+  const history: HistoryStep[] = [
+    ...HISTORY,
+    { type: "thought", signature: "sig-0", provider: "gemini" },
+    {
+      type: "model_output",
+      content: [{ type: "text", text: "Hola" }],
+      provider: "gemini",
+    },
+    { type: "user_input", content: [{ type: "text", text: "¿y hoy?" }] },
+  ];
+  await createGeminiClient(fetchImpl).generate(API_KEY, history, TOOLS, "sys");
+  const body = JSON.parse(String(calls[0].init.body));
+  assert.deepEqual(body.input, [
+    ...HISTORY,
+    { type: "thought", signature: "sig-0" },
+    { type: "model_output", content: [{ type: "text", text: "Hola" }] },
+    { type: "user_input", content: [{ type: "text", text: "¿y hoy?" }] },
+  ]);
 });
 
 async function kindOf(
   promise: Promise<unknown>,
-): Promise<{ kind: GeminiErrorKind; message: string }> {
+): Promise<{ kind: ProviderErrorKind; message: string }> {
   try {
     await promise;
   } catch (error) {
-    assert.ok(error instanceof GeminiError, String(error));
+    assert.ok(error instanceof ProviderError, String(error));
+    assert.equal(error.provider, "gemini");
     return { kind: error.kind, message: `${error.message} ${error.stack}` };
   }
-  assert.fail("expected a GeminiError");
+  assert.fail("expected a ProviderError");
 }
 
 const INVALID_KEY_BODY = {
@@ -149,7 +179,7 @@ const INVALID_KEY_BODY = {
   },
 };
 
-const errorCases: [string, () => Response, GeminiErrorKind][] = [
+const errorCases: [string, () => Response, ProviderErrorKind][] = [
   ["400 invalid key", () => json(400, INVALID_KEY_BODY), "invalid_key"],
   [
     "400 other",
@@ -204,7 +234,7 @@ test("verifyKey lists one model with the key in a header", async () => {
   assert.equal(new Headers(init.headers).get("x-goog-api-key"), API_KEY);
 });
 
-const verifyCases: [number, GeminiErrorKind][] = [
+const verifyCases: [number, ProviderErrorKind][] = [
   [400, "invalid_key"],
   [401, "invalid_key"],
   [403, "invalid_key"],
