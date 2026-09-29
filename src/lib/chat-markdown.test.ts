@@ -238,6 +238,54 @@ test("parseChatMarkdown: indented lines under an item are its detail lines", () 
   ]);
 });
 
+test("parseChatMarkdown: a plain line right under an item is its detail even without indent", () => {
+  const text =
+    "- **Probar App CD**\nComentaste a las 21:03.\nAntes, otro comentario.\n- **Mandar caso**\nCreaste esta tarea.";
+  assert.deepEqual(parseChatMarkdown(text), [
+    {
+      kind: "list",
+      ordered: false,
+      items: [
+        {
+          inlines: [{ kind: "strong", text: "Probar App CD" }],
+          details: [
+            [{ kind: "text", text: "Comentaste a las 21:03." }],
+            [{ kind: "text", text: "Antes, otro comentario." }],
+          ],
+          children: [],
+        },
+        {
+          inlines: [{ kind: "strong", text: "Mandar caso" }],
+          details: [[{ kind: "text", text: "Creaste esta tarea." }]],
+          children: [],
+        },
+      ],
+    },
+  ]);
+});
+
+test("parseChatMarkdown: a blank line ends the list, so a closing paragraph stays apart", () => {
+  assert.deepEqual(parseChatMarkdown("- **Uno**\n- **Dos**\n\n¿Seguimos?"), [
+    {
+      kind: "list",
+      ordered: false,
+      items: [
+        {
+          inlines: [{ kind: "strong", text: "Uno" }],
+          details: [],
+          children: [],
+        },
+        {
+          inlines: [{ kind: "strong", text: "Dos" }],
+          details: [],
+          children: [],
+        },
+      ],
+    },
+    { kind: "paragraph", lines: [[{ kind: "text", text: "¿Seguimos?" }]] },
+  ]);
+});
+
 test("parseChatMarkdown: an indented line outside a list stays a paragraph", () => {
   assert.deepEqual(parseChatMarkdown("Hola\n   sigue"), [
     {

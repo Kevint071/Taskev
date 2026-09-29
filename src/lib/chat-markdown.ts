@@ -139,8 +139,9 @@ export function parseChatMarkdown(text: string): Block[] {
       continue;
     }
 
-    // An indented line right under an item continues it on a new line.
-    const continued = /^\s+/.test(line) ? list?.items.at(-1) : undefined;
+    // A plain line right under an item continues it on a new line, indented
+    // or not (CommonMark's "lazy continuation"): models often drop the indent.
+    const continued = list?.items.at(-1);
     if (continued) {
       continued.details.push(parseInline(line.trim()));
       continue;
