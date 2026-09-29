@@ -28,6 +28,7 @@ export function StatusDot({
 }) {
   return (
     <span
+      role="img"
       aria-hidden={title ? undefined : true}
       aria-label={title}
       title={title}
