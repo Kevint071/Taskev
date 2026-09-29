@@ -26,7 +26,7 @@ export default async function AssistantPage() {
         />
         <EmptyState
           title="Configura una API key para empezar"
-          description="El asistente usa tu propia API key de Gemini, Groq u OpenRouter. Guarda al menos una en Ajustes para empezar a conversar."
+          description="El asistente usa tu propia API key de Gemini, Groq, OpenRouter o un token de GitHub Copilot. Guarda al menos una en Ajustes para empezar a conversar."
           action={
             <ButtonLink href={settingsHref("asistente")} variant="primary">
               Ir a Ajustes

@@ -26,6 +26,7 @@ export default async function SettingsPage() {
         gemini: status(keys.gemini),
         groq: status(keys.groq),
         openrouter: status(keys.openrouter),
+        copilot: status(keys.copilot),
       }}
     />
   );

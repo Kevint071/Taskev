@@ -504,6 +504,13 @@ const KEY_PROVIDERS: Record<
     account: "tu cuenta de OpenRouter",
     free: false,
   },
+  copilot: {
+    endpoint: "/api/account/copilot-key",
+    consoleName: "GitHub (permiso «Copilot Requests»)",
+    consoleUrl: "https://github.com/settings/personal-access-tokens/new",
+    account: "tu cuenta de GitHub",
+    free: false,
+  },
 };
 
 export function AssistantSection({
@@ -539,10 +546,12 @@ export function AssistantSection({
         <LockIcon className="mt-0.5 size-3.5 shrink-0" />
         <span>
           Cuando usas el asistente, los grupos, tareas y comentarios que
-          consulta se envían al proveedor del modelo que elijas (Google, Groq u
-          OpenRouter, que a su vez lo reenvía a quien sirve el modelo) usando tu
-          key. Las conversaciones se guardan en Taskev hasta que las borres. Las
-          keys se guardan cifradas y nunca se vuelven a mostrar completas.
+          consulta se envían al proveedor que elijas (Google, Groq, OpenRouter,
+          que a su vez lo reenvía a quien sirve el modelo, o GitHub Copilot)
+          usando tu key. Con GitHub Copilot, las consultas cuentan contra tu
+          cuota de Copilot. Las conversaciones se guardan en Taskev hasta que
+          las borres. Las keys se guardan cifradas y nunca se vuelven a mostrar
+          completas.
         </span>
       </p>
     </div>
