@@ -55,7 +55,7 @@ export function TaskRow({
   showProgress?: boolean;
   /** Vertically centers the progress ring at desktop widths. */
   centerProgressOnDesktop?: boolean;
-  /** Group page layout: wrapping meta line, no strike-through when done. */
+  /** Card layout (group page and global list): wrapping meta line, no strike-through when done. */
   inlineGroupStatus?: boolean;
   /** Hides the group-name meta text, e.g. inside that group's own page. */
   showGroup?: boolean;

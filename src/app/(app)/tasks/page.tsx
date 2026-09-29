@@ -2,9 +2,18 @@
 
 import { useEffect, useState } from "react";
 import type { GlobalTask } from "@/components/group-types";
-import { TaskBucketSection } from "@/components/tasks/task-bucket-section";
+import {
+  type TaskTabItem,
+  TaskViewTabs,
+} from "@/components/groups/group-task-tabs";
+import {
+  GLOBAL_TASK_TABS_PREFIX,
+  GlobalTaskList,
+  type GlobalTaskView,
+} from "@/components/tasks/global-task-list";
 import { TaskToolbar } from "@/components/tasks/task-toolbar";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { CalendarIcon, CheckIcon } from "@/components/ui/icons";
 import { EmptyState, LoadingRows, PageHeader } from "@/components/ui/panel";
 import { handleUnauthenticated } from "@/lib/api-client";
 import {
@@ -21,9 +30,25 @@ const NO_FILTERS: TaskFilters = {
   groupId: ALL_GROUPS,
 };
 
+const VIEW_TABS: TaskTabItem<GlobalTaskView>[] = [
+  {
+    value: "sin_completar",
+    label: "Sin completar",
+    icon: CalendarIcon,
+    color: "var(--accent)",
+  },
+  {
+    value: "completadas",
+    label: "Completadas",
+    icon: CheckIcon,
+    color: "var(--status-done)",
+  },
+];
+
 export default function GlobalTasksPage() {
   const [tasks, setTasks] = useState<GlobalTask[] | null>(null);
   const [filters, setFilters] = useState<TaskFilters>(NO_FILTERS);
+  const [view, setView] = useState<GlobalTaskView>("sin_completar");
   const [now] = useState(() => new Date());
 
   useEffect(() => {
@@ -49,7 +74,18 @@ export default function GlobalTasksPage() {
         .map(([id, name]) => ({ id, name }))
         .sort((a, b) => a.name.localeCompare(b.name, "es"))
     : [];
-  const searching = filters.query.trim() !== "";
+  const filtering =
+    filters.query.trim() !== "" ||
+    filters.status !== "todas" ||
+    filters.groupId !== ALL_GROUPS;
+  // Overdue, today and upcoming keep their urgency order inside "sin completar".
+  const byView: Record<GlobalTaskView, GlobalTask[]> = {
+    sin_completar: buckets
+      .filter((bucket) => bucket.key !== "completadas")
+      .flatMap((bucket) => bucket.tasks),
+    completadas:
+      buckets.find((bucket) => bucket.key === "completadas")?.tasks ?? [],
+  };
 
   return (
     <>
@@ -100,17 +136,27 @@ export default function GlobalTasksPage() {
               }
             />
           ) : (
-            <div className="flex flex-col gap-6">
-              {buckets.map((bucket) => (
-                <TaskBucketSection
-                  key={bucket.key}
-                  bucketKey={bucket.key}
-                  tasks={bucket.tasks}
-                  now={now}
-                  forceOpen={searching}
-                  from="tasks"
-                />
-              ))}
+            <div className="flex flex-col gap-4 md:gap-5">
+              <TaskViewTabs
+                items={VIEW_TABS}
+                idPrefix={GLOBAL_TASK_TABS_PREFIX}
+                ariaLabel="Filtrar tareas"
+                active={view}
+                counts={{
+                  sin_completar: byView.sin_completar.length,
+                  completadas: byView.completadas.length,
+                }}
+                onChange={setView}
+              />
+              <GlobalTaskList
+                view={view}
+                tasks={byView[view]}
+                now={now}
+                from="tasks"
+                onClearFilters={
+                  filtering ? () => setFilters(NO_FILTERS) : undefined
+                }
+              />
             </div>
           )}
         </>

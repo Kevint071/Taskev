@@ -19,18 +19,34 @@ const VIEW_STYLE: Record<
   no_programadas: { icon: InboxIcon, color: "var(--status-paused)" },
 };
 
+export type TaskTabItem<V extends string> = {
+  value: V;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  color: string;
+};
+
+const GROUP_TAB_ITEMS: TaskTabItem<GroupTaskView>[] = GROUP_TASK_VIEWS.map(
+  ({ value, label }) => ({ value, label, ...VIEW_STYLE[value] }),
+);
+
+export function taskTabId(prefix: string, view: string) {
+  return `${prefix}-tab-${view}`;
+}
+
+export function taskPanelId(prefix: string, view: string) {
+  return `${prefix}-panel-${view}`;
+}
+
 export function groupTaskTabId(view: GroupTaskView) {
-  return `group-tab-${view}`;
+  return taskTabId("group", view);
 }
 
 export function groupTaskPanelId(view: GroupTaskView) {
-  return `group-panel-${view}`;
+  return taskPanelId("group", view);
 }
 
-/**
- * Tabs above a group's task list, on a hairline rule. An underline in the
- * active view's color slides between tabs; each tab carries its count.
- */
+/** Tabs above a group's task list. */
 export function GroupTaskTabs({
   active,
   counts,
@@ -40,7 +56,39 @@ export function GroupTaskTabs({
   counts: Record<GroupTaskView, number>;
   onChange: (view: GroupTaskView) => void;
 }) {
-  const tabRefs = useRef(new Map<GroupTaskView, HTMLButtonElement>());
+  return (
+    <TaskViewTabs
+      items={GROUP_TAB_ITEMS}
+      idPrefix="group"
+      ariaLabel="Filtrar tareas del grupo"
+      active={active}
+      counts={counts}
+      onChange={onChange}
+    />
+  );
+}
+
+/**
+ * Tabs above a task list, on a hairline rule. An underline in the active
+ * view's color slides between tabs; each tab carries its count.
+ */
+export function TaskViewTabs<V extends string>({
+  items,
+  idPrefix,
+  ariaLabel,
+  active,
+  counts,
+  onChange,
+}: {
+  items: TaskTabItem<V>[];
+  /** Namespaces the tab/panel ids so two tab sets never collide. */
+  idPrefix: string;
+  ariaLabel: string;
+  active: V;
+  counts: Record<V, number>;
+  onChange: (view: V) => void;
+}) {
+  const tabRefs = useRef(new Map<V, HTMLButtonElement>());
   const trackRef = useRef<HTMLDivElement>(null);
   const [indicator, setIndicator] = useState<{
     left: number;
@@ -76,35 +124,32 @@ export function GroupTaskTabs({
       event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
     const edge =
       event.key === "Home"
-        ? GROUP_TASK_VIEWS[0].value
+        ? items[0].value
         : event.key === "End"
-          ? GROUP_TASK_VIEWS[GROUP_TASK_VIEWS.length - 1].value
+          ? items[items.length - 1].value
           : null;
     if (!step && !edge) return;
     event.preventDefault();
-    const index = GROUP_TASK_VIEWS.findIndex((view) => view.value === active);
+    const index = items.findIndex((view) => view.value === active);
     const next =
-      edge ??
-      GROUP_TASK_VIEWS[
-        (index + step + GROUP_TASK_VIEWS.length) % GROUP_TASK_VIEWS.length
-      ].value;
+      edge ?? items[(index + step + items.length) % items.length].value;
     onChange(next);
     tabRefs.current.get(next)?.focus();
   }
 
-  const activeColor = VIEW_STYLE[active].color;
+  const activeColor = items.find((view) => view.value === active)?.color;
 
   return (
     <div
       ref={trackRef}
       role="tablist"
-      aria-label="Filtrar tareas del grupo"
+      aria-label={ariaLabel}
       onKeyDown={handleKeyDown}
       className="relative flex w-full gap-1 border-b border-line md:gap-2"
     >
-      {GROUP_TASK_VIEWS.map((view) => {
+      {items.map((view) => {
         const selected = view.value === active;
-        const { icon: Icon, color } = VIEW_STYLE[view.value];
+        const { icon: Icon, color } = view;
         const count = counts[view.value];
         return (
           <button
@@ -115,9 +160,9 @@ export function GroupTaskTabs({
             }}
             type="button"
             role="tab"
-            id={groupTaskTabId(view.value)}
+            id={taskTabId(idPrefix, view.value)}
             aria-selected={selected}
-            aria-controls={groupTaskPanelId(view.value)}
+            aria-controls={taskPanelId(idPrefix, view.value)}
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(view.value)}
             className={`group flex h-11 min-w-0 flex-auto items-center justify-center text-meta font-medium transition-colors md:h-12 md:flex-none md:text-ui ${
