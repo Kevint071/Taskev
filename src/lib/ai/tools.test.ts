@@ -213,6 +213,26 @@ test("list_tasks returns at most 50 compact results and the real total", () => {
   assert.equal(first.groupName, "Finanzas");
 });
 
+test("list_tasks reports how many matches each status has, even past the cap", () => {
+  const many = [
+    ...Array.from({ length: 60 }, (_, i) =>
+      task({ id: `p${i}`, status: "pausada" }),
+    ),
+    task({ id: "e", status: "en_curso" }),
+    task({ id: "d", status: "disponible" }),
+  ];
+  const result = filterTasks(many, { excludeCompleted: true });
+  assert.equal(result.truncated, true);
+  // The counts cover every match, so a status missing from the capped list
+  // still shows up (or its absence is explicit: no zero entries).
+  assert.deepEqual(result.byStatus, {
+    pausada: 60,
+    en_curso: 1,
+    disponible: 1,
+  });
+  assert.deepEqual(filterTasks([], {}).byStatus, {});
+});
+
 test("compact tasks show dates as YYYY-MM-DD and priority as a number", () => {
   const [compact] = filterTasks(
     [

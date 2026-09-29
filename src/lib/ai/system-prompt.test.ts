@@ -69,6 +69,20 @@ test("asks for proactive, Markdown-formatted replies the chat can render", () =>
   assert.match(text, /Separa las ideas en párrafos distintos/);
 });
 
+test("keeps the model's answers consistent with what the tools returned", () => {
+  const text = buildSystemInstruction(evening, "UTC");
+  // Never claim a status is empty without querying it, and never contradict
+  // the tool data within one reply.
+  assert.match(text, /no des por vacío ningún estado/);
+  assert.match(text, /byStatus/);
+  assert.match(text, /no te contradigas/);
+  // A follow-up without its own filter means all the user's tasks, not the
+  // filtered list shown in the previous reply.
+  assert.match(text, /consulta siempre list_tasks de nuevo/);
+  assert.match(text, /todas las tareas del usuario/);
+  assert.match(text, /Nunca respondas .* a partir de una lista anterior/);
+});
+
 test("tells the model 'pendientes' spans every status but completada", () => {
   const text = buildSystemInstruction(evening, "UTC");
   assert.match(text, /pendiente/);

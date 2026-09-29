@@ -69,7 +69,7 @@ export const TOOL_DECLARATIONS = [
   {
     type: "function",
     name: "list_tasks",
-    description: `Lista y busca tareas de los grupos activos, las activas por relevancia y después las completadas. Devuelve como máximo ${LIST_TASKS_LIMIT} y el total real.`,
+    description: `Lista y busca tareas de los grupos activos, las activas por relevancia y después las completadas. Devuelve como máximo ${LIST_TASKS_LIMIT}, el total real y byStatus con cuántas coincidencias hay por estado (los estados ausentes tienen 0).`,
     parameters: object({
       groupId: id("del grupo"),
       status: { type: "string", enum: [...TASK_STATUSES] },
@@ -365,8 +365,15 @@ export function filterTasks(tasks: TaskLike[], filter: ListTasksFilter) {
       (dueBefore === undefined ||
         (task.dueDate !== null && task.dueDate.getTime() <= dueBefore)),
   );
+  // Counted before the cap so the model can't mistake a status that fell
+  // outside the first 50 for one that has no tasks.
+  const byStatus: Partial<Record<TaskStatus, number>> = {};
+  for (const task of matches) {
+    byStatus[task.status] = (byStatus[task.status] ?? 0) + 1;
+  }
   return {
     total: matches.length,
+    byStatus,
     truncated: matches.length > LIST_TASKS_LIMIT,
     tasks: matches.slice(0, LIST_TASKS_LIMIT).map(compactTask),
   };
