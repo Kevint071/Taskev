@@ -297,6 +297,24 @@ export function ChevronRightIcon({ className }: { className?: string } = {}) {
   );
 }
 
+export function PanelRightIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`size-4 shrink-0 ${className ?? ""}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="4" width="14" height="12" rx="2" />
+      <path d="M12 4v12" />
+    </svg>
+  );
+}
+
 export function ArrowRightIcon({ className }: { className?: string } = {}) {
   return (
     <svg

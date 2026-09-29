@@ -17,22 +17,23 @@ export default async function AssistantPage() {
   const providers = configuredProviders(await getStoredKeys(user.id));
 
   if (providers.length === 0) {
+    // The shell leaves this route unpadded on desktop for the chat layout.
     return (
-      <>
+      <div className="mx-auto flex w-full max-w-[880px] flex-col gap-8 md:px-10 md:pt-10 md:pb-16">
         <PageHeader
           title="Asistente"
           description="Consulta y gestiona tus grupos y tareas conversando."
         />
         <EmptyState
           title="Configura una API key para empezar"
-          description="El asistente usa tu propia API key de Gemini o de Groq. Guarda al menos una en Ajustes para empezar a conversar."
+          description="El asistente usa tu propia API key de Gemini, Groq u OpenRouter. Guarda al menos una en Ajustes para empezar a conversar."
           action={
             <ButtonLink href={settingsHref("asistente")} variant="primary">
               Ir a Ajustes
             </ButtonLink>
           }
         />
-      </>
+      </div>
     );
   }
 

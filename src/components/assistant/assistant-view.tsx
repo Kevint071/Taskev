@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   CheckIcon,
+  PanelRightIcon,
   PlusIcon,
   SendIcon,
   TriangleAlertIcon,
@@ -48,6 +49,9 @@ const SUGGESTIONS = [
   "¿Qué vence esta semana?",
   "¿Qué he hecho hoy?",
 ];
+
+/** Remembers, per browser, whether the desktop conversation panel is folded. */
+const PANEL_STORAGE_KEY = "taskev.assistant.panelCollapsed";
 
 /** Codes after which the fix is in Settings, so the error links there. */
 const KEY_ERRORS = new Set(["invalid_key", "no_key"]);
@@ -110,6 +114,7 @@ export function AssistantView({
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [listOpen, setListOpen] = useState(false);
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
   const [toDelete, setToDelete] = useState<ConversationItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   // Bumped whenever the open conversation changes, so a reply or a load
@@ -131,6 +136,24 @@ export function AssistantView({
     if (urlId) void load(urlId);
     else clear();
   }, [urlId]);
+
+  useEffect(() => {
+    try {
+      setPanelCollapsed(localStorage.getItem(PANEL_STORAGE_KEY) === "1");
+    } catch {
+      // Storage can be blocked (private mode); the panel then starts expanded.
+    }
+  }, []);
+
+  function togglePanel() {
+    const next = !panelCollapsed;
+    setPanelCollapsed(next);
+    try {
+      localStorage.setItem(PANEL_STORAGE_KEY, next ? "1" : "0");
+    } catch {
+      // Storage can be blocked (private mode); the choice lasts for this visit.
+    }
+  }
 
   function upsert(conversation: ConversationItem) {
     setConversations((prev) => [
@@ -354,6 +377,9 @@ export function AssistantView({
 
   const empty = items.length === 0 && !busy && !loading;
   const canPickModel = providers.length > 1;
+  const panelToggleLabel = panelCollapsed
+    ? "Mostrar conversaciones"
+    : "Ocultar conversaciones";
   const list = (
     <ConversationList
       conversations={conversations}
@@ -365,19 +391,8 @@ export function AssistantView({
   );
 
   return (
-    <div className="flex flex-1 gap-8">
-      <aside
-        aria-label="Conversaciones"
-        className="hidden w-56 shrink-0 flex-col gap-3 lg:sticky lg:top-10 lg:flex lg:max-h-[calc(100dvh-5rem)] lg:self-start"
-      >
-        <Button onClick={startNew} className="justify-start">
-          <PlusIcon className="size-4" />
-          Nueva conversación
-        </Button>
-        <div className="-mx-1 min-h-0 overflow-y-auto px-1">{list}</div>
-      </aside>
-
-      <div className="flex min-w-0 flex-1 flex-col gap-6">
+    <div className="flex flex-1">
+      <div className="mx-auto flex w-full max-w-[880px] min-w-0 flex-1 flex-col gap-6 md:px-10 md:pt-10 md:pb-6">
         <PageHeader
           title="Asistente"
           description="Consulta y gestiona tus grupos y tareas conversando."
@@ -520,6 +535,51 @@ export function AssistantView({
           </div>
         </form>
       </div>
+
+      <aside
+        aria-label="Conversaciones"
+        className={`sticky top-14 hidden h-[calc(100dvh-3.5rem)] shrink-0 flex-col gap-3 border-l border-line py-4 transition-[width] duration-200 lg:flex ${
+          panelCollapsed ? "w-16 items-center px-2" : "w-72 px-3"
+        }`}
+      >
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            onClick={togglePanel}
+            aria-expanded={!panelCollapsed}
+            aria-label={panelToggleLabel}
+            title={panelToggleLabel}
+            className="size-9 px-0"
+          >
+            <PanelRightIcon className="size-5" />
+          </Button>
+          {panelCollapsed ? null : (
+            <h2 className="text-meta font-semibold tracking-wide text-muted uppercase">
+              Conversaciones
+            </h2>
+          )}
+        </div>
+        {panelCollapsed ? (
+          <Button
+            onClick={startNew}
+            aria-label="Nueva conversación"
+            title="Nueva conversación"
+            className="size-9 px-0"
+          >
+            <PlusIcon className="size-4" />
+          </Button>
+        ) : (
+          <>
+            <Button onClick={startNew} className="justify-start">
+              <PlusIcon className="size-4" />
+              Nueva conversación
+            </Button>
+            <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
+              {list}
+            </div>
+          </>
+        )}
+      </aside>
 
       <BottomSheet
         open={listOpen}
