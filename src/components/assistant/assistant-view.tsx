@@ -1013,6 +1013,7 @@ export function AssistantView({
       <BottomSheet
         open={listOpen}
         title="Historial"
+        showClose={false}
         onClose={() => setListOpen(false)}
       >
         {list}
