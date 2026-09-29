@@ -13,6 +13,15 @@ test("states today's date and weekday in the user's time zone", () => {
   assert.match(madrid, /domingo, 27 de septiembre de 2026 \(2026-09-27\)/);
 });
 
+test("lists the next week's dates with their weekday so the model never computes them", () => {
+  const text = buildSystemInstruction(evening, "America/Bogota");
+  // Today in Bogotá is Saturday Sep 26; the list runs through Saturday Oct 3.
+  assert.match(text, /- mañana: domingo 27 de septiembre \(2026-09-27\)/);
+  assert.match(text, /- miércoles 30 de septiembre \(2026-09-30\)/);
+  assert.match(text, /- sábado 3 de octubre \(2026-10-03\)/);
+  assert.doesNotMatch(text, /2026-10-04/);
+});
+
 test("an unknown zone still yields a date", () => {
   assert.match(
     buildSystemInstruction(evening, "Not/AZone"),
@@ -38,4 +47,25 @@ test("sets the ground rules for the model", () => {
   // Task content is data, never instructions.
   assert.match(text, /datos/);
   assert.match(text, /instrucciones/);
+});
+
+test("asks for proactive, Markdown-formatted replies the chat can render", () => {
+  const text = buildSystemInstruction(evening, "UTC");
+  assert.match(text, /proactivo/);
+  assert.match(text, /recomienda/);
+  assert.match(text, /Markdown/);
+  assert.doesNotMatch(text, /sin Markdown|texto plano/);
+  // The chat renderer has no table support.
+  assert.match(text, /No uses [^.]*tablas/);
+  // A task's fields go on one line, not one bullet each.
+  assert.match(text, /Nunca pongas en viñetas los datos de una tarea/);
+  // A long flat list of tasks should break into grouped subheadings instead.
+  assert.match(text, /subtítulos/);
+  assert.match(text, /agrúpalas/);
+});
+
+test("tells the model 'pendientes' spans every status but completada", () => {
+  const text = buildSystemInstruction(evening, "UTC");
+  assert.match(text, /pendiente/);
+  assert.match(text, /excludeCompleted/);
 });
