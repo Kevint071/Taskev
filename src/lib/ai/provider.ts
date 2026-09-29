@@ -1,24 +1,18 @@
 /**
  * What every model provider shares: the provider-neutral history the agent
  * works on, the tool declarations, the result of one model step and the
- * errors. Each client (gemini.ts, groq.ts, openrouter.ts) translates to its
- * own wire format.
+ * errors. Each client (gemini.ts, groq.ts, openrouter.ts, copilot.ts)
+ * translates to its own wire format.
  */
 
-export const PROVIDERS = ["gemini", "groq", "openrouter"] as const;
+export const PROVIDERS = ["gemini", "groq", "openrouter", "copilot"] as const;
 export type Provider = (typeof PROVIDERS)[number];
 
 export const PROVIDER_NAMES: Record<Provider, string> = {
   gemini: "Gemini",
   groq: "Groq",
   openrouter: "OpenRouter",
-};
-
-/** What the model picker shows; keep in step with each client's model. */
-export const MODEL_LABELS: Record<Provider, string> = {
-  gemini: "Gemini 3.8 Flash",
-  groq: "GPT-OSS 120B · Groq",
-  openrouter: "GPT-OSS 120B · OpenRouter",
+  copilot: "GitHub Copilot",
 };
 
 export function isProvider(value: unknown): value is Provider {
@@ -53,12 +47,20 @@ export type GenerateResult = {
   calls: FunctionCall[];
 };
 
+/** The wire format a model speaks, when the caller already knows it. */
+export type ModelApi = "chat" | "responses";
+
+export type GenerateOptions = { api?: ModelApi };
+
 export type ProviderClient = {
   generate(
     apiKey: string,
     history: HistoryStep[],
     tools: readonly FunctionDeclaration[],
     system: string,
+    /** One of the provider's models; its default when omitted. */
+    model?: string,
+    options?: GenerateOptions,
   ): Promise<GenerateResult>;
   /** Resolves only if the provider accepts the key. */
   verifyKey(apiKey: string): Promise<void>;
@@ -69,6 +71,7 @@ export type ProviderErrorKind =
   | "quota"
   | "too_large"
   | "unavailable"
+  | "model_unavailable"
   | "bad_request";
 
 /** Its message never contains the key or the provider's response body. */

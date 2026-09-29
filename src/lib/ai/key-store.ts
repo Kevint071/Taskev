@@ -8,6 +8,7 @@ const FIELDS = {
   gemini: "geminiApiKeyEncrypted",
   groq: "groqApiKeyEncrypted",
   openrouter: "openrouterApiKeyEncrypted",
+  copilot: "copilotApiKeyEncrypted",
 } as const satisfies Record<Provider, keyof typeof users.$inferSelect>;
 
 /**
@@ -41,6 +42,7 @@ export async function getStoredKeys(
       gemini: users.geminiApiKeyEncrypted,
       groq: users.groqApiKeyEncrypted,
       openrouter: users.openrouterApiKeyEncrypted,
+      copilot: users.copilotApiKeyEncrypted,
     })
     .from(users)
     .where(eq(users.id, userId))
@@ -49,6 +51,7 @@ export async function getStoredKeys(
     gemini: decrypt(row?.gemini ?? null, userId, "gemini"),
     groq: decrypt(row?.groq ?? null, userId, "groq"),
     openrouter: decrypt(row?.openrouter ?? null, userId, "openrouter"),
+    copilot: decrypt(row?.copilot ?? null, userId, "copilot"),
   };
 }
 
