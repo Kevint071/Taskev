@@ -29,7 +29,7 @@ import {
 
 /**
  * Phones drill down: a section index, then one section per screen with a
- * back button. Desktop keeps the list beside the open section. The URL is the
+ * back button. Desktop shows the sections as tabs above the open one. The URL is the
  * source of truth, so the avatar menu deep-links straight into a section.
  */
 export function SettingsView({
@@ -111,13 +111,13 @@ export function SettingsView({
         <SettingsIndex email={email} name={name} onOpen={openSection} />
       ) : null}
 
-      <div className="md:grid md:grid-cols-[216px_1fr] md:gap-10">
+      <div className="md:flex md:flex-col md:gap-6">
         <div
           role="tablist"
           aria-label="Secciones de ajustes"
-          aria-orientation="vertical"
+          aria-orientation="horizontal"
           onKeyDown={handleKeyDown}
-          className="sticky top-24 hidden flex-col gap-1 self-start md:flex"
+          className="hidden gap-1 overflow-x-auto border-b border-line md:flex"
         >
           {SETTINGS_TABS.map((tab) => {
             const selected = tab.value === active;
@@ -135,15 +135,16 @@ export function SettingsView({
                 aria-controls={`settings-panel-${tab.value}`}
                 tabIndex={selected ? 0 : -1}
                 onClick={() => selectTab(tab.value)}
-                className={`flex h-12 items-center gap-3 rounded-xl px-2 text-left font-medium transition-colors ${
+                // The active underline overlaps the bar's border (-mb-px).
+                className={`-mb-px flex h-12 shrink-0 items-center gap-2.5 whitespace-nowrap border-b-2 px-3 font-medium transition-colors ${
                   selected
-                    ? "bg-raised text-ink shadow-panel ring-1 ring-line"
-                    : "text-muted hover:bg-sunken hover:text-ink"
+                    ? "border-accent text-ink"
+                    : "border-transparent text-muted hover:border-line-strong hover:text-ink"
                 }`}
               >
                 <SettingsIconTile
                   tab={tab.value}
-                  className="size-8 rounded-lg"
+                  className="size-7 rounded-lg"
                 />
                 {tab.label}
               </button>
@@ -160,11 +161,12 @@ export function SettingsView({
             id={`settings-panel-${tab.value}`}
             aria-labelledby={`settings-tab-${tab.value}`}
             hidden={tab.value !== active}
-            className={`min-w-0 max-md:animate-push-in md:col-start-2 md:row-start-1 md:max-w-[640px] md:animate-reveal ${
+            className={`min-w-0 max-md:animate-push-in md:animate-reveal ${
               section === null ? "max-md:hidden" : ""
             }`}
           >
-            <header className="mb-5 flex flex-col gap-2 md:mb-6">
+            {/* Phones only: on desktop the active tab already names the section. */}
+            <header className="mb-5 flex flex-col gap-2 md:hidden">
               <button
                 type="button"
                 onClick={backToIndex}
@@ -174,9 +176,7 @@ export function SettingsView({
                 Ajustes
               </button>
               <div>
-                <h2 className="text-page font-semibold md:text-section">
-                  {tab.label}
-                </h2>
+                <h2 className="text-page font-semibold">{tab.label}</h2>
                 <p className="mt-1 text-muted">{tab.description}</p>
               </div>
             </header>
