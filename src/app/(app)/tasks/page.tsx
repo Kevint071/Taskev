@@ -23,12 +23,11 @@ import {
   filterTasks,
   type TaskFilters,
 } from "@/lib/task-buckets";
-
-const NO_FILTERS: TaskFilters = {
-  query: "",
-  status: "todas",
-  groupId: ALL_GROUPS,
-};
+import {
+  loadTaskFilters,
+  NO_FILTERS,
+  saveTaskFilters,
+} from "@/lib/task-filters-storage";
 
 const VIEW_TABS: TaskTabItem<GlobalTaskView>[] = [
   {
@@ -47,9 +46,15 @@ const VIEW_TABS: TaskTabItem<GlobalTaskView>[] = [
 
 export default function GlobalTasksPage() {
   const [tasks, setTasks] = useState<GlobalTask[] | null>(null);
-  const [filters, setFilters] = useState<TaskFilters>(NO_FILTERS);
+  // Restored from the session so filters survive opening a task and coming back.
+  // Safe for hydration: nothing filter-dependent renders until `tasks` loads.
+  const [filters, setFilters] = useState<TaskFilters>(loadTaskFilters);
   const [view, setView] = useState<GlobalTaskView>("sin_completar");
   const [now] = useState(() => new Date());
+
+  useEffect(() => {
+    saveTaskFilters(filters);
+  }, [filters]);
 
   useEffect(() => {
     fetch("/api/tasks").then(async (res) => {
