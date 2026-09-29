@@ -83,6 +83,12 @@ test("keeps the model's answers consistent with what the tools returned", () => 
   assert.match(text, /Nunca respondas .* a partir de una lista anterior/);
 });
 
+test("tells the model to retry a search before saying a task doesn't exist", () => {
+  const text = buildSystemInstruction(evening, "UTC");
+  assert.match(text, /reintenta con una o dos palabras clave/);
+  assert.match(text, /partialMatch/);
+});
+
 test("tells the model 'pendientes' spans every status but completada", () => {
   const text = buildSystemInstruction(evening, "UTC");
   assert.match(text, /pendiente/);

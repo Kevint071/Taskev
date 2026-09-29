@@ -209,10 +209,40 @@ test("list_tasks query matches every word in any order", () => {
 
   assert.deepEqual(ids("kaleido ticket"), ["a"]);
   assert.deepEqual(ids("SSL  kaleido"), ["a", "b"]);
-  // A word that appears nowhere rules the task out.
-  assert.deepEqual(ids("kaleido factura"), []);
   // A phrase in order still matches.
   assert.deepEqual(ids("ticket de Kaleido"), ["a"]);
+  // Nothing in common at all is still no match.
+  assert.deepEqual(ids("factura presupuesto"), []);
+  assert.equal(
+    filterTasks(tasks, { query: "kaleido ticket" }).partialMatch,
+    false,
+  );
+});
+
+test("list_tasks query falls back to the best partial matches", () => {
+  const tasks = [
+    task({ id: "x", title: "Revisar app CD de Boris" }),
+    task({
+      id: "a",
+      title:
+        "Comparar implementación de mejoras de app CD con las del repo true.spec de Boris",
+      description: "Cambios pendientes",
+    }),
+    task({ id: "b", title: "Cerrar ticket de Kaleido" }),
+    task({ id: "c", title: "Enviar factura", description: "app" }),
+  ];
+  const result = filterTasks(tasks, {
+    query: "conciliar cambios app cd Boris",
+  });
+
+  // "conciliar" appears nowhere, but 4 of the 5 words do in "a" and 3 in "x".
+  // Best match first; a task matching fewer than half the words is left out.
+  assert.deepEqual(
+    result.tasks.map((t) => t.id),
+    ["a", "x"],
+  );
+  assert.equal(result.total, 2);
+  assert.equal(result.partialMatch, true);
 });
 
 test("list_tasks returns at most 50 compact results and the real total", () => {
