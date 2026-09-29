@@ -2,19 +2,33 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { type KeyboardEvent, useEffect, useRef, useState } from "react";
+import {
+  type ComponentType,
+  type CSSProperties,
+  type KeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
+  CalendarIcon,
   CheckIcon,
+  ChevronDownIcon,
+  FlagIcon,
+  HistoryIcon,
+  NewChatIcon,
+  NoteIcon,
   PanelRightIcon,
   PlusIcon,
   SendIcon,
+  SparklesIcon,
   TriangleAlertIcon,
 } from "@/components/ui/icons";
 import { Select } from "@/components/ui/input";
-import { LoadingRows, PageHeader } from "@/components/ui/panel";
+import { LoadingRows } from "@/components/ui/panel";
 import type { DisplayItem, PendingAction } from "@/lib/ai/agent";
 import { pickProvider } from "@/lib/ai/conversations";
 import { MODEL_LABELS, type Provider } from "@/lib/ai/provider";
@@ -44,10 +58,58 @@ const ASSISTANT_PATH = "/asistente";
 /** The open conversation lives in the URL, so a reload keeps it. */
 const CONVERSATION_PARAM = "c";
 
-const SUGGESTIONS = [
-  "¿Qué tareas tengo bloqueadas?",
-  "¿Qué vence esta semana?",
-  "¿Qué he hecho hoy?",
+type Suggestion = {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  hint: string;
+  prompt: string;
+  /** Questions are sent as they are; requests that need details fill the input. */
+  send: boolean;
+};
+
+const SUGGESTIONS: Suggestion[] = [
+  {
+    icon: FlagIcon,
+    title: "Qué está bloqueado",
+    hint: "Tareas detenidas y en qué grupo están",
+    prompt: "¿Qué tareas tengo bloqueadas?",
+    send: true,
+  },
+  {
+    icon: CalendarIcon,
+    title: "Qué vence pronto",
+    hint: "Fechas límite de esta semana",
+    prompt: "¿Qué vence esta semana?",
+    send: true,
+  },
+  {
+    icon: CheckIcon,
+    title: "Resumen de hoy",
+    hint: "Lo que has avanzado y completado",
+    prompt: "¿Qué he hecho hoy?",
+    send: true,
+  },
+  {
+    icon: PlusIcon,
+    title: "Crear una tarea",
+    hint: "Dime el título, el grupo y la fecha",
+    prompt: "Crea una tarea llamada ",
+    send: false,
+  },
+  {
+    icon: NoteIcon,
+    title: "Comentar una tarea",
+    hint: "Deja una nota sin abrir la tarea",
+    prompt: "Añade un comentario a la tarea ",
+    send: false,
+  },
+  {
+    icon: SparklesIcon,
+    title: "Qué priorizar",
+    hint: "Te propongo por dónde empezar",
+    prompt: "¿Por dónde debería empezar hoy? Ten en cuenta fechas y bloqueos.",
+    send: true,
+  },
 ];
 
 /** Remembers, per browser, whether the desktop conversation panel is folded. */
@@ -310,6 +372,15 @@ export function AssistantView({
     request({ message });
   }
 
+  function pickSuggestion(suggestion: Suggestion) {
+    if (suggestion.send) {
+      send(suggestion.prompt);
+      return;
+    }
+    setDraft(suggestion.prompt);
+    inputRef.current?.focus();
+  }
+
   function resolvePending(approved: boolean) {
     if (!pending || busy) return;
     const { callId } = pending;
@@ -380,6 +451,12 @@ export function AssistantView({
   const panelToggleLabel = panelCollapsed
     ? "Mostrar conversaciones"
     : "Ocultar conversaciones";
+  const conversationCount =
+    conversations.length === 0
+      ? "Aún no hay conversaciones"
+      : conversations.length === 1
+        ? "1 conversación"
+        : `${conversations.length} conversaciones`;
   const list = (
     <ConversationList
       conversations={conversations}
@@ -391,187 +468,252 @@ export function AssistantView({
   );
 
   return (
-    <div className="flex flex-1">
-      <div className="mx-auto flex w-full max-w-[880px] min-w-0 flex-1 flex-col gap-6 md:px-10 md:pt-10 md:pb-6">
-        <PageHeader
-          title="Asistente"
-          description="Consulta y gestiona tus grupos y tareas conversando."
-          actions={
-            <>
-              <Button className="lg:hidden" onClick={() => setListOpen(true)}>
-                Conversaciones
-              </Button>
-              {activeId || items.length > 0 ? (
-                <Button className="lg:hidden" onClick={startNew}>
-                  Nueva conversación
-                </Button>
-              ) : null}
-            </>
-          }
-        />
-
-        <section
-          aria-label="Conversación"
-          aria-live="polite"
-          className="flex flex-1 flex-col gap-3"
-        >
-          {loading ? <LoadingRows rows={3} /> : null}
-
-          {empty ? (
-            <div className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-line-strong px-5 py-6">
-              <p className="text-muted">
-                Pregunta por tus tareas o pide cambios: crear, editar, cambiar
-                de estado, comentar… Borrar o archivar siempre te pedirá
-                confirmación.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {SUGGESTIONS.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    onClick={() => send(suggestion)}
-                    className="rounded-full border border-line bg-raised px-3 py-1.5 text-meta font-medium text-ink transition-colors hover:border-line-strong hover:bg-sunken"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {items.map((item, i) => (
-            <ChatRow
-              // biome-ignore lint/suspicious/noArrayIndexKey: append-only transcript
-              key={i}
-              item={item}
-              onReload={() => activeId && void load(activeId)}
-            />
-          ))}
-
-          {pending ? (
-            <PendingCard
-              action={pending}
-              disabled={busy}
-              onConfirm={() => resolvePending(true)}
-              onCancel={() => resolvePending(false)}
-            />
-          ) : null}
-
-          {busy ? (
-            <p className="flex items-center gap-2 self-start text-muted">
-              <span className="flex gap-1" aria-hidden="true">
-                <span className="size-1.5 animate-pulse rounded-full bg-muted" />
-                <span className="size-1.5 animate-pulse rounded-full bg-muted [animation-delay:150ms]" />
-                <span className="size-1.5 animate-pulse rounded-full bg-muted [animation-delay:300ms]" />
-              </span>
-              Pensando…
-            </p>
-          ) : null}
-          <div ref={endRef} />
-        </section>
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            send(draft);
-          }}
-          className={`sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] flex gap-2 rounded-2xl border border-line bg-raised p-2 shadow-panel md:bottom-6 ${
-            canPickModel ? "flex-col" : "items-end"
-          }`}
-        >
-          <label htmlFor="assistant-input" className="sr-only">
-            Mensaje para el asistente
-          </label>
-          <textarea
-            id="assistant-input"
-            ref={inputRef}
-            rows={1}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Escribe un mensaje…"
-            maxLength={4000}
-            className="field-sizing-content max-h-40 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-ink outline-none placeholder:text-muted"
-          />
-          <div
-            className={
-              canPickModel ? "flex items-center justify-between gap-2" : ""
-            }
+    <div className="flex min-h-0 flex-1">
+      <div className="mx-auto flex w-full max-w-[880px] min-w-0 flex-1 flex-col">
+        <div className="flex items-center gap-2 px-4 pt-3 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setListOpen(true)}
+            className="group flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-line bg-raised p-2 pr-3 text-left shadow-panel transition-colors hover:border-accent/40"
           >
-            {canPickModel ? (
-              <>
-                <label htmlFor="assistant-model" className="sr-only">
-                  Modelo
-                </label>
-                <Select
-                  id="assistant-model"
-                  value={provider}
-                  onChange={(e) => setProvider(e.target.value as Provider)}
-                  disabled={busy || pending !== null}
-                  title={
-                    pending
-                      ? "Confirma o cancela la acción pendiente para cambiar de modelo"
-                      : undefined
-                  }
-                  className="h-8 max-w-[60%] text-meta"
-                >
-                  {providers.map((p) => (
-                    <option key={p} value={p}>
-                      {MODEL_LABELS[p]}
-                    </option>
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
+              <HistoryIcon className="size-[18px]" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-semibold">Historial</span>
+              <span className="block truncate text-meta text-muted">
+                {conversationCount}
+              </span>
+            </span>
+            <ChevronDownIcon className="size-4 text-muted transition-colors group-hover:text-ink" />
+          </button>
+          <Button
+            variant="primary"
+            onClick={startNew}
+            aria-label="Nueva conversación"
+            title="Nueva conversación"
+            className="size-13 rounded-2xl px-0"
+          >
+            <NewChatIcon className="size-6" />
+          </Button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 md:px-10 md:pt-10">
+          <section
+            aria-label="Conversación"
+            aria-live="polite"
+            className="flex min-h-full flex-col gap-3 pb-4"
+          >
+            {loading ? <LoadingRows rows={3} /> : null}
+
+            {empty ? (
+              <div className="flex flex-1 flex-col justify-center gap-8 px-4 py-4 md:px-0 md:py-10">
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <span className="flex size-14 items-center justify-center rounded-2xl bg-accent-soft text-accent ring-1 ring-accent/15">
+                    <SparklesIcon className="size-7" />
+                  </span>
+                  <div className="space-y-2">
+                    <h2 className="text-headline font-semibold">
+                      ¿En qué te ayudo hoy?
+                    </h2>
+                    <p className="mx-auto max-w-[46ch] text-muted">
+                      Consulta tus tareas o pide cambios en lenguaje normal.
+                      Borrar o archivar siempre te pedirá confirmación.
+                    </p>
+                  </div>
+                </div>
+                <ul className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                  {SUGGESTIONS.map((suggestion, i) => (
+                    <li key={suggestion.title} className="contents">
+                      <button
+                        type="button"
+                        onClick={() => pickSuggestion(suggestion)}
+                        style={{ "--delay": `${i * 60}ms` } as CSSProperties}
+                        className="group animate-rise flex items-start gap-3 rounded-2xl border border-line bg-raised p-3.5 text-left shadow-panel transition-[border-color,transform,box-shadow] hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-[0_6px_18px_-8px_color-mix(in_srgb,var(--accent)_35%,transparent)]"
+                      >
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent transition-colors group-hover:bg-accent group-hover:text-accent-ink">
+                          <suggestion.icon className="size-[18px]" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block font-semibold text-ink">
+                            {suggestion.title}
+                          </span>
+                          <span className="mt-0.5 block text-meta text-muted">
+                            {suggestion.hint}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
                   ))}
-                </Select>
-              </>
+                </ul>
+              </div>
             ) : null}
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={busy || loading || draft.trim() === ""}
-              aria-label="Enviar"
-              className="size-10 px-0"
-            >
-              <SendIcon />
-            </Button>
-          </div>
-        </form>
+
+            {items.map((item, i) => (
+              <ChatRow
+                // biome-ignore lint/suspicious/noArrayIndexKey: append-only transcript
+                key={i}
+                item={item}
+                onReload={() => activeId && void load(activeId)}
+              />
+            ))}
+
+            {pending ? (
+              <PendingCard
+                action={pending}
+                disabled={busy}
+                onConfirm={() => resolvePending(true)}
+                onCancel={() => resolvePending(false)}
+              />
+            ) : null}
+
+            {busy ? (
+              <p className="flex items-center gap-2 self-start text-muted">
+                <span className="flex gap-1" aria-hidden="true">
+                  <span className="size-1.5 animate-pulse rounded-full bg-muted" />
+                  <span className="size-1.5 animate-pulse rounded-full bg-muted [animation-delay:150ms]" />
+                  <span className="size-1.5 animate-pulse rounded-full bg-muted [animation-delay:300ms]" />
+                </span>
+                Pensando…
+              </p>
+            ) : null}
+            <div ref={endRef} />
+          </section>
+        </div>
+
+        <div className="px-4 pt-2 pb-4 md:px-10 md:pb-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              send(draft);
+            }}
+            className="flex flex-col gap-1 rounded-3xl border border-line-strong bg-raised p-2 shadow-[0_8px_30px_-12px_rgba(26,35,50,0.25)] transition-[border-color,box-shadow] focus-within:border-accent focus-within:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent)_16%,transparent),0_8px_30px_-12px_rgba(26,35,50,0.25)]"
+          >
+            <label htmlFor="assistant-input" className="sr-only">
+              Mensaje para el asistente
+            </label>
+            <textarea
+              id="assistant-input"
+              ref={inputRef}
+              rows={1}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Pregunta o pide un cambio…"
+              maxLength={4000}
+              className="field-sizing-content max-h-48 min-h-11 w-full resize-none bg-transparent px-3 pt-2.5 pb-1 text-ink outline-none placeholder:text-muted"
+            />
+            <div className="flex items-center gap-2 pl-1">
+              {canPickModel ? (
+                <span className="relative inline-flex items-center">
+                  <SparklesIcon className="pointer-events-none absolute left-2.5 size-3.5 text-accent" />
+                  <label htmlFor="assistant-model" className="sr-only">
+                    Modelo
+                  </label>
+                  <Select
+                    id="assistant-model"
+                    value={provider}
+                    onChange={(e) => setProvider(e.target.value as Provider)}
+                    disabled={busy || pending !== null}
+                    title={
+                      pending
+                        ? "Confirma o cancela la acción pendiente para cambiar de modelo"
+                        : undefined
+                    }
+                    className="h-8 max-w-[60vw] rounded-full border-transparent bg-sunken pl-8 text-meta font-medium"
+                  >
+                    {providers.map((p) => (
+                      <option key={p} value={p}>
+                        {MODEL_LABELS[p]}
+                      </option>
+                    ))}
+                  </Select>
+                </span>
+              ) : (
+                <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-sunken px-2.5 text-meta font-medium text-muted">
+                  <SparklesIcon className="size-3.5 text-accent" />
+                  {MODEL_LABELS[provider]}
+                </span>
+              )}
+              <p className="hidden min-w-0 flex-1 truncate text-meta text-muted md:block">
+                {draft.length > 3500
+                  ? `${draft.length}/4000`
+                  : "Intro para enviar · Mayús+Intro para nueva línea"}
+              </p>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={busy || loading || draft.trim() === ""}
+                aria-label="Enviar"
+                className="ml-auto size-10 rounded-full px-0 transition-[background-color,opacity,transform] enabled:hover:scale-105 disabled:bg-sunken disabled:text-muted disabled:opacity-100"
+              >
+                <SendIcon />
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
 
       <aside
         aria-label="Conversaciones"
-        className={`sticky top-14 hidden h-[calc(100dvh-3.5rem)] shrink-0 flex-col gap-3 border-l border-line py-4 transition-[width] duration-200 lg:flex ${
+        className={`hidden shrink-0 flex-col gap-4 border-l border-line bg-raised/60 py-4 transition-[width] duration-200 lg:flex ${
           panelCollapsed ? "w-16 items-center px-2" : "w-72 px-3"
         }`}
       >
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            onClick={togglePanel}
-            aria-expanded={!panelCollapsed}
-            aria-label={panelToggleLabel}
-            title={panelToggleLabel}
-            className="size-9 px-0"
-          >
-            <PanelRightIcon className="size-5" />
-          </Button>
-          {panelCollapsed ? null : (
-            <h2 className="text-meta font-semibold tracking-wide text-muted uppercase">
-              Conversaciones
-            </h2>
-          )}
-        </div>
         {panelCollapsed ? (
-          <Button
-            onClick={startNew}
-            aria-label="Nueva conversación"
-            title="Nueva conversación"
-            className="size-9 px-0"
-          >
-            <PlusIcon className="size-4" />
-          </Button>
+          <>
+            <Button
+              variant="ghost"
+              onClick={togglePanel}
+              aria-expanded={false}
+              aria-label={panelToggleLabel}
+              title={`${panelToggleLabel} (${conversations.length})`}
+              className="relative size-10 rounded-xl px-0"
+            >
+              <HistoryIcon className="size-5" />
+              {conversations.length > 0 ? (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] leading-none font-semibold text-accent-ink">
+                  {conversations.length > 99 ? "99+" : conversations.length}
+                </span>
+              ) : null}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={startNew}
+              aria-label="Nueva conversación"
+              title="Nueva conversación"
+              className="size-10 rounded-xl px-0"
+            >
+              <NewChatIcon className="size-5" />
+            </Button>
+          </>
         ) : (
           <>
-            <Button onClick={startNew} className="justify-start">
-              <PlusIcon className="size-4" />
+            <div className="flex items-center gap-2.5 pl-1">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
+                <HistoryIcon className="size-[18px]" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate font-semibold">Conversaciones</h2>
+                <p className="text-meta text-muted">{conversationCount}</p>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={togglePanel}
+                aria-expanded
+                aria-label={panelToggleLabel}
+                title={panelToggleLabel}
+                className="size-9 px-0"
+              >
+                <PanelRightIcon className="size-5" />
+              </Button>
+            </div>
+            <Button
+              variant="primary"
+              onClick={startNew}
+              className="h-10 justify-center rounded-xl"
+            >
+              <NewChatIcon className="size-4" />
               Nueva conversación
             </Button>
             <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
@@ -583,16 +725,10 @@ export function AssistantView({
 
       <BottomSheet
         open={listOpen}
-        title="Conversaciones"
+        title="Historial"
         onClose={() => setListOpen(false)}
       >
-        <div className="flex flex-col gap-3">
-          <Button onClick={startNew} className="justify-start">
-            <PlusIcon className="size-4" />
-            Nueva conversación
-          </Button>
-          {list}
-        </div>
+        {list}
       </BottomSheet>
 
       <ConfirmDialog

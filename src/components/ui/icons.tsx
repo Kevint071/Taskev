@@ -551,3 +551,57 @@ export function MailIcon({ className }: { className?: string } = {}) {
     </svg>
   );
 }
+
+export function SparklesIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M8 3.5 9.4 7.6 13.5 9 9.4 10.4 8 14.5 6.6 10.4 2.5 9 6.6 7.6 8 3.5Z" />
+      <path d="M15 2.5v3M13.5 4h3M15 13.5v3M13.5 15h3" />
+    </svg>
+  );
+}
+
+export function HistoryIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3.5 10a6.5 6.5 0 1 0 2-4.7M3.5 3.8v3.2H6.7M10 6.5V10l2.3 1.4" />
+    </svg>
+  );
+}
+
+/** A chat bubble with a plus: starts a new conversation. */
+export function NewChatIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M16.5 10.2v2.6a2 2 0 0 1-2 2H9l-3.5 2.7v-2.7h-.5a2 2 0 0 1-2-2V7.2a2 2 0 0 1 2-2h5" />
+      <path d="M15 1.8v5M12.5 4.3h5" />
+    </svg>
+  );
+}

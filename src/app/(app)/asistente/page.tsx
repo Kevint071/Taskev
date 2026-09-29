@@ -17,9 +17,9 @@ export default async function AssistantPage() {
   const providers = configuredProviders(await getStoredKeys(user.id));
 
   if (providers.length === 0) {
-    // The shell leaves this route unpadded on desktop for the chat layout.
+    // The shell leaves this route unpadded for the chat layout.
     return (
-      <div className="mx-auto flex w-full max-w-[880px] flex-col gap-8 md:px-10 md:pt-10 md:pb-16">
+      <div className="mx-auto flex w-full max-w-[880px] flex-col gap-8 px-4 pt-6 pb-8 md:px-10 md:pt-10 md:pb-16">
         <PageHeader
           title="Asistente"
           description="Consulta y gestiona tus grupos y tareas conversando."

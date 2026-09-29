@@ -156,8 +156,8 @@ function ConversationRow({
 
   return (
     <li
-      className={`group flex items-center gap-1 rounded-control pr-1 transition-colors ${
-        active ? "bg-sunken" : "hover:bg-sunken/70"
+      className={`group relative flex items-center gap-1 rounded-xl pr-1 transition-colors ${
+        active ? "bg-accent-soft" : "hover:bg-sunken/70"
       }`}
     >
       <button

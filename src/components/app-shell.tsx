@@ -84,9 +84,10 @@ export function AppShell({
   // edge, so the phone tab bar steps aside.
   const focusScreen = /^\/groups\/[^/]+\/tasks\/[^/]+/.test(pathname);
   const groupDetailScreen = /^\/groups\/[^/]+\/?$/.test(pathname);
-  // The assistant uses the full width on desktop: its conversation list sits
-  // flush against the right edge and the chat takes the rest.
-  const wideScreen = pathname.startsWith("/asistente");
+  // The assistant is pinned to the window like the focus screen: the
+  // transcript scrolls inside it, so the composer never moves with the page.
+  // On desktop its conversation list also sits flush against the right edge.
+  const chatScreen = pathname.startsWith("/asistente");
 
   // The focus screen is pinned to the window instead of sized with `h-dvh`:
   // installed Android apps resolve `dvh` too tall on a fresh load (until the
@@ -94,7 +95,7 @@ export function AppShell({
   return (
     <div
       className={`flex min-w-0 ${
-        focusScreen ? "fixed inset-0" : "min-h-dvh flex-1"
+        focusScreen || chatScreen ? "fixed inset-0" : "min-h-dvh flex-1"
       }`}
     >
       {/* Desktop sidebar */}
@@ -129,8 +130,8 @@ export function AppShell({
           className={`flex min-w-0 w-full flex-1 flex-col gap-8 ${
             focusScreen
               ? "min-h-0 overflow-y-auto overscroll-contain px-0 pt-0 pb-0"
-              : wideScreen
-                ? "px-4 pt-6 pb-28 md:p-0"
+              : chatScreen
+                ? "min-h-0 overflow-y-auto overscroll-contain p-0 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0"
                 : `mx-auto max-w-[880px] px-4 pb-28 md:px-10 md:pb-16 ${
                     groupDetailScreen ? "pt-4 md:pt-7" : "pt-6 md:pt-10"
                   }`
