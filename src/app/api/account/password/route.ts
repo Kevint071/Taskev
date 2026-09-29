@@ -2,9 +2,12 @@ import bcrypt from "bcrypt";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireUserId } from "@/lib/auth-guard";
-import { MIN_PASSWORD_LENGTH } from "@/lib/constraints";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import {
+  isStrongPassword,
+  PASSWORD_REQUIREMENTS_ERROR,
+} from "@/lib/password-checks";
 
 export async function POST(request: Request) {
   const userId = await requireUserId();
@@ -18,11 +21,9 @@ export async function POST(request: Request) {
   const newPassword =
     typeof body?.newPassword === "string" ? body.newPassword : "";
 
-  if (newPassword.length < MIN_PASSWORD_LENGTH) {
+  if (!isStrongPassword(newPassword)) {
     return NextResponse.json(
-      {
-        error: `La nueva contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`,
-      },
+      { error: `La nueva contraseña ${PASSWORD_REQUIREMENTS_ERROR}` },
       { status: 400 },
     );
   }

@@ -7,7 +7,10 @@ import { AuthCard, TextLink } from "@/components/auth-card";
 import { Button } from "@/components/ui/button";
 import { Field, FormError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { MIN_PASSWORD_LENGTH } from "@/lib/constraints";
+import { PasswordInput } from "@/components/ui/password-input";
+import { PasswordChecklist } from "@/components/ui/password-requirements";
+import { Toast, type ToastState } from "@/components/ui/toast";
+import { passwordRules } from "@/lib/password-checks";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,9 +18,14 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<ToastState>(null);
+
+  const rules = passwordRules(password);
+  const ready = rules.every((rule) => rule.ok);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!ready) return;
     setError(null);
     setLoading(true);
 
@@ -29,7 +37,13 @@ export default function RegisterPage() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "No se pudo crear la cuenta");
+      const message = data.error ?? "No se pudo crear la cuenta";
+      // A taken email is not a form-wide problem: flag it top-right, like other failures.
+      if (res.status === 409) {
+        setToast({ id: Date.now(), message, tone: "error" });
+      } else {
+        setError(message);
+      }
       setLoading(false);
       return;
     }
@@ -59,6 +73,7 @@ export default function RegisterPage() {
         </>
       }
     >
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Field label="Correo electrónico">
           <Input
@@ -69,24 +84,25 @@ export default function RegisterPage() {
             onChange={(e) => setEmail(e.target.value)}
           />
         </Field>
-        <Field
-          label="Contraseña"
-          hint={`Al menos ${MIN_PASSWORD_LENGTH} caracteres`}
-        >
-          <Input
-            type="password"
-            required
-            minLength={MIN_PASSWORD_LENGTH}
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </Field>
+        <div className="flex flex-col gap-2.5">
+          <Field label="Contraseña">
+            <PasswordInput
+              required
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(null);
+              }}
+            />
+          </Field>
+          <PasswordChecklist rules={rules} />
+        </div>
         <FormError message={error} />
         <Button
           type="submit"
           variant="primary"
-          disabled={loading}
+          disabled={loading || !ready}
           className="mt-1"
         >
           {loading ? "Creando cuenta…" : "Crear cuenta"}

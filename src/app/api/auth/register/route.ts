@@ -1,9 +1,12 @@
 import bcrypt from "bcrypt";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { MIN_PASSWORD_LENGTH } from "@/lib/constraints";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import {
+  isStrongPassword,
+  PASSWORD_REQUIREMENTS_ERROR,
+} from "@/lib/password-checks";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -17,11 +20,9 @@ export async function POST(request: Request) {
     );
   }
 
-  if (password.length < MIN_PASSWORD_LENGTH) {
+  if (!isStrongPassword(password)) {
     return NextResponse.json(
-      {
-        error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`,
-      },
+      { error: `La contraseña ${PASSWORD_REQUIREMENTS_ERROR}` },
       { status: 400 },
     );
   }

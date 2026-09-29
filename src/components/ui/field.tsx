@@ -33,7 +33,12 @@ export function Field({
 export function FormError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <p role="alert" className="text-meta font-semibold text-danger">
+    <p
+      key={message}
+      role="alert"
+      data-motion-ok=""
+      className="animate-shake text-meta font-semibold text-danger"
+    >
       {message}
     </p>
   );

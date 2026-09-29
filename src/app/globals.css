@@ -25,6 +25,8 @@
   --toast-warning-ink: #2b2206;
   --toast-error: #f47c6c;
   --toast-error-ink: #2a0d08;
+  --toast-success: #6fc59a;
+  --toast-success-ink: #06210f;
   --shadow-panel: 0 1px 2px rgba(26, 35, 50, 0.04);
   color-scheme: light;
 }
@@ -431,6 +433,44 @@
 
 @utility animate-backdrop-in {
   animation: backdrop-in 360ms ease-out;
+}
+
+/* A password requirement turning done: a soft ring blooms out from its badge. */
+@keyframes ring-burst {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--status-done) 55%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+@utility animate-ring-burst {
+  animation: ring-burst 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* A rejected form nudging side to side once. */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+@utility animate-shake {
+  animation: shake 400ms ease-in-out;
 }
 
 /* Brief border highlight on a field right after its change is confirmed saved. */

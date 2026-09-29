@@ -2,13 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import {
-  type ComponentProps,
-  type ReactNode,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -16,18 +10,22 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Field, FormError } from "@/components/ui/field";
 import {
   CheckIcon,
-  EyeIcon,
-  EyeOffIcon,
   LockIcon,
   LogOutIcon,
   MailIcon,
   TrashIcon,
 } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import {
+  FieldStatus,
+  PasswordRequirements,
+} from "@/components/ui/password-requirements";
+import { Toast, type ToastState } from "@/components/ui/toast";
 import { PROVIDER_NAMES, PROVIDERS, type Provider } from "@/lib/ai/provider";
 import { getAvatarColor } from "@/lib/avatar";
 import { MAX_NAME_LENGTH } from "@/lib/constraints";
-import { passwordChecks } from "@/lib/password-checks";
+import { passwordChecks, passwordRules } from "@/lib/password-checks";
 import { THEME_OPTIONS, type ThemePreference } from "@/lib/theme";
 
 function Card({
@@ -357,37 +355,12 @@ export function AppearanceSection() {
   );
 }
 
-function PasswordInput({
-  revealNoun = "contraseña",
-  ...props
-}: ComponentProps<typeof Input> & { revealNoun?: string }) {
-  const [visible, setVisible] = useState(false);
-  return (
-    <span className="relative flex">
-      <Input
-        {...props}
-        type={visible ? "text" : "password"}
-        className="h-11 w-full pr-11"
-      />
-      <button
-        type="button"
-        aria-label={`${visible ? "Ocultar" : "Mostrar"} ${revealNoun}`}
-        aria-pressed={visible}
-        onClick={() => setVisible((current) => !current)}
-        className="absolute inset-y-1 right-1 flex w-9 items-center justify-center rounded-control text-muted transition-colors hover:bg-sunken hover:text-ink"
-      >
-        {visible ? <EyeOffIcon /> : <EyeIcon />}
-      </button>
-    </span>
-  );
-}
-
 export function PasswordSection() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastState>(null);
   const [pending, setPending] = useState(false);
 
   const checks = passwordChecks({
@@ -396,12 +369,15 @@ export function PasswordSection() {
     confirm: confirmPassword,
   });
   const ready = currentPassword.length > 0 && checks.every((c) => c.ok);
+  const rules = passwordRules(newPassword);
+  const matches = confirmPassword === newPassword;
+  const sameAsCurrent =
+    newPassword.length > 0 && newPassword === currentPassword;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!ready) return;
     setError(null);
-    setSaved(null);
     setPending(true);
     const res = await fetch("/api/account/password", {
       method: "POST",
@@ -417,19 +393,23 @@ export function PasswordSection() {
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
-    setSaved("Contraseña actualizada");
+    setToast({
+      id: Date.now(),
+      message: "Contraseña actualizada",
+      tone: "success",
+    });
   }
 
   function edit(setter: (value: string) => void) {
     return (e: React.ChangeEvent<HTMLInputElement>) => {
       setter(e.target.value);
-      setSaved(null);
       setError(null);
     };
   }
 
   return (
     <Card>
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
       <form onSubmit={handleSubmit}>
         <CardHeader
           title="Cambiar contraseña"
@@ -445,53 +425,42 @@ export function PasswordSection() {
             />
           </Field>
           <div className="h-px bg-line" />
-          <Field label="Nueva contraseña">
-            <PasswordInput
-              required
-              autoComplete="new-password"
-              value={newPassword}
-              onChange={edit(setNewPassword)}
+          <div className="flex flex-col gap-2.5">
+            <Field label="Nueva contraseña">
+              <PasswordInput
+                required
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={edit(setNewPassword)}
+              />
+            </Field>
+            <PasswordRequirements
+              rules={rules}
+              label="Requisitos de la nueva contraseña"
             />
-          </Field>
-          <Field label="Repite la nueva contraseña">
-            <PasswordInput
-              required
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={edit(setConfirmPassword)}
-            />
-          </Field>
-          <ul
-            aria-label="Requisitos de la nueva contraseña"
-            className="flex flex-col gap-1.5 rounded-xl bg-sunken/70 p-3"
-          >
-            {checks.map((check) => (
-              <li
-                key={check.id}
-                className={`flex items-center gap-2 text-meta transition-colors ${
-                  check.ok ? "text-ink" : "text-muted"
-                }`}
-              >
-                <span
-                  className={`flex size-4 items-center justify-center rounded-full transition-colors ${
-                    check.ok
-                      ? "bg-status-done text-raised"
-                      : "border border-line-strong"
-                  }`}
-                >
-                  {check.ok ? <CheckIcon className="size-3" /> : null}
-                </span>
-                {check.label}
-                <span className="sr-only">
-                  {check.ok ? "(cumplido)" : "(pendiente)"}
-                </span>
-              </li>
-            ))}
-          </ul>
+            <FieldStatus show={sameAsCurrent} tone="warn">
+              Es igual a tu contraseña actual
+            </FieldStatus>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Field label="Repite la nueva contraseña">
+              <PasswordInput
+                required
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={edit(setConfirmPassword)}
+              />
+            </Field>
+            <FieldStatus
+              show={confirmPassword.length > 0}
+              tone={matches ? "ok" : "idle"}
+            >
+              {matches ? "Las contraseñas coinciden" : "Todavía no coinciden"}
+            </FieldStatus>
+          </div>
           <FormError message={error} />
         </div>
         <CardFooter>
-          <Saved message={saved} />
           <Button type="submit" variant="primary" disabled={pending || !ready}>
             {pending ? "Actualizando…" : "Actualizar contraseña"}
           </Button>

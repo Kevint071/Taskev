@@ -1,4 +1,4 @@
-export const MIN_PASSWORD_LENGTH = 8;
+export const MIN_PASSWORD_LENGTH = 10;
 export const TASK_STATUSES = [
   "disponible",
   "en_curso",

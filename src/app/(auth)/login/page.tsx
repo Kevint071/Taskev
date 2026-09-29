@@ -5,19 +5,20 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { AuthCard, TextLink } from "@/components/auth-card";
 import { Button } from "@/components/ui/button";
-import { Field, FormError } from "@/components/ui/field";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import { Toast, type ToastState } from "@/components/ui/toast";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<ToastState>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     setLoading(true);
     const result = await signIn("credentials", {
       email,
@@ -26,7 +27,11 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (result?.error) {
-      setError("Correo o contraseña incorrectos");
+      setToast({
+        id: Date.now(),
+        message: "Correo o contraseña incorrectos",
+        tone: "error",
+      });
       return;
     }
     router.push("/");
@@ -43,6 +48,7 @@ export default function LoginPage() {
         </>
       }
     >
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Field label="Correo electrónico">
           <Input
@@ -54,15 +60,13 @@ export default function LoginPage() {
           />
         </Field>
         <Field label="Contraseña">
-          <Input
-            type="password"
+          <PasswordInput
             required
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
         </Field>
-        <FormError message={error} />
         <Button
           type="submit"
           variant="primary"

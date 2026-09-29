@@ -8,7 +8,7 @@ import {
 } from "react";
 import { CloseIcon, TriangleAlertIcon } from "./icons";
 
-export type ToastTone = "warning" | "error";
+export type ToastTone = "warning" | "error" | "success";
 
 export type ToastState = {
   id: number;
@@ -17,6 +17,24 @@ export type ToastState = {
 } | null;
 
 const TOAST_DURATION_MS = 4000;
+
+/** Own tick (not `CheckIcon`) so the toast's size classes are the only ones applied. */
+function SuccessIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-4"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4.5 10.5 8.5 14.5 15.5 6" />
+    </svg>
+  );
+}
 
 const TONES: Record<
   ToastTone,
@@ -31,6 +49,11 @@ const TONES: Record<
     fill: "var(--toast-error)",
     ink: "var(--toast-error-ink)",
     Icon: CloseIcon,
+  },
+  success: {
+    fill: "var(--toast-success)",
+    ink: "var(--toast-success-ink)",
+    Icon: SuccessIcon,
   },
 };
 
