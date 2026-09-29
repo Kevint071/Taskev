@@ -117,7 +117,10 @@ export function SettingsView({
           aria-label="Secciones de ajustes"
           aria-orientation="horizontal"
           onKeyDown={handleKeyDown}
-          className="hidden gap-1 overflow-x-auto border-b border-line md:flex"
+          // The bar's rule is an inset shadow, not a border: a border would need
+          // the tabs to overlap it (-mb-px), which makes them overflow the box
+          // and turns overflow-x-auto into a 1px vertical scroll.
+          className="hidden gap-1 overflow-x-auto shadow-[inset_0_-1px_0_var(--color-line)] md:flex"
         >
           {SETTINGS_TABS.map((tab) => {
             const selected = tab.value === active;
@@ -135,8 +138,8 @@ export function SettingsView({
                 aria-controls={`settings-panel-${tab.value}`}
                 tabIndex={selected ? 0 : -1}
                 onClick={() => selectTab(tab.value)}
-                // The active underline overlaps the bar's border (-mb-px).
-                className={`-mb-px flex h-12 shrink-0 items-center gap-2.5 whitespace-nowrap border-b-2 px-3 font-medium transition-colors ${
+                // The active underline paints over the bar's inset rule.
+                className={`flex h-12 shrink-0 items-center gap-2.5 whitespace-nowrap border-b-2 px-3 font-medium transition-colors ${
                   selected
                     ? "border-accent text-ink"
                     : "border-transparent text-muted hover:border-line-strong hover:text-ink"
