@@ -16,7 +16,7 @@ export const PROVIDER_NAMES: Record<Provider, string> = {
 
 /** What the model picker shows; keep in step with each client's model. */
 export const MODEL_LABELS: Record<Provider, string> = {
-  gemini: "Gemini 3.7 Flash",
+  gemini: "Gemini 3.8 Flash",
   groq: "GPT-OSS 120B · Groq",
   openrouter: "GPT-OSS 120B · OpenRouter",
 };

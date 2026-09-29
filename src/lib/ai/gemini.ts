@@ -21,7 +21,7 @@ const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
  * Stable Flash model with a free tier, built for multi-step tool use. Pinned
  * so a model change is a one-line, reviewed edit.
  */
-export const GEMINI_MODEL = "gemini-3.7-flash";
+export const GEMINI_MODEL = "gemini-3.8-flash";
 
 /** Wire schema revision used by the official REST examples. */
 const API_REVISION = "2026-05-20";
