@@ -16,7 +16,6 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   CalendarIcon,
   CheckIcon,
-  ChevronDownIcon,
   FlagIcon,
   HistoryIcon,
   NewChatIcon,
@@ -27,7 +26,6 @@ import {
   SparklesIcon,
   TriangleAlertIcon,
 } from "@/components/ui/icons";
-import { Select } from "@/components/ui/input";
 import { LoadingRows } from "@/components/ui/panel";
 import type { DisplayItem, PendingAction } from "@/lib/ai/agent";
 import {
@@ -42,6 +40,7 @@ import { handleUnauthenticated } from "@/lib/api-client";
 import type { TranscriptItem } from "@/lib/db/schema";
 import { settingsHref } from "@/lib/settings-tabs";
 import { type ConversationItem, ConversationList } from "./conversation-list";
+import { OptionPicker } from "./option-picker";
 import { TypedMarkdown } from "./typed-markdown";
 
 type ChatItem =
@@ -661,34 +660,19 @@ export function AssistantView({
             <HistoryIcon className="size-5" />
           </button>
           {canPickProvider ? (
-            <span className="relative ml-auto inline-flex items-center">
-              <label htmlFor="assistant-provider" className="sr-only">
-                Proveedor
-              </label>
-              <Select
-                id="assistant-provider"
-                value={provider}
-                onChange={(e) => setProvider(e.target.value as Provider)}
-                disabled={providerLocked}
-                title={providerLockedTitle}
-                className="absolute inset-0 h-11 w-full rounded-full pl-3.5 text-meta font-medium lg:h-9 lg:pl-3"
-              >
-                {providers.map((p) => (
-                  <option key={p} value={p}>
-                    {PROVIDER_NAMES[p]}
-                  </option>
-                ))}
-              </Select>
-              {/* A native select is as wide as its longest option; this
-                  invisible copy of the selected name sizes it instead. */}
-              <span
-                aria-hidden
-                className="invisible inline-flex h-11 items-center whitespace-nowrap border border-transparent pr-7 pl-3.5 text-meta font-medium lg:h-9 lg:pl-3"
-              >
-                {PROVIDER_NAMES[provider]}
-              </span>
-              <ChevronDownIcon className="pointer-events-none absolute right-2.5 size-4 text-muted" />
-            </span>
+            <OptionPicker
+              label="Proveedor"
+              value={provider}
+              options={providers.map((p) => ({
+                id: p,
+                label: PROVIDER_NAMES[p],
+              }))}
+              onChange={(next) => setProvider(next as Provider)}
+              disabled={providerLocked}
+              title={providerLockedTitle}
+              className="ml-auto"
+              triggerClassName="h-11 border-line-strong bg-raised pr-2.5 pl-3.5 shadow-panel hover:border-ink/30 focus-visible:border-accent lg:h-9 lg:pl-3"
+            />
           ) : (
             <span className="ml-auto inline-flex h-11 items-center rounded-full bg-sunken px-3 text-meta font-medium text-muted lg:h-9">
               {PROVIDER_NAMES[provider]}
@@ -877,38 +861,25 @@ export function AssistantView({
             />
             <div className="flex items-center gap-2 pl-1">
               {modelOptions.length > 1 ? (
-                <span className="relative inline-flex items-center">
-                  <SparklesIcon className="pointer-events-none absolute left-2.5 size-3.5 text-accent" />
-                  <label htmlFor="assistant-model" className="sr-only">
-                    Modelo
-                  </label>
-                  <Select
-                    id="assistant-model"
-                    value={models[provider]}
-                    onChange={(e) => pickModel(e.target.value)}
-                    disabled={providerLocked}
-                    title={
-                      pending
-                        ? "Confirma o cancela la acción pendiente para cambiar de modelo"
-                        : undefined
-                    }
-                    className="absolute inset-0 h-8 w-full rounded-full border-transparent bg-sunken pl-8 text-meta font-medium"
-                  >
-                    {modelOptions.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </Select>
-                  {/* Invisible copy of the selected label sizes the select. */}
-                  <span
-                    aria-hidden
-                    className="invisible inline-flex h-8 max-w-[60vw] items-center border border-transparent pr-7 pl-8 text-meta font-medium"
-                  >
-                    <span className="truncate">{modelLabel}</span>
-                  </span>
-                  <ChevronDownIcon className="pointer-events-none absolute right-2.5 size-4 text-muted" />
-                </span>
+                <OptionPicker
+                  label="Modelo"
+                  value={models[provider]}
+                  options={modelOptions}
+                  onChange={pickModel}
+                  disabled={providerLocked}
+                  title={
+                    pending
+                      ? "Confirma o cancela la acción pendiente para cambiar de modelo"
+                      : undefined
+                  }
+                  icon={
+                    <SparklesIcon className="size-3.5 shrink-0 text-accent" />
+                  }
+                  opensUp
+                  align="left"
+                  sizeToValue
+                  triggerClassName="h-8 border-transparent bg-sunken pr-2 pl-2.5 hover:border-ink/20 focus-visible:border-accent"
+                />
               ) : (
                 <span className="inline-flex h-8 max-w-[60vw] items-center gap-1.5 rounded-full bg-sunken px-2.5 text-meta font-medium text-muted">
                   <SparklesIcon className="size-3.5 shrink-0 text-accent" />
