@@ -654,21 +654,14 @@ export function AssistantView({
           <button
             type="button"
             onClick={() => setListOpen(true)}
-            className="group flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-line bg-raised p-2 pr-3 text-left shadow-panel transition-colors hover:border-accent/40 lg:hidden"
+            aria-label={`Historial, ${conversationCount}`}
+            title={`Historial · ${conversationCount}`}
+            className="flex size-13 shrink-0 items-center justify-center rounded-2xl border border-line bg-raised text-accent shadow-panel transition-colors hover:border-accent/40 lg:hidden"
           >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
-              <HistoryIcon className="size-4.5" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate font-semibold">Historial</span>
-              <span className="block truncate text-meta text-muted">
-                {conversationCount}
-              </span>
-            </span>
-            <ChevronDownIcon className="size-4 text-muted transition-colors group-hover:text-ink" />
+            <HistoryIcon className="size-5" />
           </button>
           {canPickProvider ? (
-            <span className="relative inline-flex items-center lg:ml-auto">
+            <span className="relative ml-auto inline-flex items-center">
               <label htmlFor="assistant-provider" className="sr-only">
                 Proveedor
               </label>
@@ -678,7 +671,7 @@ export function AssistantView({
                 onChange={(e) => setProvider(e.target.value as Provider)}
                 disabled={providerLocked}
                 title={providerLockedTitle}
-                className="absolute inset-0 h-9 w-full rounded-full pl-3 text-meta font-medium"
+                className="absolute inset-0 h-11 w-full rounded-full pl-3.5 text-meta font-medium lg:h-9 lg:pl-3"
               >
                 {providers.map((p) => (
                   <option key={p} value={p}>
@@ -690,14 +683,14 @@ export function AssistantView({
                   invisible copy of the selected name sizes it instead. */}
               <span
                 aria-hidden
-                className="invisible inline-flex h-9 items-center whitespace-nowrap border border-transparent pr-7 pl-3 text-meta font-medium"
+                className="invisible inline-flex h-11 items-center whitespace-nowrap border border-transparent pr-7 pl-3.5 text-meta font-medium lg:h-9 lg:pl-3"
               >
                 {PROVIDER_NAMES[provider]}
               </span>
               <ChevronDownIcon className="pointer-events-none absolute right-2.5 size-4 text-muted" />
             </span>
           ) : (
-            <span className="inline-flex h-9 items-center rounded-full bg-sunken px-3 text-meta font-medium text-muted lg:ml-auto">
+            <span className="ml-auto inline-flex h-11 items-center rounded-full bg-sunken px-3 text-meta font-medium text-muted lg:h-9">
               {PROVIDER_NAMES[provider]}
             </span>
           )}
@@ -899,7 +892,7 @@ export function AssistantView({
                         ? "Confirma o cancela la acción pendiente para cambiar de modelo"
                         : undefined
                     }
-                    className="h-8 max-w-[60vw] rounded-full border-transparent bg-sunken pl-8 text-meta font-medium"
+                    className="absolute inset-0 h-8 w-full rounded-full border-transparent bg-sunken pl-8 text-meta font-medium"
                   >
                     {modelOptions.map((m) => (
                       <option key={m.id} value={m.id}>
@@ -907,6 +900,14 @@ export function AssistantView({
                       </option>
                     ))}
                   </Select>
+                  {/* Invisible copy of the selected label sizes the select. */}
+                  <span
+                    aria-hidden
+                    className="invisible inline-flex h-8 max-w-[60vw] items-center border border-transparent pr-7 pl-8 text-meta font-medium"
+                  >
+                    <span className="truncate">{modelLabel}</span>
+                  </span>
+                  <ChevronDownIcon className="pointer-events-none absolute right-2.5 size-4 text-muted" />
                 </span>
               ) : (
                 <span className="inline-flex h-8 max-w-[60vw] items-center gap-1.5 rounded-full bg-sunken px-2.5 text-meta font-medium text-muted">
