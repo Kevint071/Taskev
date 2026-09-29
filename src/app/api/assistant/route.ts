@@ -6,8 +6,12 @@ import {
   type PendingAction,
   runAgent,
 } from "@/lib/ai/agent";
-import { expandCommand } from "@/lib/ai/commands";
-import { titleFromMessage } from "@/lib/ai/conversations";
+import { expandCommand, parseCommand } from "@/lib/ai/commands";
+import {
+  captureModelTitle,
+  TITLE_INSTRUCTION,
+  titleFromMessage,
+} from "@/lib/ai/conversations";
 import { copilot } from "@/lib/ai/copilot";
 import { gemini } from "@/lib/ai/gemini";
 import { groq } from "@/lib/ai/groq";
@@ -15,6 +19,7 @@ import { getStoredKeys } from "@/lib/ai/key-store";
 import { parseModel } from "@/lib/ai/models";
 import { openrouter } from "@/lib/ai/openrouter";
 import {
+  type HistoryStep,
   isProvider,
   PROVIDER_NAMES,
   type Provider,
@@ -239,15 +244,25 @@ export async function POST(request: Request) {
   const now = new Date();
   const timeZone = (await cookies()).get(TIME_ZONE_COOKIE)?.value ?? null;
   const ctx = { userId, timeZone, now };
-  const system = buildSystemInstruction(now, timeZone);
+  // A new conversation's first answer also carries its title, so naming it
+  // costs a few output tokens instead of a request. Slash commands already
+  // have a fixed title, and any answer without a usable one falls back to
+  // titleFromMessage.
+  const wantsTitle =
+    !conversation && "message" in body && !parseCommand(body.message);
+  const system =
+    buildSystemInstruction(now, timeZone) +
+    (wantsTitle ? `\n\n${TITLE_INSTRUCTION}` : "");
   const tools = [...TOOL_DECLARATIONS];
   const client = CLIENTS[provider];
+  const generate = (steps: HistoryStep[]) =>
+    client.generate(apiKey, steps, tools, system, model, { api });
+  const titled = wantsTitle ? captureModelTitle(generate) : null;
 
   try {
     const result = await runAgent(
       {
-        generate: (steps) =>
-          client.generate(apiKey, steps, tools, system, model, { api }),
+        generate: titled ? titled.generate : generate,
         execute: (name, args) => executeTool(ctx, name, args),
         describe: (name, args) => describeDestructive(ctx, name, args),
         isDestructive,
@@ -276,7 +291,8 @@ export async function POST(request: Request) {
       ? await saveTurn(userId, conversation.id, conversation.version, turn)
       : await createConversation(
           userId,
-          titleFromMessage((body as { message: string }).message),
+          titled?.title() ??
+            titleFromMessage((body as { message: string }).message),
           turn,
         );
     if (!saved) {
