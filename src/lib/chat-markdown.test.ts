@@ -55,9 +55,17 @@ test("parseChatMarkdown: consecutive bullet lines form one unordered list", () =
       kind: "list",
       ordered: false,
       items: [
-        { inlines: [{ kind: "text", text: "Uno" }], children: [] },
-        { inlines: [{ kind: "strong", text: "Dos" }], children: [] },
-        { inlines: [{ kind: "text", text: "Tres" }], children: [] },
+        { inlines: [{ kind: "text", text: "Uno" }], details: [], children: [] },
+        {
+          inlines: [{ kind: "strong", text: "Dos" }],
+          details: [],
+          children: [],
+        },
+        {
+          inlines: [{ kind: "text", text: "Tres" }],
+          details: [],
+          children: [],
+        },
       ],
     },
   ]);
@@ -69,8 +77,8 @@ test("parseChatMarkdown: numbered lines form an ordered list", () => {
       kind: "list",
       ordered: true,
       items: [
-        { inlines: [{ kind: "text", text: "Uno" }], children: [] },
-        { inlines: [{ kind: "text", text: "Dos" }], children: [] },
+        { inlines: [{ kind: "text", text: "Uno" }], details: [], children: [] },
+        { inlines: [{ kind: "text", text: "Dos" }], details: [], children: [] },
       ],
     },
   ]);
@@ -107,6 +115,7 @@ test("parseChatMarkdown: indented items nest under the previous item", () => {
       items: [
         {
           inlines: [{ kind: "strong", text: "Pipeline" }],
+          details: [],
           children: [
             [{ kind: "text", text: "Estado: en_curso" }],
             [{ kind: "text", text: "Prioridad: 5" }],
@@ -114,6 +123,7 @@ test("parseChatMarkdown: indented items nest under the previous item", () => {
         },
         {
           inlines: [{ kind: "strong", text: "Kaleido" }],
+          details: [],
           children: [[{ kind: "text", text: "Estado: bloqueada" }]],
         },
       ],
@@ -126,7 +136,116 @@ test("parseChatMarkdown: an indented item with no parent starts the list", () =>
     {
       kind: "list",
       ordered: false,
-      items: [{ inlines: [{ kind: "text", text: "Uno" }], children: [] }],
+      items: [
+        { inlines: [{ kind: "text", text: "Uno" }], details: [], children: [] },
+      ],
+    },
+  ]);
+});
+
+test("parseChatMarkdown: text after a bold title and a dash moves to its own line", () => {
+  const text =
+    "- **Mandar caso** – creaste esta tarea.\n- **Migrar Redis** — cambiaste a **en_curso** hoy\n- **Sin guion** y más texto\n- **Guion pegado**-sin espacios";
+  assert.deepEqual(parseChatMarkdown(text), [
+    {
+      kind: "list",
+      ordered: false,
+      items: [
+        {
+          inlines: [{ kind: "strong", text: "Mandar caso" }],
+          details: [[{ kind: "text", text: "creaste esta tarea." }]],
+          children: [],
+        },
+        {
+          inlines: [{ kind: "strong", text: "Migrar Redis" }],
+          details: [
+            [
+              { kind: "text", text: "cambiaste a " },
+              { kind: "strong", text: "en_curso" },
+              { kind: "text", text: " hoy" },
+            ],
+          ],
+          children: [],
+        },
+        {
+          inlines: [
+            { kind: "strong", text: "Sin guion" },
+            { kind: "text", text: " y más texto" },
+          ],
+          details: [],
+          children: [],
+        },
+        {
+          inlines: [
+            { kind: "strong", text: "Guion pegado" },
+            { kind: "text", text: "-sin espacios" },
+          ],
+          details: [],
+          children: [],
+        },
+      ],
+    },
+  ]);
+});
+
+test("parseChatMarkdown: a dash that is not right after the bold title is left alone", () => {
+  assert.deepEqual(parseChatMarkdown("- Hoy creaste **algo** – bien"), [
+    {
+      kind: "list",
+      ordered: false,
+      items: [
+        {
+          inlines: [
+            { kind: "text", text: "Hoy creaste " },
+            { kind: "strong", text: "algo" },
+            { kind: "text", text: " – bien" },
+          ],
+          details: [],
+          children: [],
+        },
+      ],
+    },
+  ]);
+});
+
+test("parseChatMarkdown: indented lines under an item are its detail lines", () => {
+  const text =
+    "1. **Pipeline**\n   En curso, 30 %.\n   Vence mañana.\n2. **Kaleido**\n  Bloqueada\n\nY después, ¿qué?";
+  assert.deepEqual(parseChatMarkdown(text), [
+    {
+      kind: "list",
+      ordered: true,
+      items: [
+        {
+          inlines: [{ kind: "strong", text: "Pipeline" }],
+          details: [
+            [{ kind: "text", text: "En curso, 30 %." }],
+            [{ kind: "text", text: "Vence mañana." }],
+          ],
+          children: [],
+        },
+        {
+          inlines: [{ kind: "strong", text: "Kaleido" }],
+          details: [[{ kind: "text", text: "Bloqueada" }]],
+          children: [],
+        },
+      ],
+    },
+    {
+      kind: "paragraph",
+      lines: [[{ kind: "text", text: "Y después, ¿qué?" }]],
+    },
+  ]);
+});
+
+test("parseChatMarkdown: an indented line outside a list stays a paragraph", () => {
+  assert.deepEqual(parseChatMarkdown("Hola\n   sigue"), [
+    {
+      kind: "paragraph",
+      lines: [
+        [{ kind: "text", text: "Hola" }],
+        [{ kind: "text", text: "sigue" }],
+      ],
     },
   ]);
 });

@@ -52,16 +52,24 @@ export function ChatMarkdown({ text }: { text: string }) {
         );
       case "list": {
         const List = block.ordered ? "ol" : "ul";
+        // Items that span several lines need more air between them.
+        const roomy = block.items.some((item) => item.details.length > 0);
         return (
           <List
             // biome-ignore lint/suspicious/noArrayIndexKey: derived from immutable text
             key={i}
-            className={`${block.ordered ? "list-decimal" : "list-disc"} space-y-1 pl-5`}
+            className={`${block.ordered ? "list-decimal" : "list-disc"} ${roomy ? "space-y-2" : "space-y-1"} pl-5`}
           >
             {block.items.map((item, j) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: derived from immutable text
               <li key={j}>
                 <InlineSpans spans={item.inlines} />
+                {item.details.map((detail, k) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: derived from immutable text
+                  <span key={k} className="block">
+                    <InlineSpans spans={detail} />
+                  </span>
+                ))}
                 {item.children.length > 0 && (
                   <ul className="mt-1 list-[circle] space-y-0.5 pl-5 text-muted">
                     {item.children.map((child, k) => (

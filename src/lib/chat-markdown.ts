@@ -10,8 +10,15 @@ export type Inline =
   | { kind: "em"; text: string }
   | { kind: "code"; text: string };
 
-/** Deeper indentation is flattened into `children`: one level of nesting. */
-export type ListItem = { inlines: Inline[]; children: Inline[][] };
+/**
+ * `details` are the lines that follow the item's title, each on its own line.
+ * Deeper indentation is flattened into `children`: one level of nesting.
+ */
+export type ListItem = {
+  inlines: Inline[];
+  details: Inline[][];
+  children: Inline[][];
+};
 
 export type Block =
   | { kind: "paragraph"; lines: Inline[][] }
@@ -24,6 +31,8 @@ const BULLET_PATTERN = /^(\s*)[-*•]\s+(.*)$/;
 const ORDERED_PATTERN = /^(\s*)\d+[.)]\s+(.*)$/;
 const HEADING_PATTERN = /^\s*(#{1,6})\s+(.*)$/;
 const DIVIDER_PATTERN = /^\s*([-*_])(\s*\1){2,}\s*$/;
+// A spaced dash right after a bold title: `**Título** – detalle`.
+const TITLE_DASH_PATTERN = /^\s+[–—-]\s+/;
 // gpt-oss separates numbers and words with U+202F, which renders almost
 // zero-width in the UI font; a regular no-break space keeps it together.
 const NARROW_SPACE_PATTERN = / /g;
@@ -52,6 +61,23 @@ export function parseInline(text: string): Inline[] {
     ...span,
     text: span.text.replace(NARROW_SPACE_PATTERN, " "),
   }));
+}
+
+/**
+ * Models often write `**Title** – what happened` on one line. When an item
+ * opens with a bold title followed by a dash, the part after the dash moves to
+ * its own line so titles scan as a column instead of running into the prose.
+ */
+function splitTitle(spans: Inline[]): { title: Inline[]; detail: Inline[] } {
+  const [first, second, ...rest] = spans;
+  const dash =
+    second?.kind === "text" ? TITLE_DASH_PATTERN.exec(second.text) : null;
+  if (first?.kind !== "strong" || !second || !dash) {
+    return { title: spans, detail: [] };
+  }
+  const remainder = second.text.slice(dash[0].length);
+  const detail = remainder ? [{ ...second, text: remainder }, ...rest] : rest;
+  return { title: [first], detail };
 }
 
 export function parseChatMarkdown(text: string): Block[] {
@@ -104,7 +130,19 @@ export function parseChatMarkdown(text: string): Block[] {
         list = { kind: "list", ordered, items: [] };
         blocks.push(list);
       }
-      list.items.push({ inlines: parseInline(content), children: [] });
+      const { title, detail } = splitTitle(parseInline(content));
+      list.items.push({
+        inlines: title,
+        details: detail.length > 0 ? [detail] : [],
+        children: [],
+      });
+      continue;
+    }
+
+    // An indented line right under an item continues it on a new line.
+    const continued = /^\s+/.test(line) ? list?.items.at(-1) : undefined;
+    if (continued) {
+      continued.details.push(parseInline(line.trim()));
       continue;
     }
 

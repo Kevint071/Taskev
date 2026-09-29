@@ -62,6 +62,10 @@ test("asks for proactive, Markdown-formatted replies the chat can render", () =>
   // A long flat list of tasks should break into grouped subheadings instead.
   assert.match(text, /subtítulos/);
   assert.match(text, /agrúpalas/);
+  // Title and detail sit on separate lines instead of joined by a dash.
+  assert.match(text, /detalle en la línea siguiente/);
+  assert.match(text, /No unas el título y el detalle en la misma línea/);
+  assert.match(text, /Separa las ideas en párrafos distintos/);
 });
 
 test("tells the model 'pendientes' spans every status but completada", () => {
