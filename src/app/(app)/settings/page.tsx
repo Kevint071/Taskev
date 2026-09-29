@@ -22,7 +22,11 @@ export default async function SettingsPage() {
     <SettingsView
       email={user.email}
       name={user.name}
-      aiKeys={{ gemini: status(keys.gemini), groq: status(keys.groq) }}
+      aiKeys={{
+        gemini: status(keys.gemini),
+        groq: status(keys.groq),
+        openrouter: status(keys.openrouter),
+      }}
     />
   );
 }

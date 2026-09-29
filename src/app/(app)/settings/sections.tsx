@@ -499,19 +499,35 @@ export type KeyStatus = { configured: boolean; last4?: string };
 
 const KEY_PROVIDERS: Record<
   Provider,
-  { endpoint: string; consoleName: string; consoleUrl: string; account: string }
+  {
+    endpoint: string;
+    consoleName: string;
+    consoleUrl: string;
+    account: string;
+    /** False when the provider charges per use, so the copy omits "gratis". */
+    free: boolean;
+  }
 > = {
   gemini: {
     endpoint: "/api/account/gemini-key",
     consoleName: "Google AI Studio",
     consoleUrl: "https://aistudio.google.com/apikey",
     account: "tu cuenta de Google",
+    free: true,
   },
   groq: {
     endpoint: "/api/account/groq-key",
     consoleName: "GroqCloud",
     consoleUrl: "https://console.groq.com/keys",
     account: "tu cuenta de Groq",
+    free: true,
+  },
+  openrouter: {
+    endpoint: "/api/account/openrouter-key",
+    consoleName: "OpenRouter",
+    consoleUrl: "https://openrouter.ai/settings/keys",
+    account: "tu cuenta de OpenRouter",
+    free: false,
   },
 };
 
@@ -539,10 +555,11 @@ export function AssistantSection({
             <p className="font-medium text-ink">Privacidad</p>
             <p className="mt-0.5">
               Cuando usas el asistente, los grupos, tareas y comentarios que
-              consulta se envían al proveedor del modelo que elijas (Google o
-              Groq) usando tu key. Las conversaciones se guardan en Taskev hasta
-              que las borres. Las keys se guardan cifradas y nunca se vuelven a
-              mostrar completas.
+              consulta se envían al proveedor del modelo que elijas (Google,
+              Groq u OpenRouter, que a su vez lo reenvía a quien sirve el
+              modelo) usando tu key. Las conversaciones se guardan en Taskev
+              hasta que las borres. Las keys se guardan cifradas y nunca se
+              vuelven a mostrar completas.
             </p>
           </div>
         </div>
@@ -614,7 +631,8 @@ function AssistantKeyCard({
             description={
               <>
                 El asistente usa tu propia key, así que el uso y la cuota van a{" "}
-                {meta.account}. Puedes crear una gratis en{" "}
+                {meta.account}.{" "}
+                {meta.free ? "Puedes crear una gratis en" : "Puedes crearla en"}{" "}
                 <a
                   href={meta.consoleUrl}
                   target="_blank"

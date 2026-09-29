@@ -24,7 +24,7 @@ export const SETTINGS_TABS: {
   {
     value: "asistente",
     label: "Asistente IA",
-    description: "Tus API keys de Gemini y Groq",
+    description: "Tus API keys de Gemini, Groq y OpenRouter",
   },
   {
     value: "cuenta",
