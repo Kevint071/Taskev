@@ -436,6 +436,24 @@ for (const [label, respond, expected] of errorCases) {
   });
 }
 
+test("generate keeps Groq's error code as the reason for a bad_request, without its message", async () => {
+  const { fetchImpl } = fakeFetch(
+    groqError(
+      400,
+      "Failed to call a function. Please adjust your prompt and try again.",
+      "tool_use_failed",
+    ),
+  );
+  try {
+    await createGroqClient(fetchImpl).generate(API_KEY, HISTORY, TOOLS, "sys");
+    assert.fail("expected a ProviderError");
+  } catch (error) {
+    assert.ok(error instanceof ProviderError);
+    assert.equal(error.kind, "bad_request");
+    assert.equal(error.reason, "tool_use_failed");
+  }
+});
+
 test("generate maps network errors to unavailable without leaking the key", async () => {
   const { fetchImpl } = fakeFetch(() => {
     throw new TypeError(`fetch failed for key ${API_KEY}`);
