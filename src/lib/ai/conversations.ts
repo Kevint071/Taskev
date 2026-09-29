@@ -39,6 +39,37 @@ export function parseTitle(
   return { ok: true, title };
 }
 
+export type RecencyGroup<T> = { label: string; items: T[] };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Splits items (newest first) into Hoy / Ayer / Últimos 7 días / Anteriores by
+ * local calendar day, keeping their order and dropping empty groups.
+ */
+export function groupByRecency<T extends { updatedAt: string }>(
+  items: T[],
+  now: Date = new Date(),
+): RecencyGroup<T>[] {
+  const startOfDay = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const today = startOfDay(now);
+  const groups: RecencyGroup<T>[] = [
+    { label: "Hoy", items: [] },
+    { label: "Ayer", items: [] },
+    { label: "Últimos 7 días", items: [] },
+    { label: "Anteriores", items: [] },
+  ];
+  for (const item of items) {
+    const days = Math.round(
+      (today - startOfDay(new Date(item.updatedAt))) / DAY_MS,
+    );
+    const index = days <= 0 ? 0 : days === 1 ? 1 : days <= 7 ? 2 : 3;
+    groups[index].items.push(item);
+  }
+  return groups.filter((g) => g.items.length > 0);
+}
+
 /**
  * The first candidate the user has a key for (e.g. the conversation's last
  * provider, then the latest conversation's), else any configured provider.

@@ -943,7 +943,7 @@ export function AssistantView({
 
       <aside
         aria-label="Conversaciones"
-        className={`hidden shrink-0 flex-col gap-4 border-l border-line bg-raised/60 py-4 transition-[width] duration-200 lg:flex ${
+        className={`hidden shrink-0 flex-col gap-3 border-l border-line bg-raised/40 py-4 transition-[width] duration-200 lg:flex ${
           panelCollapsed ? "w-16 items-center px-2" : "w-72 px-3"
         }`}
       >
@@ -965,23 +965,21 @@ export function AssistantView({
               ) : null}
             </Button>
             <Button
-              variant="primary"
               onClick={startNew}
               aria-label="Nueva conversación"
               title="Nueva conversación"
-              className="size-10 rounded-xl px-0"
+              className="size-10 rounded-xl border-line bg-transparent px-0 text-accent hover:border-accent/40 hover:bg-accent-soft"
             >
               <NewChatIcon className="size-5" />
             </Button>
           </>
         ) : (
           <>
-            <div className="flex items-center gap-2.5 pl-1">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
-                <HistoryIcon className="size-4.5" />
-              </span>
+            <div className="flex items-center gap-2 pl-2">
               <div className="min-w-0 flex-1">
-                <h2 className="truncate font-semibold">Conversaciones</h2>
+                <h2 className="truncate text-ui font-semibold">
+                  Conversaciones
+                </h2>
                 <p className="text-meta text-muted">{conversationCount}</p>
               </div>
               <Button
@@ -990,20 +988,19 @@ export function AssistantView({
                 aria-expanded
                 aria-label={panelToggleLabel}
                 title={panelToggleLabel}
-                className="size-9 px-0"
+                className="size-8 rounded-lg px-0"
               >
-                <PanelRightIcon className="size-5" />
+                <PanelRightIcon className="size-4.5" />
               </Button>
             </div>
             <Button
-              variant="primary"
               onClick={startNew}
-              className="h-10 justify-center rounded-xl"
+              className="h-10 justify-start gap-2.5 rounded-xl border-line bg-transparent px-3 text-ink hover:border-accent/40 hover:bg-accent-soft"
             >
-              <NewChatIcon className="size-4" />
+              <NewChatIcon className="size-4 text-accent" />
               Nueva conversación
             </Button>
-            <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
+            <div className="-mx-1 min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-2">
               {list}
             </div>
           </>

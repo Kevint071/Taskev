@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  groupByRecency,
   MAX_TITLE_LENGTH,
   parseTitle,
   pickProvider,
@@ -67,4 +68,39 @@ test("pickProvider falls back to a configured provider, or null", () => {
   assert.equal(pickProvider([], ["gemini", "groq"]), "gemini");
   assert.equal(pickProvider([undefined], ["groq"]), "groq");
   assert.equal(pickProvider(["gemini"], []), null);
+});
+
+test("groupByRecency buckets by local calendar day and keeps the order", () => {
+  const now = new Date(2026, 8, 29, 10, 0);
+  const at = (day: number, hour = 12) =>
+    new Date(2026, 8, day, hour).toISOString();
+  const items = [
+    { id: "a", updatedAt: at(29, 9) },
+    { id: "b", updatedAt: at(28, 23) },
+    { id: "c", updatedAt: at(25) },
+    { id: "d", updatedAt: at(22) },
+    { id: "e", updatedAt: at(1) },
+  ];
+  assert.deepEqual(
+    groupByRecency(items, now).map((g) => [g.label, g.items.map((i) => i.id)]),
+    [
+      ["Hoy", ["a"]],
+      ["Ayer", ["b"]],
+      ["Últimos 7 días", ["c", "d"]],
+      ["Anteriores", ["e"]],
+    ],
+  );
+});
+
+test("groupByRecency skips empty groups", () => {
+  const now = new Date(2026, 8, 29, 10, 0);
+  const groups = groupByRecency(
+    [{ id: "a", updatedAt: new Date(2026, 5, 1).toISOString() }],
+    now,
+  );
+  assert.deepEqual(
+    groups.map((g) => g.label),
+    ["Anteriores"],
+  );
+  assert.deepEqual(groupByRecency([], now), []);
 });

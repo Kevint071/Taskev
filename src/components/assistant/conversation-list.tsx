@@ -1,11 +1,15 @@
 "use client";
 
 import { type KeyboardEvent, useState } from "react";
-import { MoreIcon } from "@/components/ui/icons";
+import { HistoryIcon, MoreIcon } from "@/components/ui/icons";
 import { Popover } from "@/components/ui/popover";
-import { MAX_TITLE_LENGTH, parseTitle } from "@/lib/ai/conversations";
+import {
+  groupByRecency,
+  MAX_TITLE_LENGTH,
+  parseTitle,
+} from "@/lib/ai/conversations";
 import { PROVIDER_NAMES, type Provider } from "@/lib/ai/provider";
-import { formatShortDate } from "@/lib/format";
+import { formatShortDate, formatTime } from "@/lib/format";
 
 export type ConversationItem = {
   id: string;
@@ -34,25 +38,48 @@ export function ConversationList({
 }) {
   if (conversations.length === 0) {
     return (
-      <p className="px-3 py-2 text-meta text-muted">
-        Tus conversaciones aparecerán aquí.
-      </p>
+      <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+        <span className="flex size-10 items-center justify-center rounded-full bg-sunken text-muted">
+          <HistoryIcon className="size-5" />
+        </span>
+        <p className="text-ui font-medium">Aún no hay conversaciones</p>
+        <p className="max-w-[24ch] text-meta text-muted">
+          Cuando escribas al asistente, tus conversaciones aparecerán aquí.
+        </p>
+      </div>
     );
   }
   return (
-    <ul className="flex flex-col gap-0.5">
-      {conversations.map((conversation) => (
-        <ConversationRow
-          key={conversation.id}
-          conversation={conversation}
-          active={conversation.id === activeId}
-          onOpen={onOpen}
-          onRename={onRename}
-          onDelete={onDelete}
-        />
+    <div className="flex flex-col gap-5">
+      {groupByRecency(conversations).map((group) => (
+        <section key={group.label} aria-label={group.label}>
+          <h3 className="mb-1 px-3 text-meta font-medium text-muted">
+            {group.label}
+          </h3>
+          <ul className="flex flex-col gap-px">
+            {group.items.map((conversation) => (
+              <ConversationRow
+                key={conversation.id}
+                conversation={conversation}
+                active={conversation.id === activeId}
+                onOpen={onOpen}
+                onRename={onRename}
+                onDelete={onDelete}
+              />
+            ))}
+          </ul>
+        </section>
       ))}
-    </ul>
+    </div>
   );
+}
+
+/** Today's conversations show the hour; older ones, the day. */
+function stampFor(iso: string, now = new Date()) {
+  const date = new Date(iso);
+  return date.toDateString() === now.toDateString()
+    ? formatTime(iso)
+    : formatShortDate(date);
 }
 
 function ConversationRow({
@@ -156,27 +183,44 @@ function ConversationRow({
 
   return (
     <li
-      className={`group relative flex items-center gap-1 rounded-xl pr-1 transition-colors ${
+      className={`group relative flex items-center rounded-lg transition-colors ${
         active ? "bg-accent-soft" : "hover:bg-sunken/70"
       }`}
     >
+      {active ? (
+        <span
+          aria-hidden
+          className="absolute top-2.5 bottom-2.5 left-0 w-0.5 rounded-full bg-accent"
+        />
+      ) : null}
       <button
         type="button"
         onClick={() => onOpen(conversation.id)}
         aria-current={active ? "page" : undefined}
-        className="flex min-h-11 min-w-0 flex-1 flex-col justify-center px-3 py-1.5 text-left"
+        className="flex min-h-12 min-w-0 flex-1 flex-col justify-center rounded-lg px-3 py-1.5 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
       >
         <span
-          className={`truncate text-ui ${active ? "font-semibold" : "font-medium"}`}
+          className={`truncate text-ui ${active ? "font-semibold text-ink" : "font-medium"}`}
         >
           {conversation.title}
         </span>
-        <span className="truncate text-meta text-muted">
-          {PROVIDER_NAMES[conversation.provider]} ·{" "}
-          {formatShortDate(new Date(conversation.updatedAt))}
+        <span className="flex gap-2 text-meta text-muted">
+          <span className="min-w-0 truncate">
+            {PROVIDER_NAMES[conversation.provider]}
+          </span>
+          <span className="shrink-0 tabular-nums opacity-75">
+            {stampFor(conversation.updatedAt)}
+          </span>
         </span>
       </button>
-      <Popover open={menuOpen} onClose={() => setMenuOpen(false)}>
+      <Popover
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        // With a mouse the menu button appears on hover or focus; touch keeps it visible.
+        className={`mr-1 transition-opacity [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:opacity-100 ${
+          menuOpen ? "[@media(hover:hover)]:opacity-100" : ""
+        }`}
+      >
         <button
           type="button"
           aria-label={`Opciones de ${conversation.title}`}
@@ -184,7 +228,7 @@ function ConversationRow({
           aria-haspopup="menu"
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen(!menuOpen)}
-          className="flex size-9 items-center justify-center rounded-control text-muted hover:bg-raised hover:text-ink"
+          className="flex size-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-raised hover:text-ink focus-visible:outline-2 focus-visible:outline-accent"
         >
           <MoreIcon className="size-5" />
         </button>
@@ -192,7 +236,7 @@ function ConversationRow({
           <div
             role="menu"
             aria-label={`Opciones de ${conversation.title}`}
-            className="animate-menu-in absolute top-full right-0 z-30 w-40 rounded-control border border-line-strong bg-raised p-1 shadow-lg"
+            className="animate-menu-in absolute top-full right-0 z-30 mt-1 w-40 rounded-xl border border-line bg-raised p-1 shadow-lg"
           >
             <button
               type="button"
