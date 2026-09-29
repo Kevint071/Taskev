@@ -8,9 +8,11 @@ import {
 } from "@/lib/ai/agent";
 import { expandCommand } from "@/lib/ai/commands";
 import { titleFromMessage } from "@/lib/ai/conversations";
+import { copilot } from "@/lib/ai/copilot";
 import { gemini } from "@/lib/ai/gemini";
 import { groq } from "@/lib/ai/groq";
 import { getStoredKeys } from "@/lib/ai/key-store";
+import { parseModel } from "@/lib/ai/models";
 import { openrouter } from "@/lib/ai/openrouter";
 import {
   isProvider,
@@ -40,7 +42,12 @@ const MAX_MESSAGE_LENGTH = 4000;
 /** Keeps arbitrary amounts of stored context from being relayed to a model. */
 const MAX_HISTORY_BYTES = 200_000;
 
-const CLIENTS: Record<Provider, ProviderClient> = { gemini, groq, openrouter };
+const CLIENTS: Record<Provider, ProviderClient> = {
+  gemini,
+  groq,
+  openrouter,
+  copilot,
+};
 
 function providerError(
   provider: Provider,
@@ -68,6 +75,11 @@ function providerError(
         status: 503,
         error: `${name} no está disponible en este momento. Inténtalo de nuevo en unos minutos.`,
       };
+    case "model_unavailable":
+      return {
+        status: 422,
+        error: `${name} no ofrece este modelo con tu cuenta. Elige otro modelo.`,
+      };
     case "bad_request":
       return {
         status: 502,
@@ -76,10 +88,19 @@ function providerError(
   }
 }
 
+/** `model` is the raw value: it's checked once the provider is known. */
 type RequestBody =
-  | { conversationId: string | null; provider: Provider; message: string }
+  | {
+      conversationId: string | null;
+      provider: Provider;
+      model: unknown;
+      modelApi: unknown;
+      message: string;
+    }
   | {
       conversationId: string;
+      model: unknown;
+      modelApi: unknown;
       confirmation: { callId: string; approved: boolean };
     };
 
@@ -94,7 +115,13 @@ function parseBody(raw: unknown): RequestBody | null {
     const message = body.message.trim();
     if (!message || message.length > MAX_MESSAGE_LENGTH) return null;
     if (!isProvider(body.provider)) return null;
-    return { conversationId, provider: body.provider, message };
+    return {
+      conversationId,
+      provider: body.provider,
+      model: body.model,
+      modelApi: body.modelApi,
+      message,
+    };
   }
   const confirmation = body.confirmation as Record<string, unknown> | undefined;
   if (
@@ -104,6 +131,8 @@ function parseBody(raw: unknown): RequestBody | null {
   ) {
     return {
       conversationId,
+      model: body.model,
+      modelApi: body.modelApi,
       confirmation: {
         callId: confirmation.callId,
         approved: confirmation.approved,
@@ -174,6 +203,17 @@ export async function POST(request: Request) {
     "confirmation" in body && conversation
       ? conversation.provider
       : (body as { provider: Provider }).provider;
+  const model = parseModel(provider, body.model);
+  if (!model) {
+    return NextResponse.json({ error: "Modelo inválido" }, { status: 400 });
+  }
+  // What the model picker's catalog said the model speaks; only Copilot has
+  // several formats, and a wrong hint is corrected by the client.
+  const api =
+    provider === "copilot" &&
+    (body.modelApi === "chat" || body.modelApi === "responses")
+      ? body.modelApi
+      : undefined;
   const apiKey = (await getStoredKeys(userId))[provider];
   if (!apiKey) {
     return NextResponse.json(
@@ -206,7 +246,8 @@ export async function POST(request: Request) {
   try {
     const result = await runAgent(
       {
-        generate: (steps) => client.generate(apiKey, steps, tools, system),
+        generate: (steps) =>
+          client.generate(apiKey, steps, tools, system, model, { api }),
         execute: (name, args) => executeTool(ctx, name, args),
         describe: (name, args) => describeDestructive(ctx, name, args),
         isDestructive,
