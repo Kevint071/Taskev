@@ -25,6 +25,10 @@ function withDetail(base: string, args: string): string {
 const CREATE_TASK = `El usuario quiere crear una tarea con el comando /crear. Este es su borrador, tal como lo escribió, con posibles faltas de ortografía o una redacción improvisada:
 «{draft}»
 
+Excepción que manda sobre todo lo demás: si el borrador incluye una petición del usuario sobre el proceso, como revisar antes si ya existe una tarea igual o parecida, o confirmarle algo antes de crear, hazle caso. En ese caso busca con list_tasks (query) usando una o dos palabras distintivas del borrador, sin frases ni palabras de relleno; como deben aparecer todas, si no hay resultados repite la búsqueda con una sola palabra antes de concluir que no existe. Muestra las coincidencias o di que no hay ninguna. Una tarea es duplicada si tiene la misma acción y el mismo asunto que el borrador, aunque cambie la redacción, una preposición o el orden: dilo claramente («ya existe») y recomienda no crear otra, en vez de decir que no hay una idéntica. Las que solo tocan el mismo tema son relacionadas, no duplicadas. Por último, no llames a create_task hasta que el usuario responda. Si pidió confirmar, preséntale el título, la descripción y la prioridad que usarías. Esa petición no es parte de la tarea: no incluyas esa frase en el título ni en la descripción.
+
+Si el borrador no pide nada así:
+
 Crea la tarea ya con create_task, sin pedir confirmación, y hazlo así:
 1. Título: reescribe el borrador con ortografía y tildes correctas y una redacción clara y concisa, en ${MAX_TITLE} caracteres como máximo. Conserva el sentido y los nombres propios o términos técnicos; no añadas datos que el borrador no contenga.
 2. Descripción: una o dos frases que aclaren qué hay que hacer y para qué o cuál es el resultado esperado. Debe aportar contexto útil, no repetir el título con otras palabras. Si el borrador no permite deducir nada más sin inventarlo, redacta solo el alcance más razonable en una frase.

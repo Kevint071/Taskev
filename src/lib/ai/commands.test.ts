@@ -71,6 +71,29 @@ test("expandCommand turns /crear into instructions that keep the draft", () => {
   }
 });
 
+test("expandCommand lets /crear honour a review requested in the draft", () => {
+  const prompt = expandCommand(
+    "/crear cerrar ticket de Kaleido de respuesta de SSL, antes de crearla dime si ya hay una así",
+  );
+  assert.ok(prompt);
+  for (const part of [
+    "list_tasks",
+    "no llames a create_task",
+    "hasta que el usuario responda",
+    "no incluyas esa frase en el título",
+    "misma acción y el mismo asunto",
+  ]) {
+    assert.ok(prompt.includes(part), `falta «${part}»`);
+  }
+});
+
+test("expandCommand keeps /crear direct when the draft asks nothing", () => {
+  const prompt = expandCommand("/crear conciliar openspec");
+  assert.ok(prompt);
+  assert.ok(prompt.includes("Crea la tarea ya con create_task"));
+  assert.ok(prompt.includes("sin pedir confirmación"));
+});
+
 test("expandCommand needs text for the commands that require it", () => {
   assert.equal(expandCommand("/crear"), null);
   assert.equal(expandCommand("/crear   "), null);

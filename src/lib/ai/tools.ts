@@ -80,7 +80,8 @@ export const TOOL_DECLARATIONS = [
       },
       query: {
         type: "string",
-        description: "Texto a buscar en el título o la descripción.",
+        description:
+          "Palabras a buscar en el título o la descripción; deben aparecer todas, en cualquier orden.",
       },
       dueBefore: {
         type: "string",
@@ -351,17 +352,23 @@ export function compactTask(task: TaskLike) {
   };
 }
 
+function matchesWords(task: TaskLike, words: string[]): boolean {
+  const text = fold(`${task.title}\n${task.description ?? ""}`);
+  return words.every((word) => text.includes(word));
+}
+
 /** Keeps the incoming order and caps the result, reporting the real total. */
 export function filterTasks(tasks: TaskLike[], filter: ListTasksFilter) {
-  const query = filter.query ? fold(filter.query) : null;
+  // Every word must appear, in any order: a model searching "kaleido ticket"
+  // must still find "Cerrar ticket de Kaleido".
+  const words = filter.query ? fold(filter.query).split(/\s+/) : null;
   const dueBefore = filter.dueBefore?.getTime();
   const matches = tasks.filter(
     (task) =>
       (!filter.groupId || task.groupId === filter.groupId) &&
       (!filter.status || task.status === filter.status) &&
       (!filter.excludeCompleted || task.status !== "completada") &&
-      (query === null ||
-        fold(`${task.title}\n${task.description ?? ""}`).includes(query)) &&
+      (words === null || matchesWords(task, words)) &&
       (dueBefore === undefined ||
         (task.dueDate !== null && task.dueDate.getTime() <= dueBefore)),
   );

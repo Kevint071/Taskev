@@ -198,6 +198,23 @@ test("list_tasks with excludeCompleted keeps every status except completada", ()
   assert.deepEqual(ids, ["a", "b", "c", "d"]);
 });
 
+test("list_tasks query matches every word in any order", () => {
+  const tasks = [
+    task({ id: "a", title: "Cerrar ticket de Kaleido de respuesta de SSL" }),
+    task({ id: "b", title: "Renovar certificado", description: "Kaleido SSL" }),
+    task({ id: "c", title: "Ticket de otra cosa" }),
+  ];
+  const ids = (query: string) =>
+    filterTasks(tasks, { query }).tasks.map((t) => t.id);
+
+  assert.deepEqual(ids("kaleido ticket"), ["a"]);
+  assert.deepEqual(ids("SSL  kaleido"), ["a", "b"]);
+  // A word that appears nowhere rules the task out.
+  assert.deepEqual(ids("kaleido factura"), []);
+  // A phrase in order still matches.
+  assert.deepEqual(ids("ticket de Kaleido"), ["a"]);
+});
+
 test("list_tasks returns at most 50 compact results and the real total", () => {
   const many = Array.from({ length: 70 }, (_, i) =>
     task({ id: `t${i}`, description: "x".repeat(500) }),
