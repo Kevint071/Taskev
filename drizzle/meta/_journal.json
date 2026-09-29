@@ -71,6 +71,13 @@
       "when": 1790637755412,
       "tag": "0009_deep_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790644800534,
+      "tag": "0010_cooing_nightcrawler",
+      "breakpoints": true
     }
   ]
 }

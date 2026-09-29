@@ -23,6 +23,8 @@ export const users = pgTable("users", {
   geminiApiKeyEncrypted: text("gemini_api_key_encrypted"),
   /** Same scheme as the Gemini key, for Groq. */
   groqApiKeyEncrypted: text("groq_api_key_encrypted"),
+  /** Same scheme as the Gemini key, for OpenRouter. */
+  openrouterApiKeyEncrypted: text("openrouter_api_key_encrypted"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
