@@ -11,7 +11,7 @@ import { CloseIcon } from "./icons";
 
 const DISMISS_DISTANCE = 96;
 const DISMISS_VELOCITY = 0.5; // px per ms
-const DISMISS_MS = 180;
+const SNAP_BACK_MS = 180;
 
 /**
  * Native <dialog> that rises from the bottom edge on phones and sits centred
@@ -96,11 +96,17 @@ export function BottomSheet({
     if (!d || !d.active || !dialog) return;
     const dy = Math.max(0, e.clientY - d.startY);
     const velocity = dy / Math.max(1, e.timeStamp - d.startTime);
-    dialog.style.transition = `transform ${DISMISS_MS}ms ease-out`;
     if (dy > DISMISS_DISTANCE || (velocity > DISMISS_VELOCITY && dy > 24)) {
-      dialog.style.transform = "translateY(100%)";
-      window.setTimeout(onClose, DISMISS_MS);
+      // Close the dialog right here rather than after an exit animation and a
+      // React render: while it is still open it is modal, so any tap in that
+      // window lands on the backdrop and only closes it instead of reaching
+      // the page.
+      dialog.close();
+      dialog.style.transition = "";
+      dialog.style.transform = "";
+      onClose();
     } else {
+      dialog.style.transition = `transform ${SNAP_BACK_MS}ms ease-out`;
       dialog.style.transform = "";
     }
   }
@@ -108,7 +114,7 @@ export function BottomSheet({
   function cancelDrag() {
     const dialog = ref.current;
     if (drag.current?.active && dialog) {
-      dialog.style.transition = `transform ${DISMISS_MS}ms ease-out`;
+      dialog.style.transition = `transform ${SNAP_BACK_MS}ms ease-out`;
       dialog.style.transform = "";
     }
     drag.current = null;
