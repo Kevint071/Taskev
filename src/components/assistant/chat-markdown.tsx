@@ -45,7 +45,7 @@ export function ChatMarkdown({ text }: { text: string }) {
           <p
             // biome-ignore lint/suspicious/noArrayIndexKey: derived from immutable text
             key={i}
-            className={`font-semibold text-ink not-first:pt-2 ${block.level <= 2 ? "text-base" : "text-[0.95rem]"}`}
+            className={`font-semibold not-first:pt-2 ${block.level <= 2 ? "text-base" : "text-[0.95rem]"}`}
           >
             <InlineSpans spans={block.inlines} />
           </p>

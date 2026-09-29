@@ -36,16 +36,18 @@ import {
   type SlashCommand,
 } from "@/lib/ai/commands";
 import { pickProvider } from "@/lib/ai/conversations";
-import { MODEL_LABELS, type Provider } from "@/lib/ai/provider";
+import { defaultModel, type ModelOption, modelsFor } from "@/lib/ai/models";
+import { PROVIDER_NAMES, type Provider } from "@/lib/ai/provider";
 import { handleUnauthenticated } from "@/lib/api-client";
 import type { TranscriptItem } from "@/lib/db/schema";
 import { settingsHref } from "@/lib/settings-tabs";
-import { ChatMarkdown } from "./chat-markdown";
 import { type ConversationItem, ConversationList } from "./conversation-list";
+import { TypedMarkdown } from "./typed-markdown";
 
 type ChatItem =
   | { kind: "user"; text: string }
-  | { kind: "assistant"; text: string }
+  // `typing`: a reply that just arrived is typed out; loaded ones show whole.
+  | { kind: "assistant"; text: string; typing?: boolean }
   | { kind: "action"; text: string; isError: boolean }
   | { kind: "error"; text: string; settingsLink: boolean; reload: boolean };
 
@@ -128,6 +130,22 @@ const COMMAND_ICONS: Record<string, ComponentType<{ className?: string }>> = {
 
 /** Remembers, per browser, whether the desktop conversation panel is folded. */
 const PANEL_STORAGE_KEY = "taskev.assistant.panelCollapsed";
+/** Remembers, per browser, the model last picked under each provider. */
+const MODELS_STORAGE_KEY = "taskev.assistant.models";
+
+/** Copilot's models depend on the user's plan, so they're fetched once. */
+type CopilotModels =
+  | { status: "idle" | "loading" | "error"; options: ModelOption[] }
+  | { status: "ready"; options: ModelOption[] };
+
+function initialModels(): Record<Provider, string> {
+  return {
+    gemini: defaultModel("gemini"),
+    groq: defaultModel("groq"),
+    openrouter: defaultModel("openrouter"),
+    copilot: defaultModel("copilot"),
+  };
+}
 
 /** Codes after which the fix is in Settings, so the error links there. */
 const KEY_ERRORS = new Set(["invalid_key", "no_key"]);
@@ -186,6 +204,13 @@ export function AssistantView({
       pickProvider([initialConversations[0]?.provider], providers) ??
       providers[0],
   );
+  // Each provider keeps its own model, so one model id offered by two
+  // providers is never mixed up between them.
+  const [models, setModels] = useState(initialModels);
+  const [copilotModels, setCopilotModels] = useState<CopilotModels>({
+    status: "idle",
+    options: [],
+  });
   const [draft, setDraft] = useState("");
   const [commandIndex, setCommandIndex] = useState(0);
   // Escape closes the command menu until the draft changes again.
@@ -224,6 +249,58 @@ export function AssistantView({
     }
   }, []);
 
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem(MODELS_STORAGE_KEY) ?? "{}",
+      );
+      if (typeof saved !== "object" || saved === null) return;
+      setModels((current) => {
+        const next = { ...current };
+        for (const p of Object.keys(current) as Provider[]) {
+          if (typeof saved[p] === "string") next[p] = saved[p];
+        }
+        return next;
+      });
+    } catch {
+      // Storage can be blocked or hold junk; each provider then starts on its default.
+    }
+  }, []);
+
+  const usesCopilot = providers.includes("copilot");
+  const copilotStatus = copilotModels.status;
+  useEffect(() => {
+    if (provider !== "copilot" || !usesCopilot || copilotStatus !== "idle") {
+      return;
+    }
+    setCopilotModels({ status: "loading", options: [] });
+    fetch("/api/assistant/models")
+      .then(async (res) => {
+        if (handleUnauthenticated(res)) return;
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !Array.isArray(data.models)) throw new Error();
+        const options = data.models as ModelOption[];
+        setCopilotModels({ status: "ready", options });
+        // A remembered model the plan no longer offers gives way to the first one.
+        setModels((current) =>
+          options.length > 0 && !options.some((m) => m.id === current.copilot)
+            ? { ...current, copilot: options[0].id }
+            : current,
+        );
+      })
+      .catch(() => setCopilotModels({ status: "error", options: [] }));
+  }, [provider, usesCopilot, copilotStatus]);
+
+  function pickModel(next: string) {
+    const updated = { ...models, [provider]: next };
+    setModels(updated);
+    try {
+      localStorage.setItem(MODELS_STORAGE_KEY, JSON.stringify(updated));
+    } catch {
+      // Storage can be blocked (private mode); the choice lasts for this visit.
+    }
+  }
+
   function togglePanel() {
     const next = !panelCollapsed;
     setPanelCollapsed(next);
@@ -232,6 +309,11 @@ export function AssistantView({
     } catch {
       // Storage can be blocked (private mode); the choice lasts for this visit.
     }
+  }
+
+  function keepEndInView() {
+    // Instant: a smooth scroll would still be chasing the previous frame.
+    endRef.current?.scrollIntoView({ block: "end", behavior: "instant" });
   }
 
   function upsert(conversation: ConversationItem) {
@@ -326,6 +408,17 @@ export function AssistantView({
         body: JSON.stringify({
           conversationId: shownId.current,
           ...("message" in body ? { provider } : {}),
+          // While an action awaits confirmation the provider is locked, so
+          // this is also the model that continues that conversation.
+          model: models[provider],
+          // Copilot models speak different APIs, which the picker's catalog told.
+          ...(provider === "copilot"
+            ? {
+                modelApi: copilotModels.options.find(
+                  (m) => m.id === models.copilot,
+                )?.api,
+              }
+            : {}),
           ...body,
         }),
       });
@@ -352,7 +445,15 @@ export function AssistantView({
       }
       upsert(reply.conversation);
       setPending(reply.pending);
-      setItems((prev) => [...prev, ...reply.display.map(toChatItem)]);
+      const fresh = reply.display.map(toChatItem);
+      // Only the last text of the reply is typed out; earlier ones are already there.
+      const lastText = fresh.map((item) => item.kind).lastIndexOf("assistant");
+      setItems((prev) => [
+        ...prev,
+        ...fresh.map((item, i) =>
+          i === lastText ? { ...item, typing: true } : item,
+        ),
+      ]);
     } catch {
       if (token !== generation.current) return;
       setItems((prev) => [
@@ -506,11 +607,25 @@ export function AssistantView({
     }
   }
 
+  const lastUser = items.map((item) => item.kind).lastIndexOf("user");
   const commands = matchCommands(draft);
   const menuOpen = commands.length > 0 && !menuDismissed;
   const activeCommand = commands[Math.min(commandIndex, commands.length - 1)];
   const empty = items.length === 0 && !busy && !loading;
-  const canPickModel = providers.length > 1;
+  const canPickProvider = providers.length > 1;
+  const modelOptions =
+    modelsFor(provider) ??
+    (provider === "copilot" ? copilotModels.options : []);
+  const modelsLoading =
+    provider === "copilot" &&
+    (copilotModels.status === "idle" || copilotModels.status === "loading");
+  const modelLabel =
+    modelOptions.find((m) => m.id === models[provider])?.label ??
+    models[provider];
+  const providerLocked = busy || pending !== null;
+  const providerLockedTitle = pending
+    ? "Confirma o cancela la acción pendiente para cambiar de proveedor"
+    : undefined;
   const panelToggleLabel = panelCollapsed
     ? "Mostrar conversaciones"
     : "Ocultar conversaciones";
@@ -532,15 +647,15 @@ export function AssistantView({
 
   return (
     <div className="flex min-h-0 flex-1">
-      <div className="mx-auto flex w-full max-w-[880px] min-w-0 flex-1 flex-col">
-        <div className="flex items-center gap-2 px-4 pt-3 lg:hidden">
+      <div className="mx-auto flex w-full max-w-220 min-w-0 flex-1 flex-col">
+        <div className="flex items-center gap-2 px-4 pt-3 md:px-10 lg:pt-4">
           <button
             type="button"
             onClick={() => setListOpen(true)}
-            className="group flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-line bg-raised p-2 pr-3 text-left shadow-panel transition-colors hover:border-accent/40"
+            className="group flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-line bg-raised p-2 pr-3 text-left shadow-panel transition-colors hover:border-accent/40 lg:hidden"
           >
             <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
-              <HistoryIcon className="size-[18px]" />
+              <HistoryIcon className="size-4.5" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate font-semibold">Historial</span>
@@ -550,12 +665,37 @@ export function AssistantView({
             </span>
             <ChevronDownIcon className="size-4 text-muted transition-colors group-hover:text-ink" />
           </button>
+          {canPickProvider ? (
+            <span className="relative inline-flex items-center lg:ml-auto">
+              <label htmlFor="assistant-provider" className="sr-only">
+                Proveedor
+              </label>
+              <Select
+                id="assistant-provider"
+                value={provider}
+                onChange={(e) => setProvider(e.target.value as Provider)}
+                disabled={providerLocked}
+                title={providerLockedTitle}
+                className="h-9 max-w-38 rounded-full pl-3 text-meta font-medium sm:max-w-none"
+              >
+                {providers.map((p) => (
+                  <option key={p} value={p}>
+                    {PROVIDER_NAMES[p]}
+                  </option>
+                ))}
+              </Select>
+            </span>
+          ) : (
+            <span className="inline-flex h-9 items-center rounded-full bg-sunken px-3 text-meta font-medium text-muted lg:ml-auto">
+              {PROVIDER_NAMES[provider]}
+            </span>
+          )}
           <Button
             variant="primary"
             onClick={startNew}
             aria-label="Nueva conversación"
             title="Nueva conversación"
-            className="size-13 rounded-2xl px-0"
+            className="size-13 rounded-2xl px-0 lg:hidden"
           >
             <NewChatIcon className="size-6" />
           </Button>
@@ -595,7 +735,7 @@ export function AssistantView({
                         className="group animate-rise flex items-start gap-3 rounded-2xl border border-line bg-raised p-3.5 text-left shadow-panel transition-[border-color,transform,box-shadow] hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-[0_6px_18px_-8px_color-mix(in_srgb,var(--accent)_35%,transparent)]"
                       >
                         <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent transition-colors group-hover:bg-accent group-hover:text-accent-ink">
-                          <suggestion.icon className="size-[18px]" />
+                          <suggestion.icon className="size-4.5" />
                         </span>
                         <span className="min-w-0">
                           <span className="block font-semibold text-ink">
@@ -617,6 +757,11 @@ export function AssistantView({
                 // biome-ignore lint/suspicious/noArrayIndexKey: append-only transcript
                 key={i}
                 item={item}
+                // Once the user writes again, whatever was still typing shows whole.
+                typing={
+                  item.kind === "assistant" && !!item.typing && i > lastUser
+                }
+                onTyping={keepEndInView}
                 onReload={() => activeId && void load(activeId)}
               />
             ))}
@@ -727,7 +872,7 @@ export function AssistantView({
               className="field-sizing-content max-h-48 min-h-11 w-full resize-none bg-transparent px-3 pt-2.5 pb-1 text-ink outline-none placeholder:text-muted"
             />
             <div className="flex items-center gap-2 pl-1">
-              {canPickModel ? (
+              {modelOptions.length > 1 ? (
                 <span className="relative inline-flex items-center">
                   <SparklesIcon className="pointer-events-none absolute left-2.5 size-3.5 text-accent" />
                   <label htmlFor="assistant-model" className="sr-only">
@@ -735,9 +880,9 @@ export function AssistantView({
                   </label>
                   <Select
                     id="assistant-model"
-                    value={provider}
-                    onChange={(e) => setProvider(e.target.value as Provider)}
-                    disabled={busy || pending !== null}
+                    value={models[provider]}
+                    onChange={(e) => pickModel(e.target.value)}
+                    disabled={providerLocked}
                     title={
                       pending
                         ? "Confirma o cancela la acción pendiente para cambiar de modelo"
@@ -745,17 +890,24 @@ export function AssistantView({
                     }
                     className="h-8 max-w-[60vw] rounded-full border-transparent bg-sunken pl-8 text-meta font-medium"
                   >
-                    {providers.map((p) => (
-                      <option key={p} value={p}>
-                        {MODEL_LABELS[p]}
+                    {modelOptions.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.label}
                       </option>
                     ))}
                   </Select>
                 </span>
               ) : (
-                <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-sunken px-2.5 text-meta font-medium text-muted">
-                  <SparklesIcon className="size-3.5 text-accent" />
-                  {MODEL_LABELS[provider]}
+                <span className="inline-flex h-8 max-w-[60vw] items-center gap-1.5 rounded-full bg-sunken px-2.5 text-meta font-medium text-muted">
+                  <SparklesIcon className="size-3.5 shrink-0 text-accent" />
+                  <span className="truncate">
+                    {modelsLoading
+                      ? "Cargando modelos…"
+                      : copilotModels.status === "error" &&
+                          provider === "copilot"
+                        ? "No se pudieron cargar los modelos"
+                        : modelLabel}
+                  </span>
                 </span>
               )}
               <p className="hidden min-w-0 flex-1 truncate text-meta text-muted md:block">
@@ -814,7 +966,7 @@ export function AssistantView({
           <>
             <div className="flex items-center gap-2.5 pl-1">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
-                <HistoryIcon className="size-[18px]" />
+                <HistoryIcon className="size-4.5" />
               </span>
               <div className="min-w-0 flex-1">
                 <h2 className="truncate font-semibold">Conversaciones</h2>
@@ -871,18 +1023,32 @@ export function AssistantView({
   );
 }
 
-function ChatRow({ item, onReload }: { item: ChatItem; onReload: () => void }) {
+function ChatRow({
+  item,
+  typing,
+  onTyping,
+  onReload,
+}: {
+  item: ChatItem;
+  typing: boolean;
+  onTyping: () => void;
+  onReload: () => void;
+}) {
   switch (item.kind) {
     case "user":
       return (
-        <p className="chat-bubble-user max-w-[85%] self-end rounded-2xl rounded-br-md px-4 py-2.5 whitespace-pre-wrap shadow-panel break-words">
+        <p className="chat-bubble-user max-w-[85%] self-end rounded-2xl rounded-br-md px-4 py-2.5 whitespace-pre-wrap shadow-panel wrap-break-word">
           {item.text}
         </p>
       );
     case "assistant":
       return (
-        <div className="chat-bubble-bot max-w-[85%] space-y-2 self-start rounded-2xl rounded-bl-md px-4 py-2.5 break-words shadow-panel">
-          <ChatMarkdown text={item.text} />
+        <div className="chat-bubble-bot max-w-[85%] space-y-2 self-start rounded-2xl rounded-bl-md px-4 py-2.5 wrap-break-word shadow-panel">
+          <TypedMarkdown
+            text={item.text}
+            animate={typing}
+            onProgress={onTyping}
+          />
         </div>
       );
     case "action":
@@ -960,7 +1126,7 @@ function PendingCard({
   return (
     <section
       aria-label="Acción pendiente de confirmación"
-      className="animate-reveal flex flex-col gap-4 self-stretch rounded-2xl border border-line bg-raised p-4 shadow-panel sm:self-start sm:min-w-[360px]"
+      className="animate-reveal flex flex-col gap-4 self-stretch rounded-2xl border border-line bg-raised p-4 shadow-panel sm:self-start sm:min-w-90"
     >
       <div className="flex items-start gap-3">
         <span
