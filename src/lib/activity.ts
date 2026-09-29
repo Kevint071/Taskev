@@ -40,3 +40,36 @@ export function groupEventsByTask(events: ActivityEvent[]): TaskActivity[] {
     })
     .sort((a, b) => b.latestAt.getTime() - a.latestAt.getTime());
 }
+
+export type GroupActivity = {
+  groupId: string;
+  groupName: string;
+  /** Newest first. */
+  tasks: TaskActivity[];
+  latestAt: Date;
+};
+
+/**
+ * Nests tasks under their group so the feed names each group once instead of
+ * on every task. Expects `tasks` newest first (as `groupEventsByTask` returns
+ * them); groups are ordered by their most recent task.
+ */
+export function groupTasksByGroup(tasks: TaskActivity[]): GroupActivity[] {
+  const byGroup = new Map<string, GroupActivity>();
+  for (const task of tasks) {
+    const group = byGroup.get(task.groupId);
+    if (group) group.tasks.push(task);
+    else {
+      byGroup.set(task.groupId, {
+        groupId: task.groupId,
+        groupName: task.groupName,
+        tasks: [task],
+        latestAt: task.latestAt,
+      });
+    }
+  }
+
+  return [...byGroup.values()].sort(
+    (a, b) => b.latestAt.getTime() - a.latestAt.getTime(),
+  );
+}
