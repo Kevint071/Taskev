@@ -20,6 +20,7 @@ import { MODEL_LABELS, type Provider } from "@/lib/ai/provider";
 import { handleUnauthenticated } from "@/lib/api-client";
 import type { TranscriptItem } from "@/lib/db/schema";
 import { settingsHref } from "@/lib/settings-tabs";
+import { ChatMarkdown } from "./chat-markdown";
 import { type ConversationItem, ConversationList } from "./conversation-list";
 
 type ChatItem =
@@ -561,9 +562,9 @@ function ChatRow({ item, onReload }: { item: ChatItem; onReload: () => void }) {
       );
     case "assistant":
       return (
-        <p className="max-w-[85%] self-start rounded-2xl rounded-bl-md border border-line bg-raised px-4 py-2.5 whitespace-pre-wrap shadow-panel">
-          {item.text}
-        </p>
+        <div className="max-w-[85%] space-y-2 self-start rounded-2xl rounded-bl-md border border-line bg-raised px-4 py-2.5 break-words shadow-panel">
+          <ChatMarkdown text={item.text} />
+        </div>
       );
     case "action":
       return (
