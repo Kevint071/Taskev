@@ -28,6 +28,14 @@
   --toast-success: #6fc59a;
   --toast-success-ink: #06210f;
   --shadow-panel: 0 1px 2px rgba(26, 35, 50, 0.04);
+  /* Chat bubbles: pale tints in light, deep tints in dark, so --ink (dark in
+     light, light in dark) is always the text color. Contrast >= 10:1. */
+  --chat-user-from: #e6ecfd;
+  --chat-user-to: #d5defa;
+  --chat-user-line: #bccaf7;
+  --chat-bot-from: #ffffff;
+  --chat-bot-to: #f6f8fc;
+  --chat-bot-line: #dde3ec;
   color-scheme: light;
 }
 
@@ -50,6 +58,12 @@
   --status-paused: #d9a441;
   --status-done: #6fc59a;
   --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.6);
+  --chat-user-from: #2c3c7c;
+  --chat-user-to: #222f63;
+  --chat-user-line: #40529a;
+  --chat-bot-from: #1b202b;
+  --chat-bot-to: #151921;
+  --chat-bot-line: #2b3240;
   color-scheme: dark;
 }
 
@@ -186,6 +200,26 @@
     opacity: 0;
     transform: translateY(8px);
   }
+}
+
+@utility chat-bubble-user {
+  background-image: linear-gradient(
+    135deg,
+    var(--chat-user-from),
+    var(--chat-user-to)
+  );
+  border: 1px solid var(--chat-user-line);
+  color: var(--ink);
+}
+
+@utility chat-bubble-bot {
+  background-image: linear-gradient(
+    135deg,
+    var(--chat-bot-from),
+    var(--chat-bot-to)
+  );
+  border: 1px solid var(--chat-bot-line);
+  color: var(--ink);
 }
 
 @utility animate-rise {

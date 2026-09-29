@@ -875,13 +875,13 @@ function ChatRow({ item, onReload }: { item: ChatItem; onReload: () => void }) {
   switch (item.kind) {
     case "user":
       return (
-        <p className="max-w-[85%] self-end rounded-2xl rounded-br-md bg-accent px-4 py-2.5 whitespace-pre-wrap text-accent-ink">
+        <p className="chat-bubble-user max-w-[85%] self-end rounded-2xl rounded-br-md px-4 py-2.5 whitespace-pre-wrap shadow-panel break-words">
           {item.text}
         </p>
       );
     case "assistant":
       return (
-        <div className="max-w-[85%] space-y-2 self-start rounded-2xl rounded-bl-md border border-line bg-raised px-4 py-2.5 break-words shadow-panel">
+        <div className="chat-bubble-bot max-w-[85%] space-y-2 self-start rounded-2xl rounded-bl-md px-4 py-2.5 break-words shadow-panel">
           <ChatMarkdown text={item.text} />
         </div>
       );
