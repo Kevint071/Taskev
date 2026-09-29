@@ -53,12 +53,8 @@
           "name": "groups_user_id_users_id_fk",
           "tableFrom": "groups",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -106,12 +102,8 @@
           "name": "task_comments_task_id_tasks_id_fk",
           "tableFrom": "task_comments",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -196,12 +188,8 @@
           "name": "task_events_task_id_tasks_id_fk",
           "tableFrom": "task_events",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -309,12 +297,8 @@
           "name": "tasks_group_id_groups_id_fk",
           "tableFrom": "tasks",
           "tableTo": "groups",
-          "columnsFrom": [
-            "group_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["group_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -380,9 +364,7 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -394,22 +376,12 @@
     "public.task_event_type": {
       "name": "task_event_type",
       "schema": "public",
-      "values": [
-        "task_created",
-        "status_changed",
-        "comment_added"
-      ]
+      "values": ["task_created", "status_changed", "comment_added"]
     },
     "public.task_status": {
       "name": "task_status",
       "schema": "public",
-      "values": [
-        "disponible",
-        "en_curso",
-        "bloqueada",
-        "pausada",
-        "completada"
-      ]
+      "values": ["disponible", "en_curso", "bloqueada", "pausada", "completada"]
     }
   },
   "schemas": {},
