@@ -30,6 +30,11 @@ import {
 import { Select } from "@/components/ui/input";
 import { LoadingRows } from "@/components/ui/panel";
 import type { DisplayItem, PendingAction } from "@/lib/ai/agent";
+import {
+  matchCommands,
+  parseCommand,
+  type SlashCommand,
+} from "@/lib/ai/commands";
 import { pickProvider } from "@/lib/ai/conversations";
 import { MODEL_LABELS, type Provider } from "@/lib/ai/provider";
 import { handleUnauthenticated } from "@/lib/api-client";
@@ -112,6 +117,15 @@ const SUGGESTIONS: Suggestion[] = [
   },
 ];
 
+const COMMAND_ICONS: Record<string, ComponentType<{ className?: string }>> = {
+  crear: PlusIcon,
+  comentar: NoteIcon,
+  bloqueadas: FlagIcon,
+  vencen: CalendarIcon,
+  hoy: CheckIcon,
+  priorizar: SparklesIcon,
+};
+
 /** Remembers, per browser, whether the desktop conversation panel is folded. */
 const PANEL_STORAGE_KEY = "taskev.assistant.panelCollapsed";
 
@@ -173,6 +187,9 @@ export function AssistantView({
       providers[0],
   );
   const [draft, setDraft] = useState("");
+  const [commandIndex, setCommandIndex] = useState(0);
+  // Escape closes the command menu until the draft changes again.
+  const [menuDismissed, setMenuDismissed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [listOpen, setListOpen] = useState(false);
@@ -349,10 +366,32 @@ export function AssistantView({
     }
   }
 
+  function changeDraft(text: string) {
+    setDraft(text);
+    setCommandIndex(0);
+    setMenuDismissed(false);
+  }
+
+  function pickCommand(command: SlashCommand) {
+    if (command.needsArgs) {
+      changeDraft(`/${command.name} `);
+      inputRef.current?.focus();
+      return;
+    }
+    send(`/${command.name}`);
+  }
+
   function send(text: string) {
     const message = text.trim();
     if (!message || busy || loading) return;
-    setDraft("");
+    // A command that needs text has nothing to work on yet: keep typing.
+    const command = parseCommand(message);
+    if (command?.command.needsArgs && !command.args) {
+      changeDraft(`/${command.command.name} `);
+      inputRef.current?.focus();
+      return;
+    }
+    changeDraft("");
     setItems((prev) => [
       ...prev,
       // A new message declines whatever was waiting for confirmation; the
@@ -377,7 +416,7 @@ export function AssistantView({
       send(suggestion.prompt);
       return;
     }
-    setDraft(suggestion.prompt);
+    changeDraft(suggestion.prompt);
     inputRef.current?.focus();
   }
 
@@ -436,6 +475,27 @@ export function AssistantView({
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (menuOpen && !event.nativeEvent.isComposing) {
+      const last = commands.length - 1;
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        const step = event.key === "ArrowDown" ? 1 : -1;
+        setCommandIndex((i) =>
+          i + step < 0 ? last : i + step > last ? 0 : i + step,
+        );
+        return;
+      }
+      if (event.key === "Enter" || event.key === "Tab") {
+        event.preventDefault();
+        pickCommand(commands[Math.min(commandIndex, last)]);
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMenuDismissed(true);
+        return;
+      }
+    }
     if (
       event.key === "Enter" &&
       !event.shiftKey &&
@@ -446,6 +506,9 @@ export function AssistantView({
     }
   }
 
+  const commands = matchCommands(draft);
+  const menuOpen = commands.length > 0 && !menuDismissed;
+  const activeCommand = commands[Math.min(commandIndex, commands.length - 1)];
   const empty = items.length === 0 && !busy && !loading;
   const canPickModel = providers.length > 1;
   const panelToggleLabel = panelCollapsed
@@ -587,8 +650,59 @@ export function AssistantView({
               e.preventDefault();
               send(draft);
             }}
-            className="flex flex-col gap-1 rounded-3xl border border-line-strong bg-raised p-2 shadow-[0_8px_30px_-12px_rgba(26,35,50,0.25)] transition-[border-color,box-shadow] focus-within:border-accent focus-within:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent)_16%,transparent),0_8px_30px_-12px_rgba(26,35,50,0.25)]"
+            className="relative flex flex-col gap-1 rounded-3xl border border-line-strong bg-raised p-2 shadow-[0_8px_30px_-12px_rgba(26,35,50,0.25)] transition-[border-color,box-shadow] focus-within:border-accent focus-within:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent)_16%,transparent),0_8px_30px_-12px_rgba(26,35,50,0.25)]"
           >
+            {menuOpen ? (
+              <div
+                id="assistant-commands"
+                role="listbox"
+                aria-label="Comandos"
+                className="animate-reveal absolute inset-x-0 bottom-full z-10 mb-2 flex flex-col gap-0.5 rounded-2xl border border-line bg-raised p-1.5 shadow-panel"
+              >
+                {commands.map((command, i) => {
+                  const Icon = COMMAND_ICONS[command.name] ?? SparklesIcon;
+                  const active = command === activeCommand;
+                  return (
+                    // biome-ignore lint/a11y/useKeyWithClickEvents: the textarea drives the listbox with the keyboard (aria-activedescendant)
+                    <div
+                      key={command.name}
+                      id={`assistant-command-${command.name}`}
+                      role="option"
+                      aria-selected={active}
+                      tabIndex={-1}
+                      // Keeps the textarea focused while the option is clicked.
+                      onMouseDown={(e) => e.preventDefault()}
+                      onMouseEnter={() => setCommandIndex(i)}
+                      onClick={() => pickCommand(command)}
+                      className={`flex cursor-pointer items-center gap-3 rounded-xl px-2.5 py-2 ${
+                        active ? "bg-accent-soft" : ""
+                      }`}
+                    >
+                      <span
+                        className={`flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                          active
+                            ? "bg-accent text-accent-ink"
+                            : "bg-accent-soft text-accent"
+                        }`}
+                      >
+                        <Icon className="size-4" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-semibold text-ink">
+                          /{command.name}
+                          <span className="ml-2 font-normal text-muted">
+                            {command.title}
+                          </span>
+                        </span>
+                        <span className="block truncate text-meta text-muted">
+                          {command.hint}
+                        </span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
             <label htmlFor="assistant-input" className="sr-only">
               Mensaje para el asistente
             </label>
@@ -597,9 +711,18 @@ export function AssistantView({
               ref={inputRef}
               rows={1}
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => changeDraft(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Pregunta o pide un cambio…"
+              role="combobox"
+              aria-expanded={menuOpen}
+              aria-controls="assistant-commands"
+              aria-autocomplete="list"
+              aria-activedescendant={
+                menuOpen && activeCommand
+                  ? `assistant-command-${activeCommand.name}`
+                  : undefined
+              }
+              placeholder="Pregunta o escribe / para ver comandos…"
               maxLength={4000}
               className="field-sizing-content max-h-48 min-h-11 w-full resize-none bg-transparent px-3 pt-2.5 pb-1 text-ink outline-none placeholder:text-muted"
             />

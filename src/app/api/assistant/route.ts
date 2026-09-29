@@ -6,6 +6,7 @@ import {
   type PendingAction,
   runAgent,
 } from "@/lib/ai/agent";
+import { expandCommand } from "@/lib/ai/commands";
 import { titleFromMessage } from "@/lib/ai/conversations";
 import { gemini } from "@/lib/ai/gemini";
 import { groq } from "@/lib/ai/groq";
@@ -212,7 +213,9 @@ export async function POST(request: Request) {
       },
       history,
       "message" in body
-        ? { message: body.message }
+        ? // The model gets the command's instructions; the transcript below
+          // keeps what the user typed.
+          { message: expandCommand(body.message) ?? body.message }
         : { confirmation: body.confirmation },
     );
 
