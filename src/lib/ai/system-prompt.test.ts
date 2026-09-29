@@ -89,6 +89,16 @@ test("tells the model to retry a search before saying a task doesn't exist", () 
   assert.match(text, /partialMatch/);
 });
 
+test("keeps the assistant on Taskev and declines unrelated requests", () => {
+  const text = buildSystemInstruction(evening, "UTC");
+  assert.match(text, /Solo atiendes peticiones sobre Taskev/);
+  // Off-topic asks (code help, general knowledge) get a short decline that
+  // steers back to tasks, even when the user asks politely or in a follow-up.
+  assert.match(text, /programación/);
+  assert.match(text, /conocimiento general/);
+  assert.match(text, /redirige/);
+});
+
 test("tells the model 'pendientes' spans every status but completada", () => {
   const text = buildSystemInstruction(evening, "UTC");
   assert.match(text, /pendiente/);
