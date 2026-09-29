@@ -196,7 +196,9 @@ export function AssistantView({
   const urlId = searchParams.get(CONVERSATION_PARAM);
 
   const [conversations, setConversations] = useState(initialConversations);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  // A conversation in the URL starts as loading, so the first paint shows the
+  // skeleton instead of flashing the empty-chat welcome before the effect runs.
+  const [activeId, setActiveId] = useState<string | null>(urlId);
   const [items, setItems] = useState<ChatItem[]>([]);
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [provider, setProvider] = useState<Provider>(
@@ -216,7 +218,7 @@ export function AssistantView({
   // Escape closes the command menu until the draft changes again.
   const [menuDismissed, setMenuDismissed] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(urlId !== null);
   const [listOpen, setListOpen] = useState(false);
   const [panelCollapsed, setPanelCollapsed] = useState(false);
   const [toDelete, setToDelete] = useState<ConversationItem | null>(null);
@@ -676,7 +678,7 @@ export function AssistantView({
                 onChange={(e) => setProvider(e.target.value as Provider)}
                 disabled={providerLocked}
                 title={providerLockedTitle}
-                className="h-9 max-w-38 rounded-full pl-3 text-meta font-medium sm:max-w-none"
+                className="absolute inset-0 h-9 w-full rounded-full pl-3 text-meta font-medium"
               >
                 {providers.map((p) => (
                   <option key={p} value={p}>
@@ -684,6 +686,15 @@ export function AssistantView({
                   </option>
                 ))}
               </Select>
+              {/* A native select is as wide as its longest option; this
+                  invisible copy of the selected name sizes it instead. */}
+              <span
+                aria-hidden
+                className="invisible inline-flex h-9 items-center whitespace-nowrap border border-transparent pr-7 pl-3 text-meta font-medium"
+              >
+                {PROVIDER_NAMES[provider]}
+              </span>
+              <ChevronDownIcon className="pointer-events-none absolute right-2.5 size-4 text-muted" />
             </span>
           ) : (
             <span className="inline-flex h-9 items-center rounded-full bg-sunken px-3 text-meta font-medium text-muted lg:ml-auto">
