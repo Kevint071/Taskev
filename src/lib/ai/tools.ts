@@ -69,7 +69,7 @@ export const TOOL_DECLARATIONS = [
   {
     type: "function",
     name: "list_tasks",
-    description: `Lista y busca tareas de los grupos activos, las activas por relevancia y después las completadas. Devuelve como máximo ${LIST_TASKS_LIMIT}, el total real y byStatus con cuántas coincidencias hay por estado (los estados ausentes tienen 0).`,
+    description: `Lista y busca tareas de los grupos activos, las activas por relevancia y después las completadas. Devuelve como máximo ${LIST_TASKS_LIMIT}, el total real, partialMatch y byStatus con cuántas coincidencias hay por estado (los estados ausentes tienen 0).`,
     parameters: object({
       groupId: id("del grupo"),
       status: { type: "string", enum: [...TASK_STATUSES] },
@@ -81,7 +81,7 @@ export const TOOL_DECLARATIONS = [
       query: {
         type: "string",
         description:
-          "Palabras a buscar en el título o la descripción; deben aparecer todas, en cualquier orden.",
+          "Palabras a buscar en el título o la descripción. Se prefieren las tareas que tienen todas, en cualquier orden; si ninguna, se devuelven las que tienen al menos la mitad (partialMatch true). Usa pocas palabras clave, sin sinónimos dudosos.",
       },
       dueBefore: {
         type: "string",
@@ -352,26 +352,45 @@ export function compactTask(task: TaskLike) {
   };
 }
 
-function matchesWords(task: TaskLike, words: string[]): boolean {
+/** How many of the query words the task mentions. */
+function wordHits(task: TaskLike, words: string[]): number {
   const text = fold(`${task.title}\n${task.description ?? ""}`);
-  return words.every((word) => text.includes(word));
+  return words.filter((word) => text.includes(word)).length;
 }
 
-/** Keeps the incoming order and caps the result, reporting the real total. */
+/**
+ * Keeps the incoming order and caps the result, reporting the real total.
+ * A query first needs every word, in any order: "kaleido ticket" must find
+ * "Cerrar ticket de Kaleido". When no task has them all, it falls back to
+ * tasks with at least half the words, best first, so a query with a word the
+ * task doesn't use ("conciliar" for "Comparar") still finds it.
+ */
 export function filterTasks(tasks: TaskLike[], filter: ListTasksFilter) {
-  // Every word must appear, in any order: a model searching "kaleido ticket"
-  // must still find "Cerrar ticket de Kaleido".
   const words = filter.query ? fold(filter.query).split(/\s+/) : null;
   const dueBefore = filter.dueBefore?.getTime();
-  const matches = tasks.filter(
+  let matches = tasks.filter(
     (task) =>
       (!filter.groupId || task.groupId === filter.groupId) &&
       (!filter.status || task.status === filter.status) &&
       (!filter.excludeCompleted || task.status !== "completada") &&
-      (words === null || matchesWords(task, words)) &&
       (dueBefore === undefined ||
         (task.dueDate !== null && task.dueDate.getTime() <= dueBefore)),
   );
+  let partialMatch = false;
+  if (words) {
+    const hits = new Map(matches.map((task) => [task, wordHits(task, words)]));
+    const all = matches.filter((task) => hits.get(task) === words.length);
+    if (all.length > 0) {
+      matches = all;
+    } else {
+      const half = Math.ceil(words.length / 2);
+      // Array.prototype.sort is stable, so ties keep the incoming order.
+      matches = matches
+        .filter((task) => (hits.get(task) ?? 0) >= half)
+        .sort((x, y) => (hits.get(y) ?? 0) - (hits.get(x) ?? 0));
+      partialMatch = matches.length > 0;
+    }
+  }
   // Counted before the cap so the model can't mistake a status that fell
   // outside the first 50 for one that has no tasks.
   const byStatus: Partial<Record<TaskStatus, number>> = {};
@@ -382,6 +401,7 @@ export function filterTasks(tasks: TaskLike[], filter: ListTasksFilter) {
     total: matches.length,
     byStatus,
     truncated: matches.length > LIST_TASKS_LIMIT,
+    partialMatch,
     tasks: matches.slice(0, LIST_TASKS_LIMIT).map(compactTask),
   };
 }
