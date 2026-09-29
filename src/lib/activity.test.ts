@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { groupEventsByTask } from "./activity";
+import { groupEventsByTask, groupTasksByGroup } from "./activity";
 import type { ActivityEvent } from "./data/activity";
 
 function event(
@@ -65,4 +65,52 @@ test("a task keeps its group so the feed can link and label it", () => {
 
 test("empty input produces no tasks", () => {
   assert.deepEqual(groupEventsByTask([]), []);
+});
+
+test("tasks are grouped under their group, newest group first", () => {
+  const groups = groupTasksByGroup(
+    groupEventsByTask([
+      event("e1", "t1", "2026-09-16T08:00:00Z", {
+        groupId: "g-old",
+        groupName: "Casa",
+      }),
+      event("e2", "t2", "2026-09-16T10:00:00Z", {
+        groupId: "g-new",
+        groupName: "Trabajo",
+      }),
+      event("e3", "t3", "2026-09-16T09:00:00Z", {
+        groupId: "g-new",
+        groupName: "Trabajo",
+      }),
+    ]),
+  );
+
+  assert.deepEqual(
+    groups.map((g) => g.groupId),
+    ["g-new", "g-old"],
+  );
+  assert.equal(groups[0].groupName, "Trabajo");
+  assert.deepEqual(
+    groups[0].tasks.map((t) => t.taskId),
+    ["t2", "t3"],
+  );
+});
+
+test("a group ranks by its most recent task, not by task count", () => {
+  const groups = groupTasksByGroup(
+    groupEventsByTask([
+      event("e1", "t1", "2026-09-16T06:00:00Z", { groupId: "busy" }),
+      event("e2", "t2", "2026-09-16T07:00:00Z", { groupId: "busy" }),
+      event("e3", "t3", "2026-09-16T09:00:00Z", { groupId: "recent" }),
+    ]),
+  );
+
+  assert.deepEqual(
+    groups.map((g) => g.groupId),
+    ["recent", "busy"],
+  );
+});
+
+test("no tasks produces no groups", () => {
+  assert.deepEqual(groupTasksByGroup([]), []);
 });
