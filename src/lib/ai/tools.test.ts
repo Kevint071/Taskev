@@ -117,6 +117,15 @@ test("list_tasks validates its filters", () => {
   );
   assert.equal(parseListTasksArgs({ status: "hecha" }).ok, false);
   assert.equal(parseListTasksArgs({ dueBefore: "mañana" }).ok, false);
+
+  const excluding = parseListTasksArgs({ excludeCompleted: true });
+  assert.ok(excluding.ok);
+  assert.equal(excluding.value.excludeCompleted, true);
+  // A non-boolean value is ignored rather than rejected.
+  assert.deepEqual(parseListTasksArgs({ excludeCompleted: "sí" }), {
+    ok: true,
+    value: {},
+  });
 });
 
 function task(overrides: Partial<TaskLike>): TaskLike {
@@ -173,6 +182,20 @@ test("list_tasks filters by group, status, text and due date", () => {
     "a",
     "b",
   ]);
+});
+
+test("list_tasks with excludeCompleted keeps every status except completada", () => {
+  const tasks = [
+    task({ id: "a", status: "disponible" }),
+    task({ id: "b", status: "en_curso" }),
+    task({ id: "c", status: "bloqueada" }),
+    task({ id: "d", status: "pausada" }),
+    task({ id: "e", status: "completada" }),
+  ];
+  const ids = filterTasks(tasks, { excludeCompleted: true }).tasks.map(
+    (t) => t.id,
+  );
+  assert.deepEqual(ids, ["a", "b", "c", "d"]);
 });
 
 test("list_tasks returns at most 50 compact results and the real total", () => {

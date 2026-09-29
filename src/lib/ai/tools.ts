@@ -73,6 +73,11 @@ export const TOOL_DECLARATIONS = [
     parameters: object({
       groupId: id("del grupo"),
       status: { type: "string", enum: [...TASK_STATUSES] },
+      excludeCompleted: {
+        type: "boolean",
+        description:
+          'true para las "pendientes": todos los estados salvo completada. No lo combines con status.',
+      },
       query: {
         type: "string",
         description: "Texto a buscar en el título o la descripción.",
@@ -271,6 +276,8 @@ export function parseTaskArgs(
 export type ListTasksFilter = {
   groupId?: string;
   status?: TaskStatus;
+  /** "pendientes": every status but completada. */
+  excludeCompleted?: boolean;
   query?: string;
   dueBefore?: Date;
 };
@@ -285,6 +292,7 @@ export function parseListTasksArgs(args: Args): ParseResult<ListTasksFilter> {
     if (error) return { ok: false, error };
     filter.status = args.status as TaskStatus;
   }
+  if (args.excludeCompleted === true) filter.excludeCompleted = true;
   if (typeof args.query === "string" && args.query.trim() !== "") {
     filter.query = args.query.trim();
   }
@@ -351,6 +359,7 @@ export function filterTasks(tasks: TaskLike[], filter: ListTasksFilter) {
     (task) =>
       (!filter.groupId || task.groupId === filter.groupId) &&
       (!filter.status || task.status === filter.status) &&
+      (!filter.excludeCompleted || task.status !== "completada") &&
       (query === null ||
         fold(`${task.title}\n${task.description ?? ""}`).includes(query)) &&
       (dueBefore === undefined ||
