@@ -1,21 +1,24 @@
 /**
  * What every model provider shares: the provider-neutral history the agent
  * works on, the tool declarations, the result of one model step and the
- * errors. Each client (gemini.ts, groq.ts) translates to its own wire format.
+ * errors. Each client (gemini.ts, groq.ts, openrouter.ts) translates to its
+ * own wire format.
  */
 
-export const PROVIDERS = ["gemini", "groq"] as const;
+export const PROVIDERS = ["gemini", "groq", "openrouter"] as const;
 export type Provider = (typeof PROVIDERS)[number];
 
 export const PROVIDER_NAMES: Record<Provider, string> = {
   gemini: "Gemini",
   groq: "Groq",
+  openrouter: "OpenRouter",
 };
 
-/** What the model picker shows; keep in step with GEMINI_MODEL and GROQ_MODEL. */
+/** What the model picker shows; keep in step with each client's model. */
 export const MODEL_LABELS: Record<Provider, string> = {
   gemini: "Gemini 3.7 Flash",
   groq: "GPT-OSS 120B · Groq",
+  openrouter: "GPT-OSS 120B · OpenRouter",
 };
 
 export function isProvider(value: unknown): value is Provider {
@@ -74,7 +77,7 @@ export class ProviderError extends Error {
     readonly provider: Provider,
     readonly kind: ProviderErrorKind,
     readonly status?: number,
-    /** Network error code (e.g. ECONNRESET) for logs; never request data. */
+    /** Short code for logs (e.g. ECONNRESET, tool_use_failed); never the provider's message or request data. */
     readonly reason?: string,
   ) {
     super(

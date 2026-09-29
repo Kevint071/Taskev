@@ -10,6 +10,7 @@ import { titleFromMessage } from "@/lib/ai/conversations";
 import { gemini } from "@/lib/ai/gemini";
 import { groq } from "@/lib/ai/groq";
 import { getStoredKeys } from "@/lib/ai/key-store";
+import { openrouter } from "@/lib/ai/openrouter";
 import {
   isProvider,
   PROVIDER_NAMES,
@@ -38,7 +39,7 @@ const MAX_MESSAGE_LENGTH = 4000;
 /** Keeps arbitrary amounts of stored context from being relayed to a model. */
 const MAX_HISTORY_BYTES = 200_000;
 
-const CLIENTS: Record<Provider, ProviderClient> = { gemini, groq };
+const CLIENTS: Record<Provider, ProviderClient> = { gemini, groq, openrouter };
 
 function providerError(
   provider: Provider,

@@ -7,6 +7,7 @@ import { PROVIDERS, type Provider } from "./provider";
 const FIELDS = {
   gemini: "geminiApiKeyEncrypted",
   groq: "groqApiKeyEncrypted",
+  openrouter: "openrouterApiKeyEncrypted",
 } as const satisfies Record<Provider, keyof typeof users.$inferSelect>;
 
 /**
@@ -39,6 +40,7 @@ export async function getStoredKeys(
     .select({
       gemini: users.geminiApiKeyEncrypted,
       groq: users.groqApiKeyEncrypted,
+      openrouter: users.openrouterApiKeyEncrypted,
     })
     .from(users)
     .where(eq(users.id, userId))
@@ -46,6 +48,7 @@ export async function getStoredKeys(
   return {
     gemini: decrypt(row?.gemini ?? null, userId, "gemini"),
     groq: decrypt(row?.groq ?? null, userId, "groq"),
+    openrouter: decrypt(row?.openrouter ?? null, userId, "openrouter"),
   };
 }
 
