@@ -23,6 +23,7 @@ const CONFIG: OpenAiCompatibleConfig = {
   verifyPath: "/key",
   // Optional attribution OpenRouter shows on the account's activity page.
   headers: { "X-Title": "Taskev" },
+  reasoningEffort: "medium",
 };
 
 export function createOpenRouterClient(

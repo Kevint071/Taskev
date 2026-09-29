@@ -61,11 +61,12 @@ export function createGeminiClient(
       history: HistoryStep[],
       tools: readonly FunctionDeclaration[],
       system: string,
+      model: string = GEMINI_MODEL,
     ): Promise<GenerateResult> {
       const response = await request(apiKey, "/interactions", {
         method: "POST",
         body: JSON.stringify({
-          model: GEMINI_MODEL,
+          model,
           store: false,
           input: renderTurnsFor("gemini", history).map(toWire),
           tools,

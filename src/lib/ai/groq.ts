@@ -17,6 +17,7 @@ const CONFIG: OpenAiCompatibleConfig = {
   model: GROQ_MODEL,
   // Listing the models needs the key, so a 401 here means it was rejected.
   verifyPath: "/models",
+  reasoningEffort: "medium",
 };
 
 export function createGroqClient(

@@ -26,6 +26,8 @@ export type OpenAiCompatibleConfig = {
   verifyPath: string;
   /** Headers beyond content type and authorization (e.g. attribution). */
   headers?: Record<string, string>;
+  /** Sent as `reasoning_effort`; leave out for models that reject it. */
+  reasoningEffort?: string;
 };
 
 /** Steps a model produces; consecutive ones form one assistant message. */
@@ -47,19 +49,18 @@ type Message =
     }
   | { role: "tool"; tool_call_id: string; content: string };
 
-export function createOpenAiCompatibleClient(
+/** Authenticated calls to the provider, retried once on a network failure. */
+export function createRequest(
   config: OpenAiCompatibleConfig,
-  fetchImpl: typeof fetch = fetch,
-): ProviderClient {
-  const { provider, baseUrl, model, verifyPath } = config;
-
-  async function request(
+  fetchImpl: typeof fetch,
+) {
+  return async function request(
     apiKey: string,
     path: string,
     init: RequestInit,
   ): Promise<Response> {
     const attempt = () =>
-      fetchImpl(`${baseUrl}${path}`, {
+      fetchImpl(`${config.baseUrl}${path}`, {
         ...init,
         headers: {
           "Content-Type": "application/json",
@@ -75,13 +76,21 @@ export function createOpenAiCompatibleClient(
     } catch (error) {
       // Only the error code is kept: the message may echo request details.
       throw new ProviderError(
-        provider,
+        config.provider,
         "unavailable",
         undefined,
         networkCode(error),
       );
     }
-  }
+  };
+}
+
+export function createOpenAiCompatibleClient(
+  config: OpenAiCompatibleConfig,
+  fetchImpl: typeof fetch = fetch,
+): ProviderClient {
+  const { provider, model, verifyPath } = config;
+  const request = createRequest(config, fetchImpl);
 
   return {
     async generate(
@@ -89,11 +98,12 @@ export function createOpenAiCompatibleClient(
       history: HistoryStep[],
       tools: readonly FunctionDeclaration[],
       system: string,
+      modelId: string = model,
     ): Promise<GenerateResult> {
       const response = await request(apiKey, "/chat/completions", {
         method: "POST",
         body: JSON.stringify({
-          model,
+          model: modelId,
           messages: [
             { role: "system", content: system },
             ...toMessages(renderTurnsFor(provider, history), provider),
@@ -102,7 +112,9 @@ export function createOpenAiCompatibleClient(
             type: "function",
             function: { name, description, parameters },
           })),
-          reasoning_effort: "medium",
+          ...(config.reasoningEffort
+            ? { reasoning_effort: config.reasoningEffort }
+            : {}),
         }),
       });
       if (!response.ok) throw await errorFor(response, provider);
@@ -122,7 +134,7 @@ export function createOpenAiCompatibleClient(
   };
 }
 
-function textOf(step: HistoryStep): string {
+export function textOf(step: HistoryStep): string {
   if (!Array.isArray(step.content)) return "";
   return (step.content as { type?: string; text?: unknown }[])
     .filter((part) => part.type === "text" && typeof part.text === "string")
@@ -189,7 +201,7 @@ function toMessages(history: HistoryStep[], provider: Provider): Message[] {
   return messages;
 }
 
-function parseArguments(raw: unknown): Record<string, unknown> {
+export function parseArguments(raw: unknown): Record<string, unknown> {
   if (typeof raw !== "string") return {};
   try {
     const parsed: unknown = JSON.parse(raw);
@@ -241,7 +253,7 @@ function parseMessage(
   return { steps, text, calls };
 }
 
-async function errorFor(
+export async function errorFor(
   response: Response,
   provider: Provider,
 ): Promise<ProviderError> {
@@ -269,6 +281,9 @@ async function errorFor(
     error?: { code?: unknown };
   } | null;
   const code = body?.error?.code;
+  if (code === "model_not_supported" || code === "model_not_found") {
+    return new ProviderError(provider, "model_unavailable", status, code);
+  }
   return new ProviderError(
     provider,
     "bad_request",
