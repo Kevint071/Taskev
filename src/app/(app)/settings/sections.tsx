@@ -2,7 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { type ComponentProps, type ReactNode, useState } from "react";
+import {
+  type ComponentProps,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTheme } from "@/components/theme-provider";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -536,44 +542,56 @@ export function AssistantSection({
 }: {
   keys: Record<Provider, KeyStatus>;
 }) {
+  // One row edits at a time, so the list stays compact.
+  const [editing, setEditing] = useState<Provider | null>(null);
+
   return (
     <div className="flex flex-col gap-4">
-      {PROVIDERS.map((provider) => (
-        <AssistantKeyCard
-          key={provider}
-          provider={provider}
-          initialStatus={keys[provider]}
-        />
-      ))}
-
       <Card>
-        <div className="flex gap-3 px-5 py-4">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sunken text-muted">
-            <LockIcon />
-          </span>
-          <div className="min-w-0 text-meta text-muted">
-            <p className="font-medium text-ink">Privacidad</p>
-            <p className="mt-0.5">
-              Cuando usas el asistente, los grupos, tareas y comentarios que
-              consulta se envían al proveedor del modelo que elijas (Google,
-              Groq u OpenRouter, que a su vez lo reenvía a quien sirve el
-              modelo) usando tu key. Las conversaciones se guardan en Taskev
-              hasta que las borres. Las keys se guardan cifradas y nunca se
-              vuelven a mostrar completas.
-            </p>
-          </div>
-        </div>
+        <CardHeader
+          title="API keys"
+          description="El asistente usa tus propias keys, así que el uso y la cuota van a tu cuenta de cada proveedor."
+        />
+        <ul className="mt-4 divide-y divide-line border-t border-line">
+          {PROVIDERS.map((provider) => (
+            <AssistantKeyRow
+              key={provider}
+              provider={provider}
+              initialStatus={keys[provider]}
+              editing={editing === provider}
+              onEdit={() => setEditing(provider)}
+              onClose={() => setEditing(null)}
+            />
+          ))}
+        </ul>
       </Card>
+
+      <p className="flex gap-2 px-1 text-meta text-muted">
+        <LockIcon className="mt-0.5 size-3.5 shrink-0" />
+        <span>
+          Cuando usas el asistente, los grupos, tareas y comentarios que
+          consulta se envían al proveedor del modelo que elijas (Google, Groq u
+          OpenRouter, que a su vez lo reenvía a quien sirve el modelo) usando tu
+          key. Las conversaciones se guardan en Taskev hasta que las borres. Las
+          keys se guardan cifradas y nunca se vuelven a mostrar completas.
+        </span>
+      </p>
     </div>
   );
 }
 
-function AssistantKeyCard({
+function AssistantKeyRow({
   provider,
   initialStatus,
+  editing,
+  onEdit,
+  onClose,
 }: {
   provider: Provider;
   initialStatus: KeyStatus;
+  editing: boolean;
+  onEdit: () => void;
+  onClose: () => void;
 }) {
   const meta = KEY_PROVIDERS[provider];
   const name = PROVIDER_NAMES[provider];
@@ -584,6 +602,24 @@ function AssistantKeyCard({
   const [pending, setPending] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (editing) formRef.current?.querySelector("input")?.focus();
+  }, [editing]);
+
+  function startEditing() {
+    setApiKey("");
+    setError(null);
+    setSaved(null);
+    onEdit();
+  }
+
+  function cancel() {
+    setApiKey("");
+    setError(null);
+    onClose();
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -605,6 +641,7 @@ function AssistantKeyCard({
     setStatus({ configured: true, last4: data.last4 });
     setApiKey("");
     setSaved(replaced ? "API key reemplazada" : "API key guardada");
+    onClose();
   }
 
   async function handleDelete() {
@@ -623,15 +660,74 @@ function AssistantKeyCard({
   }
 
   return (
-    <>
-      <Card>
-        <form onSubmit={handleSubmit}>
-          <CardHeader
-            title={`API key de ${name}`}
-            description={
+    <li>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-3">
+        <span
+          className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${
+            status.configured
+              ? "bg-status-done text-raised"
+              : "border border-line-strong text-muted"
+          }`}
+        >
+          {status.configured ? (
+            <CheckIcon className="size-4" />
+          ) : (
+            <LockIcon className="size-4" />
+          )}
+        </span>
+        <div className="min-w-32 flex-1">
+          <p className="font-medium">{name}</p>
+          {saved ? (
+            <output className="animate-caption-in block text-meta font-medium text-status-done">
+              {saved}
+            </output>
+          ) : error && !editing ? (
+            <p role="alert" className="text-meta font-medium text-danger">
+              {error}
+            </p>
+          ) : (
+            <p className="text-meta text-muted">
+              {status.configured
+                ? `Configurada${status.last4 ? ` · ••••${status.last4}` : ""}`
+                : "Sin configurar"}
+            </p>
+          )}
+        </div>
+        {editing ? null : (
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={status.configured ? "secondary" : "primary"}
+              onClick={startEditing}
+            >
+              {status.configured ? "Reemplazar" : "Añadir"}
+            </Button>
+            {status.configured ? (
+              <Button
+                size="sm"
+                variant="danger"
+                aria-label={`Eliminar la API key de ${name}`}
+                className="w-8 px-0"
+                onClick={() => setConfirmOpen(true)}
+              >
+                <TrashIcon />
+              </Button>
+            ) : null}
+          </div>
+        )}
+      </div>
+
+      {editing ? (
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-3 border-t border-line bg-sunken/50 px-5 py-4"
+        >
+          <Field
+            label={status.configured ? "Nueva API key" : "API key"}
+            error={error}
+            hint={
               <>
-                El asistente usa tu propia key, así que el uso y la cuota van a{" "}
-                {meta.account}.{" "}
                 {meta.free ? "Puedes crear una gratis en" : "Puedes crearla en"}{" "}
                 <a
                   href={meta.consoleUrl}
@@ -644,81 +740,33 @@ function AssistantKeyCard({
                 .
               </>
             }
-          />
-          <div className="flex flex-col gap-4 px-5 pt-4 pb-5">
-            <div className="flex items-center gap-3 rounded-xl bg-sunken/70 p-3">
-              <span
-                className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${
-                  status.configured
-                    ? "bg-status-done text-raised"
-                    : "border border-line-strong text-muted"
-                }`}
-              >
-                {status.configured ? (
-                  <CheckIcon className="size-4" />
-                ) : (
-                  <LockIcon className="size-4" />
-                )}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="font-medium">
-                  {status.configured ? "Configurada" : "Sin configurar"}
-                </p>
-                <p className="text-meta text-muted">
-                  {status.configured
-                    ? `Puedes hablar con ${name} en el asistente.`
-                    : `Guarda una key para usar ${name} en el asistente.`}
-                </p>
-              </div>
-              {status.configured && status.last4 ? (
-                <span className="rounded-full bg-raised px-2.5 py-1 font-mono text-meta text-muted ring-1 ring-line">
-                  ••••{status.last4}
-                </span>
-              ) : null}
-            </div>
-            <Field
-              label={status.configured ? "Nueva API key" : "API key"}
-              error={error}
-            >
-              <PasswordInput
-                revealNoun="API key"
-                autoComplete="off"
-                spellCheck={false}
-                placeholder="Pega aquí tu API key"
-                value={apiKey}
-                onChange={(e) => {
-                  setApiKey(e.target.value);
-                  setSaved(null);
-                  setError(null);
-                }}
-              />
-            </Field>
-          </div>
-          <CardFooter>
-            <Saved message={saved} />
-            {status.configured ? (
-              <Button
-                variant="danger"
-                disabled={pending}
-                onClick={() => setConfirmOpen(true)}
-              >
-                Eliminar
-              </Button>
-            ) : null}
+          >
+            <PasswordInput
+              revealNoun="API key"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="Pega aquí tu API key"
+              value={apiKey}
+              onChange={(e) => {
+                setApiKey(e.target.value);
+                setError(null);
+              }}
+            />
+          </Field>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={cancel} disabled={pending}>
+              Cancelar
+            </Button>
             <Button
               type="submit"
               variant="primary"
               disabled={pending || apiKey.trim() === ""}
             >
-              {pending
-                ? "Verificando…"
-                : status.configured
-                  ? "Reemplazar"
-                  : "Guardar"}
+              {pending ? "Verificando…" : "Guardar"}
             </Button>
-          </CardFooter>
+          </div>
         </form>
-      </Card>
+      ) : null}
 
       <ConfirmDialog
         open={confirmOpen}
@@ -729,7 +777,7 @@ function AssistantKeyCard({
         onConfirm={handleDelete}
         onClose={() => setConfirmOpen(false)}
       />
-    </>
+    </li>
   );
 }
 
