@@ -16,7 +16,8 @@ export function GroupFilterTabs({
     <div
       role="group"
       aria-label="Filtrar grupos"
-      className="flex gap-4 border-b border-line"
+      data-motion-ok=""
+      className="inline-flex gap-1 self-start rounded-full bg-sunken p-1"
     >
       {TABS.map((tab) => {
         const active = tab.value === showArchived;
@@ -26,10 +27,10 @@ export function GroupFilterTabs({
             type="button"
             aria-pressed={active}
             onClick={() => onChange(tab.value)}
-            className={`-mb-px border-b-2 pb-2 font-medium transition-colors ${
+            className={`min-h-10 rounded-full px-5 font-medium transition-[background-color,color,box-shadow] duration-200 ${
               active
-                ? "border-accent text-ink"
-                : "border-transparent text-muted hover:text-ink"
+                ? "bg-raised text-ink shadow-panel ring-1 ring-line"
+                : "text-muted hover:text-ink"
             }`}
           >
             {tab.label}
