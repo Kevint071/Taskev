@@ -23,9 +23,8 @@ function completedLabel(n: number) {
 }
 
 /**
- * "Tu progreso": the week's completions as one number, how much of it was
- * today as a proportional bar, and one column per day so the two read against
- * each other. Completion dates are the viewer's calendar day stored as UTC
+ * "Tu progreso": the week's completions as one number and one column per day
+ * so it reads against each day. Completion dates are the viewer's calendar day stored as UTC
  * midnight, so "today" must come from the browser's clock: the server (UTC on
  * Vercel) is already on the next day during the viewer's evening. Server render
  * and hydration use `serverNow`, then the browser recomputes. Tapping or
@@ -64,16 +63,6 @@ export function TodayMetrics({
   const focus = week[focusIndex] ?? week[lastIndex];
   const focusLabel =
     focusIndex === lastIndex ? "hoy" : weekdayName.format(focus.dayKey);
-  const rest = completedThisWeek - focus.count;
-  const segments = [
-    { key: "focus", count: focus.count, label: focusLabel, color: "bg-accent" },
-    {
-      key: "rest",
-      count: rest,
-      label: focusIndex === lastIndex ? "días anteriores" : "otros días",
-      color: "bg-accent/35",
-    },
-  ];
 
   return (
     <section className="flex min-w-0 flex-col gap-4">
@@ -98,47 +87,10 @@ export function TodayMetrics({
       </div>
 
       <div className="rounded-2xl border border-line bg-raised p-5 shadow-panel md:p-6">
-        <div
-          aria-hidden="true"
-          className="h-2 overflow-hidden rounded-full bg-sunken"
-        >
-          {/* Both segments stay mounted so their width, gap included, animates as the selected day changes; the negative margin clips the last segment's trailing gap. */}
-          <div className="-mr-0.5 flex h-full">
-            {segments.map((segment) => (
-              <span
-                key={segment.key}
-                className={`block h-full basis-0 transition-[flex-grow,min-width,margin-right] duration-500 ease-out ${segment.color}`}
-                style={{
-                  flexGrow: segment.count,
-                  minWidth: segment.count > 0 ? 4 : 0,
-                  marginRight: segment.count > 0 ? 2 : 0,
-                }}
-              />
-            ))}
-          </div>
-        </div>
-        <ul className="mt-3 flex min-h-4.5 flex-wrap gap-x-4 gap-y-1.5">
-          {segments
-            .filter((segment) => segment.count > 0)
-            .map((segment) => (
-              <li
-                key={segment.key}
-                className="tabular inline-flex items-center gap-2 text-meta"
-              >
-                <span
-                  aria-hidden="true"
-                  className={`size-2 rounded-full ${segment.color}`}
-                />
-                <span className="font-semibold">{segment.count}</span>
-                <span className="text-muted">{segment.label}</span>
-              </li>
-            ))}
-        </ul>
-
         {/* An empty day counts as no selection, so it reads as if nothing were hovered. */}
         {/* biome-ignore lint/a11y/noStaticElementInteractions: only resets the hover readout; every column is a focusable button. */}
         <div
-          className="mt-6"
+          className="mt-1"
           onMouseLeave={() => setSelected(null)}
           role="presentation"
         >
