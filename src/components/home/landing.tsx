@@ -1,30 +1,60 @@
-import type { ComponentType } from "react";
+import type { ReactNode } from "react";
 import { Brand } from "@/components/brand";
 import { STATUS_LABELS, type Task } from "@/components/group-types";
 import { ButtonLink } from "@/components/ui/button";
-import {
-  CalendarIcon,
-  CheckIcon,
-  TriangleAlertIcon,
-} from "@/components/ui/icons";
-import { StatusDot } from "@/components/ui/status-badge";
+import { PinIcon } from "@/components/ui/icons";
+import { STATUS_TONE } from "@/components/ui/status-badge";
 import { CtaLink, SecondaryLink } from "./cta-link";
+import {
+  AssistantMock,
+  BucketsMock,
+  CalendarMock,
+  CommentMock,
+  GroupsMock,
+  RankingBoard,
+  StatusTile,
+  TaskFormMock,
+  ThemesMock,
+  TodayStepMock,
+} from "./landing-mocks";
 import { TaskFlow } from "./task-flow";
 
 const container = "mx-auto w-full max-w-280 px-4 md:px-8";
 
-const STEPS = [
+const STEPS: {
+  title: string;
+  text: string;
+  mock: ReactNode;
+}[] = [
   {
     title: "Crea un grupo",
     text: "Un grupo reúne las tareas que comparten un objetivo: un cliente, la casa, un viaje.",
+    mock: <GroupsMock />,
   },
   {
     title: "Añade tus tareas",
     text: "Ponles prioridad y fecha límite si las tienen. Ninguna de las dos es obligatoria.",
+    mock: <TaskFormMock />,
   },
   {
     title: "Abre Hoy",
     text: "Taskev suma la prioridad y la cercanía de la fecha: lo vencido y lo de hoy pesa más. Las tres primeras quedan marcadas.",
+    mock: <TodayStepMock />,
+  },
+];
+
+const RANKING_POINTS = [
+  {
+    title: "La prioridad la pones tú",
+    text: "Cada punto de prioridad suma 20. Una tarea sin fecha compite solo con ella.",
+  },
+  {
+    title: "La fecha pesa más cuanto más cerca",
+    text: "Lo vencido y lo de hoy suman hasta 100 puntos. Esa ventaja se reduce poco a poco a medida que la fecha se aleja.",
+  },
+  {
+    title: "El avance no cambia el orden",
+    text: "Una tarea al 90 % no baja en la lista. Solo desempata cuando dos pesan lo mismo.",
   },
 ];
 
@@ -39,59 +69,7 @@ const STATES: { status: Task["status"]; meaning: string }[] = [
   },
 ];
 
-type BucketIcon = ComponentType<{ className?: string }>;
-
-const TASK_BUCKETS: {
-  bucket: string;
-  color: string;
-  icon: BucketIcon;
-  task: string;
-  detail: string;
-}[] = [
-  {
-    bucket: "Vencidas",
-    color: "var(--danger)",
-    icon: TriangleAlertIcon,
-    task: "Renovar dominio",
-    detail: "venció ayer",
-  },
-  {
-    bucket: "Hoy",
-    color: "var(--accent)",
-    icon: CalendarIcon,
-    task: "Enviar propuesta al cliente",
-    detail: "hoy",
-  },
-  {
-    bucket: "Próximas",
-    color: "var(--muted)",
-    icon: CalendarIcon,
-    task: "Revisar contrato de alquiler",
-    detail: "en 5 días",
-  },
-  {
-    bucket: "Completadas",
-    color: "var(--status-done)",
-    icon: CheckIcon,
-    task: "Preparar factura de agosto",
-    detail: "ayer",
-  },
-];
-
-const EXTRAS = [
-  {
-    title: "Comentarios",
-    text: "Deja notas y decisiones dentro de cada tarea, con su fecha.",
-  },
-  {
-    title: "Calendario",
-    text: "Elige la fecha límite en un calendario en lugar de escribirla.",
-  },
-  {
-    title: "Claro y oscuro",
-    text: "Elige un tema en Ajustes o deja que siga el de tu dispositivo.",
-  },
-];
+const card = "rounded-panel border border-line bg-raised p-5 md:p-6";
 
 /** The 1-2-3 badges of the demo below, so the sentence and the animation read as one. */
 function TopThree() {
@@ -156,26 +134,35 @@ export function Landing() {
           aria-labelledby="como-funciona"
           className="border-t border-line"
         >
-          <div className={`${container} py-12 md:py-24`}>
+          <div className={`${container} py-14 md:py-24`}>
             <h2
               id="como-funciona"
               className="max-w-md scroll-mt-24 text-headline font-semibold text-balance"
             >
-              Cómo funciona
+              Tres pasos y ya tienes el día ordenado
             </h2>
-            <ol className="mt-8 grid gap-7 md:mt-10 md:grid-cols-3 md:gap-10">
+            <ol className="mt-10 grid gap-10 md:mt-14 md:grid-cols-3 md:gap-8 lg:gap-10">
               {STEPS.map((step, i) => (
-                <li
-                  key={step.title}
-                  className="border-t-2 border-ink pt-4 md:pt-5"
-                >
-                  <span className="tabular text-meta font-semibold text-accent">
-                    Paso {i + 1}
-                  </span>
-                  <h3 className="mt-1 text-section font-semibold">
+                <li key={step.title} className="flex flex-col">
+                  <div className="flex items-center gap-3">
+                    <span
+                      aria-hidden="true"
+                      className="tabular flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-ui font-bold text-accent-ink"
+                    >
+                      {i + 1}
+                    </span>
+                    {i < STEPS.length - 1 && (
+                      <span
+                        aria-hidden="true"
+                        className="hidden h-px flex-1 bg-line-strong md:block"
+                      />
+                    )}
+                  </div>
+                  <h3 className="mt-4 text-section font-semibold">
                     {step.title}
                   </h3>
-                  <p className="mt-2 max-w-[24rem] text-muted">{step.text}</p>
+                  <p className="mt-2 max-w-104 text-muted">{step.text}</p>
+                  <div className="mt-5 flex-1 md:mt-6">{step.mock}</div>
                 </li>
               ))}
             </ol>
@@ -183,10 +170,43 @@ export function Landing() {
         </section>
 
         <section
-          aria-labelledby="por-dentro"
-          className="border-y border-line bg-raised"
+          aria-labelledby="que-va-primero"
+          className="border-y border-line bg-sunken"
         >
-          <div className={`${container} py-12 md:py-24`}>
+          <div
+            className={`${container} grid items-center gap-10 py-14 md:py-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16`}
+          >
+            <div>
+              <h2
+                id="que-va-primero"
+                className="max-w-lg text-headline font-semibold text-balance"
+              >
+                Sin magia: una suma que puedes ver
+              </h2>
+              <p className="mt-4 max-w-120 text-[17px] leading-[1.6] text-muted">
+                Cada barra de Hoy es la suma de dos cosas. Por eso sabes por qué
+                una tarea va antes que otra.
+              </p>
+              <dl className="mt-8 flex flex-col gap-6">
+                {RANKING_POINTS.map((point) => (
+                  <div
+                    key={point.title}
+                    className="border-l-2 border-accent pl-4"
+                  >
+                    <dt className="font-semibold">{point.title}</dt>
+                    <dd className="mt-1 max-w-120 text-muted">
+                      {point.text}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+            <RankingBoard />
+          </div>
+        </section>
+
+        <section aria-labelledby="por-dentro">
+          <div className={`${container} py-14 md:py-24`}>
             <h2
               id="por-dentro"
               className="max-w-lg text-headline font-semibold text-balance"
@@ -194,73 +214,108 @@ export function Landing() {
               Distingue lo que puedes hacer de lo que está esperando
             </h2>
 
-            <div className="mt-8 grid gap-10 md:mt-10 lg:grid-cols-2 lg:gap-16">
-              <div>
-                <h3 className="text-section font-semibold">
-                  Cada tarea dice en qué punto está
-                </h3>
-                <dl className="mt-4 divide-y divide-line border-y border-line">
-                  {STATES.map(({ status, meaning }) => (
-                    <div
-                      key={status}
-                      className="grid grid-cols-[8rem_1fr] items-baseline gap-4 py-3 sm:grid-cols-[9rem_1fr]"
-                    >
-                      <dt className="flex items-center gap-2 font-medium">
-                        <StatusDot status={status} />
-                        {STATUS_LABELS[status]}
-                      </dt>
-                      <dd className="text-muted">{meaning}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-
-              <div>
-                <h3 className="text-section font-semibold">
-                  Tareas las agrupa por vencimiento
-                </h3>
-                <div className="mt-4 overflow-hidden rounded-panel border border-line bg-surface">
-                  <ul className="divide-y divide-line">
-                    {TASK_BUCKETS.map(
-                      ({ bucket, color, icon: Icon, task, detail }) => (
-                        <li
-                          key={bucket}
-                          className="flex items-center gap-3 px-3 py-3 sm:px-4"
-                        >
-                          <span
-                            className="flex size-9 shrink-0 items-center justify-center rounded-control"
-                            style={{
-                              backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`,
-                              color,
-                            }}
-                          >
-                            <Icon className="size-4.5" />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium">{bucket}</p>
-                            <p className="truncate text-meta text-muted">
-                              {task}
-                            </p>
-                          </div>
-                          <span className="tabular shrink-0 text-meta text-muted">
-                            {detail}
-                          </span>
-                        </li>
-                      ),
-                    )}
-                  </ul>
-                </div>
-              </div>
+            <div className="mt-8 grid gap-3 sm:grid-cols-2 md:mt-10 lg:grid-cols-5">
+              {STATES.map(({ status, meaning }) => (
+                <StatusTile
+                  key={status}
+                  status={status}
+                  label={STATUS_LABELS[status]}
+                  meaning={meaning}
+                  tone={STATUS_TONE[status]}
+                />
+              ))}
             </div>
 
-            <dl className="mt-12 grid gap-x-10 divide-y divide-line border-t border-line sm:grid-cols-2 sm:gap-y-8 sm:divide-y-0 sm:pt-10 md:mt-16 lg:grid-cols-3">
-              {EXTRAS.map((extra) => (
-                <div key={extra.title} className="py-4 sm:py-0">
-                  <dt className="font-semibold">{extra.title}</dt>
-                  <dd className="mt-1 text-muted">{extra.text}</dd>
+            <div className="mt-14 grid items-center gap-8 md:mt-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16">
+              <div>
+                <h3 className="max-w-md text-page font-semibold text-balance">
+                  Tus tareas, agrupadas por vencimiento
+                </h3>
+                <p className="mt-3 max-w-120 text-muted">
+                  La lista de tareas separa lo vencido, lo de hoy y lo que
+                  viene, y deja las completadas al final. Sin filtros que
+                  configurar para saber qué se te ha pasado.
+                </p>
+              </div>
+              <BucketsMock />
+            </div>
+          </div>
+        </section>
+
+        <section
+          aria-labelledby="extras"
+          className="border-t border-line bg-sunken"
+        >
+          <div className={`${container} py-14 md:py-24`}>
+            <h2
+              id="extras"
+              className="max-w-lg text-headline font-semibold text-balance"
+            >
+              Y todo lo que hace falta alrededor
+            </h2>
+
+            <div className="mt-8 grid gap-4 md:mt-10 lg:grid-cols-3">
+              <article className={`${card} lg:col-span-2`}>
+                <h3 className="text-section font-semibold">Asistente</h3>
+                <p className="mt-2 max-w-136 text-muted">
+                  Escribe <span className="font-medium text-ink">/crear</span>,{" "}
+                  <span className="font-medium text-ink">/vencen</span> o{" "}
+                  <span className="font-medium text-ink">/priorizar</span>, o
+                  pregúntale con tus palabras. Crea tareas, añade comentarios y
+                  resume lo que hiciste hoy.
+                </p>
+                <div className="mt-5 max-w-lg">
+                  <AssistantMock />
                 </div>
-              ))}
-            </dl>
+              </article>
+
+              <article className={card}>
+                <h3 className="text-section font-semibold">Comentarios</h3>
+                <p className="mt-2 text-muted">
+                  Deja notas y decisiones dentro de cada tarea, con su fecha.
+                </p>
+                <div className="mt-5">
+                  <CommentMock />
+                </div>
+              </article>
+
+              <article className={card}>
+                <h3 className="text-section font-semibold">Calendario</h3>
+                <p className="mt-2 text-muted">
+                  Elige la fecha límite en un calendario en lugar de escribirla.
+                </p>
+                <div className="mt-5">
+                  <CalendarMock />
+                </div>
+              </article>
+
+              <article className={card}>
+                <h3 className="text-section font-semibold">Fijar para hoy</h3>
+                <p className="mt-2 text-muted">
+                  ¿Algo no puede esperar aunque no sea lo más relevante? Fíjalo
+                  y aparece en Hoy.
+                </p>
+                <div className="mt-5">
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex items-center gap-2 rounded-full bg-accent-soft px-3.5 py-2 font-medium text-accent"
+                  >
+                    <PinIcon filled className="size-4" />
+                    Fijada para hoy
+                  </span>
+                </div>
+              </article>
+
+              <article className={card}>
+                <h3 className="text-section font-semibold">Claro y oscuro</h3>
+                <p className="mt-2 text-muted">
+                  Elige un tema en Ajustes o deja que siga el de tu dispositivo.
+                </p>
+                <div className="mt-5">
+                  <ThemesMock />
+                </div>
+              </article>
+            </div>
           </div>
         </section>
 
@@ -269,7 +324,7 @@ export function Landing() {
           className="bg-accent text-accent-ink"
         >
           <div
-            className={`${container} flex flex-col items-start gap-6 py-12 md:flex-row md:items-center md:justify-between md:py-20`}
+            className={`${container} flex flex-col items-start gap-6 py-14 md:flex-row md:items-center md:justify-between md:py-20`}
           >
             <div className="max-w-136">
               <h2
@@ -290,6 +345,22 @@ export function Landing() {
           </div>
         </section>
       </main>
+
+      <footer className="border-t border-line">
+        <div
+          className={`${container} flex flex-wrap items-center justify-between gap-4 py-6`}
+        >
+          <Brand />
+          <nav aria-label="Pie" className="flex items-center gap-1">
+            <ButtonLink href="/login" variant="ghost">
+              Entrar
+            </ButtonLink>
+            <ButtonLink href="/register" variant="ghost">
+              Crear cuenta
+            </ButtonLink>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }
