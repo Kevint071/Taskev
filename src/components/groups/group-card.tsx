@@ -1,27 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { type CSSProperties, type PointerEvent, useState } from "react";
 import type { GroupSummary } from "@/components/group-types";
+import { EditGroupDialog } from "@/components/groups/edit-group-dialog";
+import { useCountUp } from "@/components/groups/use-count-up";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { MoreIcon } from "@/components/ui/icons";
+import { ArrowRightIcon, CheckIcon, MoreIcon } from "@/components/ui/icons";
 import { Panel } from "@/components/ui/panel";
 import { Popover } from "@/components/ui/popover";
 import { handleUnauthenticated } from "@/lib/api-client";
 
 export function GroupCard({
   group: p,
+  enterDelay = 0,
   onUpdated,
   onError,
 }: {
   group: GroupSummary;
+  /** Milliseconds before the meter starts filling (staggers the grid). */
+  enterDelay?: number;
   onUpdated: () => void;
   onError: (message: string) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [pending, setPending] = useState(false);
   const done = p.avgProgress >= 100 && p.taskCount > 0;
+  const shown = useCountUp(p.avgProgress, enterDelay);
 
   async function updateGroup(method: "PATCH" | "DELETE") {
     setPending(true);
@@ -50,45 +57,74 @@ export function GroupCard({
     }
   }
 
+  const empty = p.taskCount === 0;
+  const toneClass = empty
+    ? "[--tone:var(--line-strong)]"
+    : done
+      ? "[--tone:var(--status-done)]"
+      : "[--tone:var(--accent)]";
+
+  // The spotlight and border highlight follow the cursor through CSS variables
+  // set on the panel, without re-rendering.
+  function followPointer(e: PointerEvent<HTMLElement>) {
+    const panel = e.currentTarget.parentElement;
+    if (!panel) return;
+    const box = panel.getBoundingClientRect();
+    panel.style.setProperty("--mx", `${e.clientX - box.left}px`);
+    panel.style.setProperty("--my", `${e.clientY - box.top}px`);
+  }
+
   return (
     <>
       <Panel
-        className={`relative h-full transition-colors hover:border-line-strong ${menuOpen ? "z-20" : ""}`}
+        className={`group/card spot-border relative h-full transition-[border-color,box-shadow] duration-300 hover:border-line-strong hover:shadow-[0_12px_32px_-16px_color-mix(in_srgb,var(--tone)_55%,transparent)] ${toneClass} ${menuOpen ? "z-20" : ""}`}
       >
         <Link
           href={`/groups/${p.id}`}
-          className="group flex h-full flex-col gap-5 p-5"
+          onPointerMove={followPointer}
+          className="group relative flex h-full flex-col gap-4 rounded-panel p-4"
         >
-          <div className="min-w-0 pr-8">
-            <p className="truncate font-medium group-hover:text-accent">
-              {p.name}
+          {/* Light that trails the cursor, tinted by the state of the group. */}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+            style={{
+              background:
+                "radial-gradient(220px circle at var(--mx, 50%) var(--my, 0%), color-mix(in srgb, var(--tone) 14%, transparent), transparent 70%)",
+            }}
+          />
+
+          <div className="relative min-w-0 pr-9">
+            <p className="flex items-center gap-1.5 font-semibold">
+              <span className="truncate">{p.name}</span>
+              <ArrowRightIcon className="size-3.5 -translate-x-1.5 text-accent opacity-0 transition-[opacity,translate] duration-300 group-hover:translate-x-0 group-hover:opacity-100" />
             </p>
-            {p.description ? (
-              <p className="mt-1 line-clamp-2 text-meta text-muted">
+            {p.description && (
+              <p className="mt-0.5 line-clamp-2 text-meta text-muted">
                 {p.description}
-              </p>
-            ) : (
-              <p className="mt-1 text-meta text-muted">
-                {p.taskCount === 0
-                  ? "Sin tareas"
-                  : `${p.openCount} ${p.openCount === 1 ? "abierta" : "abiertas"}`}
               </p>
             )}
           </div>
 
-          <div className="mt-auto flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              {p.description && (
-                <span className="tabular text-meta text-muted">
-                  {p.taskCount === 0
+          <div className="relative mt-auto flex flex-col gap-2">
+            <div className="flex items-baseline justify-between gap-3 text-meta">
+              {done ? (
+                <span className="flex items-center gap-1 font-medium text-status-done">
+                  <CheckIcon className="size-3.5" />
+                  Completado
+                </span>
+              ) : (
+                <span className="tabular text-muted">
+                  {empty
                     ? "Sin tareas"
-                    : `${p.openCount} ${p.openCount === 1 ? "abierta" : "abiertas"}`}
+                    : `${p.openCount} ${p.openCount === 1 ? "abierta" : "abiertas"} de ${p.taskCount}`}
                 </span>
               )}
               <span
-                className={`tabular ml-auto text-meta font-medium ${done ? "text-status-done" : "text-ink"}`}
+                aria-hidden="true"
+                className={`tabular font-medium ${done ? "text-status-done" : empty ? "text-muted" : "text-ink"}`}
               >
-                {p.avgProgress}%
+                {shown}%
               </span>
             </div>
             <div
@@ -97,12 +133,23 @@ export function GroupCard({
               aria-valuenow={p.avgProgress}
               aria-valuemin={0}
               aria-valuemax={100}
-              className="h-1.5 overflow-hidden rounded-full bg-sunken"
+              className="relative h-0.75 rounded-full bg-line"
             >
-              <div
-                className={`h-full rounded-full ${done ? "bg-status-done" : "bg-accent"}`}
-                style={{ width: `${p.avgProgress}%` }}
-              />
+              {!empty && (
+                <div
+                  className="animate-line-grow absolute inset-y-0 left-0 rounded-full"
+                  style={
+                    {
+                      width: `${p.avgProgress}%`,
+                      "--delay": `${enterDelay}ms`,
+                      background:
+                        "linear-gradient(90deg, color-mix(in srgb, var(--tone) 35%, transparent), var(--tone))",
+                    } as CSSProperties
+                  }
+                >
+                  <span className="absolute top-1/2 right-0 size-1.75 -translate-y-1/2 translate-x-1/2 rounded-full bg-(--tone) shadow-[0_0_10px_2px_color-mix(in_srgb,var(--tone)_70%,transparent)]" />
+                </div>
+              )}
             </div>
           </div>
         </Link>
@@ -116,7 +163,7 @@ export function GroupCard({
               aria-expanded={menuOpen}
               disabled={pending}
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex size-11 items-center justify-center rounded-control text-muted hover:bg-sunken hover:text-ink disabled:opacity-50"
+              className="flex size-11 items-center justify-center rounded-control text-muted transition-opacity hover:bg-sunken hover:text-ink focus-visible:opacity-100 disabled:opacity-50 aria-expanded:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/card:opacity-100"
             >
               <MoreIcon className="size-5" />
             </button>
@@ -126,6 +173,17 @@ export function GroupCard({
                 aria-label={`Opciones de ${p.name}`}
                 className="animate-menu-in absolute top-full right-0 z-30 w-44 rounded-control border border-line-strong bg-raised p-1 shadow-lg"
               >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setEditing(true);
+                  }}
+                  className="flex min-h-11 w-full items-center rounded-control px-3 text-left text-ui hover:bg-sunken"
+                >
+                  Editar
+                </button>
                 <button
                   type="button"
                   role="menuitem"
@@ -153,6 +211,13 @@ export function GroupCard({
           </Popover>
         </div>
       </Panel>
+      {editing && (
+        <EditGroupDialog
+          group={p}
+          onSaved={onUpdated}
+          onClose={() => setEditing(false)}
+        />
+      )}
       <ConfirmDialog
         open={confirmDelete}
         title="¿Eliminar este grupo?"
