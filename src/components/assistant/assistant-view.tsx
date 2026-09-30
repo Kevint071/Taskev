@@ -150,6 +150,11 @@ function initialModels(): Record<Provider, string> {
 /** Codes after which the fix is in Settings, so the error links there. */
 const KEY_ERRORS = new Set(["invalid_key", "no_key"]);
 
+/** Markdown symbols would be read out loud, so they are dropped. */
+function spoken(text: string) {
+  return text.replace(/[*_`#>|]+/g, "").trim();
+}
+
 function toChatItem(item: DisplayItem): ChatItem {
   return item.type === "text"
     ? { kind: "assistant", text: item.text }
@@ -218,6 +223,9 @@ export function AssistantView({
   // Escape closes the command menu until the draft changes again.
   const [menuDismissed, setMenuDismissed] = useState(false);
   const [busy, setBusy] = useState(false);
+  // What screen readers are told about a fresh reply. Only new replies are
+  // announced: opening a saved conversation must not read its whole history.
+  const [announcement, setAnnouncement] = useState("");
   const [loading, setLoading] = useState(urlId !== null);
   const [listOpen, setListOpen] = useState(false);
   const [panelCollapsed, setPanelCollapsed] = useState(false);
@@ -335,6 +343,7 @@ export function AssistantView({
     setPending(null);
     setBusy(false);
     setLoading(false);
+    setAnnouncement("");
     setProvider(
       (current) =>
         pickProvider([conversations[0]?.provider, current], providers) ??
@@ -350,6 +359,7 @@ export function AssistantView({
     setPending(null);
     setBusy(false);
     setLoading(true);
+    setAnnouncement("");
     try {
       const res = await fetch(`/api/assistant/conversations/${id}`);
       if (handleUnauthenticated(res)) return;
@@ -452,6 +462,16 @@ export function AssistantView({
       }
       upsert(reply.conversation);
       setPending(reply.pending);
+      setAnnouncement(
+        [
+          ...reply.display.map((item) => spoken(item.text)),
+          reply.pending
+            ? `Pendiente de confirmación: ${reply.pending.summary}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join(". "),
+      );
       const fresh = reply.display.map(toChatItem);
       // Only the last text of the reply is typed out; earlier ones are already there.
       const lastText = fresh.map((item) => item.kind).lastIndexOf("assistant");
@@ -703,6 +723,7 @@ export function AssistantView({
   return (
     <div className="flex min-h-0 flex-1">
       <div className="mx-auto flex w-full max-w-220 min-w-0 flex-1 flex-col">
+        <h1 className="sr-only">Asistente</h1>
         <div className="flex items-center gap-2 px-4 pt-3 md:px-10 lg:pt-4">
           <button
             type="button"
@@ -747,9 +768,11 @@ export function AssistantView({
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 md:px-10 md:pt-10">
           <section
             aria-label="Conversación"
-            aria-live="polite"
             className="flex min-h-full flex-col gap-3 pb-4"
           >
+            <div aria-live="polite" className="sr-only">
+              {announcement}
+            </div>
             {loading ? <LoadingRows rows={3} /> : null}
 
             {empty ? (
@@ -819,14 +842,14 @@ export function AssistantView({
             ) : null}
 
             {busy ? (
-              <p className="flex items-center gap-2 self-start text-muted">
+              <output className="flex items-center gap-2 self-start text-muted">
                 <span className="flex gap-1" aria-hidden="true">
                   <span className="size-1.5 animate-pulse rounded-full bg-muted" />
                   <span className="size-1.5 animate-pulse rounded-full bg-muted [animation-delay:150ms]" />
                   <span className="size-1.5 animate-pulse rounded-full bg-muted [animation-delay:300ms]" />
                 </span>
                 Pensando…
-              </p>
+              </output>
             ) : null}
             <div ref={endRef} />
           </section>
@@ -988,7 +1011,7 @@ export function AssistantView({
             >
               <HistoryIcon className="size-5" />
               {conversations.length > 0 ? (
-                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] leading-none font-semibold text-accent-ink">
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[0.6875rem] leading-none font-semibold text-accent-ink">
                   {conversations.length > 99 ? "99+" : conversations.length}
                 </span>
               ) : null}

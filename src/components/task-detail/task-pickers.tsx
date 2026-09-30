@@ -135,7 +135,7 @@ export function DuePicker({
               }`}
             >
               <small
-                className={`text-[11px] leading-[14px] ${
+                className={`text-[0.75rem] leading-[14px] ${
                   isSelected ? "opacity-75" : "text-muted"
                 }`}
               >
@@ -267,7 +267,7 @@ export function PriorityStepper({
             e.currentTarget.blur();
           }
         }}
-        className="tabular h-9 w-16 min-w-0 bg-transparent text-center text-[22px] font-medium tracking-[-0.02em] focus-visible:shadow-none focus-visible:outline-none"
+        className="tabular h-9 w-16 min-w-0 bg-transparent rounded-control text-center text-[22px] font-medium tracking-[-0.02em]"
       />
       <button
         type="button"

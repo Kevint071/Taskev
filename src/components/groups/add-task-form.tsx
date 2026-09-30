@@ -19,7 +19,7 @@ export function NewTaskButton({ href }: { href: string }) {
     >
       <PlusIcon className="size-4 transition-transform duration-200 group-hover:rotate-90" />
       Nueva tarea
-      <kbd className="ml-0.5 flex size-5 items-center justify-center rounded-[5px] bg-accent-ink/20 font-sans text-[11px] font-semibold">
+      <kbd className="ml-0.5 flex size-5 items-center justify-center rounded-[5px] bg-accent-ink/20 font-sans text-[0.75rem] font-semibold">
         {NEW_TASK_SHORTCUT.toUpperCase()}
       </kbd>
     </Link>

@@ -173,7 +173,7 @@ export function TodayActivity({
             {hours.map((hour, i) => (
               <li
                 key={hour.hour}
-                className={`min-w-0 flex-1 whitespace-nowrap text-center text-[11px] leading-none ${
+                className={`min-w-0 flex-1 whitespace-nowrap text-center text-[0.75rem] leading-none ${
                   i === hours.length - 1
                     ? "font-semibold text-ink"
                     : "text-muted"

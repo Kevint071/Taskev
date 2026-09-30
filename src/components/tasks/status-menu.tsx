@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { STATUS_LABELS, type Task } from "@/components/group-types";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CheckIcon, LockIcon, RefreshIcon } from "@/components/ui/icons";
+import { Menu } from "@/components/ui/menu";
 import { Popover } from "@/components/ui/popover";
 import { STATUS_DOT } from "@/components/ui/status-badge";
 import { formatDueDate } from "@/lib/format";
@@ -58,7 +59,7 @@ export function StatusMenu({
   const [confirmReset, setConfirmReset] = useState(false);
   const [placement, setPlacement] = useState<MenuPlacement>("bottom");
   const anchorRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLFieldSetElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Measured before paint so a menu near the phone tab bar opens upward
   // instead of covering it.
@@ -131,8 +132,10 @@ export function StatusMenu({
         <div ref={anchorRef} className="relative z-10">
           {trigger({ open, toggle: () => setMenuOpen(!open) })}
           {open && (
-            <fieldset
+            <Menu
               ref={menuRef}
+              aria-label="Cambiar estado"
+              onClose={() => setMenuOpen(false)}
               className={`animate-menu-in pointer-events-auto absolute left-0 z-50 m-0 flex min-w-44 flex-col gap-0.5 rounded-control border border-line-strong bg-raised p-1 shadow-lg ${
                 placement === "top" ? "bottom-full mb-1.5" : "top-full mt-1.5"
               }`}
@@ -142,7 +145,6 @@ export function StatusMenu({
                   placement === "top" ? "bottom left" : undefined,
               }}
             >
-              <legend className="sr-only">Cambiar estado</legend>
               {STATUS_ORDER.map((s) => {
                 const current = status === s;
                 const locked = s === "completada" && completeLocked && !current;
@@ -150,7 +152,8 @@ export function StatusMenu({
                   <button
                     key={s}
                     type="button"
-                    aria-pressed={current}
+                    role="menuitemradio"
+                    aria-checked={current}
                     aria-disabled={locked || undefined}
                     title={
                       locked
@@ -162,7 +165,7 @@ export function StatusMenu({
                       current
                         ? "bg-sunken font-semibold text-ink"
                         : locked
-                          ? "cursor-not-allowed text-muted/70"
+                          ? "cursor-not-allowed text-muted"
                           : "text-ink hover:bg-sunken"
                     }`}
                   >
@@ -171,12 +174,17 @@ export function StatusMenu({
                       className={`size-2.5 shrink-0 rounded-full ${STATUS_DOT[s]} ${locked ? "opacity-40" : ""}`}
                     />
                     <span className="min-w-0 flex-1">{STATUS_LABELS[s]}</span>
+                    {locked && (
+                      <span className="sr-only">
+                        (falta {100 - progressPct} % de avance)
+                      </span>
+                    )}
                     {current && <CheckIcon className="size-4 text-accent" />}
                     {locked && <LockIcon className="size-3.5 text-muted" />}
                   </button>
                 );
               })}
-            </fieldset>
+            </Menu>
           )}
         </div>
       </Popover>

@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { Button } from "./button";
 import { TriangleAlertIcon } from "./icons";
 import { Input } from "./input";
@@ -65,6 +65,8 @@ export function ConfirmDialog({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [typed, setTyped] = useState("");
+  const titleId = useId();
+  const descriptionId = useId();
 
   useEffect(() => {
     const dialog = ref.current;
@@ -86,6 +88,8 @@ export function ConfirmDialog({
   return (
     <dialog
       ref={ref}
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
       onClose={onClose}
       onCancel={onClose}
       data-motion-ok={alwaysAnimate ? "" : undefined}
@@ -111,12 +115,16 @@ export function ConfirmDialog({
               >
                 {icon ?? <TriangleAlertIcon className="size-4" />}
               </span>
-              <h2 className="min-w-0 text-[15px] leading-5 font-semibold">
+              <h2
+                id={titleId}
+                className="min-w-0 text-[15px] leading-5 font-semibold"
+              >
                 {title}
               </h2>
             </div>
             {body && <div className="mt-3">{body}</div>}
             <div
+              id={descriptionId}
               className={`text-meta text-muted ${body ? "mt-1.5" : "mt-2.5"}`}
             >
               {description}
@@ -130,8 +138,12 @@ export function ConfirmDialog({
               {icon ?? <TriangleAlertIcon className="size-5" />}
             </span>
             <div className="min-w-0 flex-1 pt-1">
-              <h2 className="text-section font-semibold">{title}</h2>
-              <div className="mt-1 text-muted">{description}</div>
+              <h2 id={titleId} className="text-section font-semibold">
+                {title}
+              </h2>
+              <div id={descriptionId} className="mt-1 text-muted">
+                {description}
+              </div>
               {body && <div className="mt-3">{body}</div>}
             </div>
           </div>

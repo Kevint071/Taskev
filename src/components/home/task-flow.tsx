@@ -319,7 +319,7 @@ export function TaskFlow() {
                 <Badge kind={view.kind} slot={view.slot} status={chip.status} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-ui font-semibold">{chip.title}</p>
-                  <p className="truncate text-[12px] leading-4 text-muted">
+                  <p className="truncate text-[0.75rem] leading-4 text-muted">
                     {chip.group}
                   </p>
                 </div>
@@ -388,7 +388,7 @@ function Badge({
 
   return (
     <span
-      className={`tabular flex size-7 shrink-0 items-center justify-center rounded-full text-[12px] font-bold transition-colors duration-500 ${tone}`}
+      className={`tabular flex size-7 shrink-0 items-center justify-center rounded-full text-[0.75rem] font-bold transition-colors duration-500 ${tone}`}
     >
       {kind === "lead" || kind === "next" ? (
         slot + 1
@@ -411,7 +411,7 @@ function Ring({ pct, done }: { pct: number; done: boolean }) {
         background: `conic-gradient(${tone} ${pct}%, var(--line-strong) 0)`,
       }}
     >
-      <span className="tabular flex size-7 items-center justify-center rounded-full bg-raised text-[11px] font-bold">
+      <span className="tabular flex size-7 items-center justify-center rounded-full bg-raised text-[0.75rem] font-bold">
         {pct}
       </span>
     </span>

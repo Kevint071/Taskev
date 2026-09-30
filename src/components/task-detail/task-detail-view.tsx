@@ -548,6 +548,7 @@ export function TaskDetailView({
 
       <div className="flex flex-col gap-6 pt-4 pb-10">
         <header className="flex flex-col gap-4">
+          <h1 className="sr-only">{task.title}</h1>
           <FlashWrap tick={flash.title}>
             <label className="block">
               <span className="sr-only">Título de la tarea</span>
@@ -569,7 +570,7 @@ export function TaskDetailView({
                 }}
                 rows={1}
                 maxLength={MAX_TASK_TITLE_LENGTH}
-                className={`-mx-1 block w-full resize-none overflow-hidden rounded-[4px] bg-transparent px-1 text-[23px] leading-[29px] font-semibold tracking-[-0.02em] text-pretty caret-accent outline-none sm:text-page ${
+                className={`-mx-1 block w-full resize-none overflow-hidden rounded-[4px] bg-transparent px-1 text-[23px] leading-[29px] font-semibold tracking-[-0.02em] text-pretty caret-accent sm:text-page ${
                   done ? "text-muted line-through decoration-1" : "text-ink"
                 }`}
               />
@@ -747,7 +748,7 @@ export function TaskDetailView({
                   }
                 }}
                 rows={3}
-                className={`description-scrollbar block min-h-24 w-full resize-none overflow-y-auto rounded-xl border border-line bg-sunken/55 px-4 py-3 text-[15px] leading-7 text-ink caret-accent transition-[background-color,border-color,box-shadow] placeholder:text-muted/80 hover:border-line-strong focus:border-accent focus:bg-raised focus-visible:ring-2 focus-visible:ring-accent/15 ${descriptionExpanded ? "max-h-[440px]" : "max-h-[160px]"}`}
+                className={`description-scrollbar block min-h-24 w-full resize-none overflow-y-auto rounded-xl border border-control bg-sunken/55 px-4 py-3 text-[15px] leading-7 text-ink caret-accent transition-[background-color,border-color,box-shadow] placeholder:text-muted hover:border-ink/40 focus:border-accent focus:bg-raised focus-visible:ring-2 focus-visible:ring-accent/15 ${descriptionExpanded ? "max-h-[440px]" : "max-h-[160px]"}`}
               />
             </label>
           </FlashWrap>

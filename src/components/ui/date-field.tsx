@@ -47,17 +47,24 @@ export function DateField({
     <Popover open={open} onClose={() => setOpen(false)} className={className}>
       <button
         type="button"
+        aria-haspopup="dialog"
+        aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         className={`${controlClass} tabular flex h-9 w-full items-center gap-2 px-3 text-left ${
-          selected ? "" : "text-muted/80"
+          selected ? "" : "text-muted"
         }`}
       >
         <CalendarIcon />
         {selected ? formatDisplay(selected) : placeholder}
       </button>
       {open && (
-        <div className="absolute z-20 mt-1">
+        <div
+          role="dialog"
+          aria-label="Elegir fecha"
+          className="absolute z-20 mt-1"
+        >
           <CalendarPanel
+            focusOnMount
             selected={selected}
             shortcuts={shortcuts}
             onSelect={(date) => {

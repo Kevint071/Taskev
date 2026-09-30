@@ -125,7 +125,7 @@ export function TodayMetrics({
                       <>
                         <span
                           aria-hidden="true"
-                          className={`animate-rise tabular text-[11px] leading-none ${isToday || selected === i ? "font-semibold text-accent" : "text-muted"}`}
+                          className={`animate-rise tabular text-[0.75rem] leading-none ${isToday || selected === i ? "font-semibold text-accent" : "text-muted"}`}
                           style={
                             { "--delay": `${i * 55 + 250}ms` } as CSSProperties
                           }
@@ -157,7 +157,7 @@ export function TodayMetrics({
             {week.map((day, i) => (
               <li
                 key={day.dayKey}
-                className={`min-w-0 flex-1 text-center text-[11px] leading-none ${i === lastIndex ? "font-semibold text-ink" : "text-muted"}`}
+                className={`min-w-0 flex-1 text-center text-[0.75rem] leading-none ${i === lastIndex ? "font-semibold text-ink" : "text-muted"}`}
               >
                 {weekdayLetter.format(day.dayKey)}
               </li>

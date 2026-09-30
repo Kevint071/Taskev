@@ -2,7 +2,10 @@
 
 import { type ReactNode, useEffect, useRef } from "react";
 
-/** Wraps a trigger and its floating panel; closes on outside click or Escape. */
+/**
+ * Wraps a trigger and its floating panel; closes on outside click or Escape.
+ * Escape returns focus to the trigger, found by its `aria-expanded="true"`.
+ */
 export function Popover({
   open,
   onClose,
@@ -22,7 +25,12 @@ export function Popover({
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
     }
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      // Focus goes back to whatever opened the panel before it unmounts.
+      ref.current
+        ?.querySelector<HTMLElement>('[aria-expanded="true"]')
+        ?.focus();
+      onClose();
     }
     document.addEventListener("mousedown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);

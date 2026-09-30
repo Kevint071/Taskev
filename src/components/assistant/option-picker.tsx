@@ -143,7 +143,7 @@ export function OptionPicker({
                 role="option"
                 aria-selected={current}
                 onClick={() => pick(o.id)}
-                className={`flex min-h-10 w-full items-center gap-2 rounded-control px-2.5 text-left text-meta whitespace-nowrap transition-colors outline-none focus-visible:bg-sunken lg:min-h-9 ${
+                className={`flex min-h-10 w-full items-center gap-2 rounded-control px-2.5 text-left text-meta whitespace-nowrap transition-colors focus-visible:bg-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent lg:min-h-9 ${
                   current
                     ? "bg-sunken font-semibold text-ink"
                     : "text-ink hover:bg-sunken"

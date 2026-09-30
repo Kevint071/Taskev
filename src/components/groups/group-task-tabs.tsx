@@ -179,7 +179,7 @@ export function TaskViewTabs<V extends string>({
               </span>
               <span className="truncate">{view.label}</span>
               <span
-                className={`tabular hidden h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold transition-colors md:inline-flex ${
+                className={`tabular hidden h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[0.75rem] font-semibold transition-colors md:inline-flex ${
                   selected ? "" : "bg-sunken text-muted group-hover:bg-line"
                 }`}
                 style={

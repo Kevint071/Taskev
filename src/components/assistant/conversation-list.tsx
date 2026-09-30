@@ -2,6 +2,7 @@
 
 import { type KeyboardEvent, useState } from "react";
 import { HistoryIcon, MoreIcon } from "@/components/ui/icons";
+import { Menu } from "@/components/ui/menu";
 import { Popover } from "@/components/ui/popover";
 import {
   groupByRecency,
@@ -163,7 +164,7 @@ function ConversationRow({
           aria-describedby={
             error ? `rename-error-${conversation.id}` : undefined
           }
-          className="h-9 w-full rounded-control border border-line-strong bg-raised px-2.5 text-ui text-ink outline-none focus:border-accent"
+          className="h-9 w-full rounded-control border border-control bg-raised px-2.5 text-ui text-ink focus-visible:border-accent"
         />
         {error ? (
           <p
@@ -233,8 +234,8 @@ function ConversationRow({
           <MoreIcon className="size-5" />
         </button>
         {menuOpen && (
-          <div
-            role="menu"
+          <Menu
+            onClose={() => setMenuOpen(false)}
             aria-label={`Opciones de ${conversation.title}`}
             className="animate-menu-in absolute top-full right-0 z-30 mt-1 w-40 rounded-xl border border-line bg-raised p-1 shadow-lg"
           >
@@ -257,7 +258,7 @@ function ConversationRow({
             >
               Eliminar
             </button>
-          </div>
+          </Menu>
         )}
       </Popover>
     </li>

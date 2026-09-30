@@ -111,7 +111,7 @@ export function TaskRow({
               aria-haspopup="true"
               aria-expanded={open}
               onClick={toggle}
-              className="inline-flex items-center gap-1 whitespace-nowrap rounded-sm text-meta font-medium text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              className="inline-flex min-h-6 items-center gap-1 whitespace-nowrap rounded-sm text-meta font-medium text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               {STATUS_LABELS[task.status]}
               <svg
@@ -135,6 +135,7 @@ export function TaskRow({
               Fecha de finalización
             </p>
             <CalendarPanel
+              focusOnMount
               selected={todayUtcMidnight()}
               shortcuts={[
                 { key: "today", label: "Hoy", date: todayUtcMidnight() },
@@ -215,6 +216,8 @@ export function TaskRow({
               className={`${CHIP} ${inlineGroupStatus ? "h-5 lg:h-6" : ""} ${task.dueDate ? "-ml-2" : ""} shrink-0 text-muted`}
             >
               <FlagIcon className="size-3.5" />
+              {/* The tooltip is only for the mouse; assistive tech reads this. */}
+              <span className="sr-only">Prioridad</span>
               {formatPriority(priority)}
             </span>
           ) : null}

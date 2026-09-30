@@ -8,6 +8,7 @@ import { Brand } from "@/components/brand";
 import { SETTINGS_ICONS } from "@/components/settings-icons";
 import { Avatar } from "@/components/ui/avatar";
 import { LogOutIcon } from "@/components/ui/icons";
+import { Menu } from "@/components/ui/menu";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { SETTINGS_TABS, settingsHref } from "@/lib/settings-tabs";
 
@@ -103,6 +104,13 @@ export function AppShell({
         focusScreen || chatScreen ? "fixed inset-0" : "min-h-dvh flex-1"
       }`}
     >
+      <a
+        href="#contenido"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-70 focus:rounded-control focus:bg-raised focus:px-3 focus:py-2 focus:font-medium focus:text-ink focus:shadow-lg"
+      >
+        Saltar al contenido
+      </a>
+
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-58 shrink-0 flex-col border-r border-line bg-raised px-3 py-4 md:flex">
         <Link href="/" className="mb-6 w-fit rounded-control px-2 py-1">
@@ -132,7 +140,9 @@ export function AppShell({
         </header>
 
         <main
-          className={`flex min-w-0 w-full flex-1 flex-col gap-8 ${
+          id="contenido"
+          tabIndex={-1}
+          className={`flex min-w-0 w-full flex-1 flex-col gap-8 focus:outline-none ${
             focusScreen
               ? "min-h-0 overflow-y-auto overscroll-contain px-0 pt-0 pb-0"
               : chatScreen
@@ -171,7 +181,7 @@ export function AppShell({
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium ${
+              className={`flex h-16 flex-col items-center justify-center gap-1 text-[0.75rem] font-medium ${
                 active ? "text-ink" : "text-muted"
               }`}
             >
@@ -308,8 +318,8 @@ function UserMenu({ user }: { user: { email: string; name: string | null } }) {
         <Avatar identity={identity} />
       </button>
       {open ? (
-        <div
-          role="menu"
+        <Menu
+          onClose={() => setOpen(false)}
           aria-label="Menú de usuario"
           className="animate-reveal absolute right-0 top-11 z-30 w-56 rounded-panel border border-line bg-raised p-2 shadow-lg"
         >
@@ -347,7 +357,7 @@ function UserMenu({ user }: { user: { email: string; name: string | null } }) {
             <LogOutIcon className="size-4.5" />
             Cerrar sesión
           </button>
-        </div>
+        </Menu>
       ) : null}
     </div>
   );

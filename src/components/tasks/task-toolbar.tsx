@@ -118,7 +118,7 @@ function FilterSection({
   return (
     <div className={divided ? "border-t border-line pt-3" : undefined}>
       <fieldset className="m-0 flex min-w-0 flex-col gap-px border-0 p-0">
-        <legend className="mb-1 px-2.5 text-[11px] leading-4 font-semibold tracking-wider text-muted uppercase">
+        <legend className="mb-1 px-2.5 text-[0.75rem] leading-4 font-semibold tracking-wider text-muted uppercase">
           {label}
         </legend>
         {children}

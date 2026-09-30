@@ -10,9 +10,11 @@ export function GroupFilterTabs({
   showArchived: boolean;
   onChange: (showArchived: boolean) => void;
 }) {
+  // Two toggle buttons, not tabs: nothing here is a tab panel.
   return (
+    // biome-ignore lint/a11y/useSemanticElements: a <fieldset> would draw a frame around the row
     <div
-      role="tablist"
+      role="group"
       aria-label="Filtrar grupos"
       className="flex gap-4 border-b border-line"
     >
@@ -22,8 +24,7 @@ export function GroupFilterTabs({
           <button
             key={tab.label}
             type="button"
-            role="tab"
-            aria-selected={active}
+            aria-pressed={active}
             onClick={() => onChange(tab.value)}
             className={`-mb-px border-b-2 pb-2 font-medium transition-colors ${
               active

@@ -185,16 +185,18 @@ export function ProgressRing({
   return (
     <span
       role="progressbar"
+      aria-label="Avance"
       aria-valuenow={pct}
       aria-valuemin={0}
       aria-valuemax={100}
-      className={`flex shrink-0 items-center justify-center rounded-full ${md ? "size-8" : "size-6"}`}
+      aria-valuetext={`${pct} %`}
+      className={`flex shrink-0 items-center justify-center rounded-full ${md ? "size-9" : "size-7"}`}
       style={{
         background: `conic-gradient(${color} ${pct}%, var(--line-strong) 0)`,
       }}
     >
       <span
-        className={`tabular flex items-center justify-center rounded-full bg-raised font-bold text-ink ${md ? "size-6 text-[9px]" : "size-[18px] text-[8px]"}`}
+        className={`tabular flex items-center justify-center rounded-full bg-raised font-bold text-ink ${md ? "size-7 text-[0.6875rem]" : "size-[22px] text-[0.625rem]"}`}
       >
         {pct}
       </span>

@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NewTaskView } from "@/components/task-detail/new-task-view";
 import { getCurrentUser } from "@/lib/auth-guard";
 import { getGroupById } from "@/lib/data/access";
+
+export const metadata: Metadata = { title: "Nueva tarea | Taskev" };
 
 export default async function NewTaskPage({
   params,

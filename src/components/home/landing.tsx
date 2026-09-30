@@ -100,7 +100,7 @@ function TopThree() {
       {[1, 2, 3].map((n) => (
         <span
           key={n}
-          className="tabular inline-flex size-5.5 items-center justify-center rounded-full bg-accent-soft text-[12px] font-bold text-accent"
+          className="tabular inline-flex size-5.5 items-center justify-center rounded-full bg-accent-soft text-[0.75rem] font-bold text-accent"
         >
           {n}
         </span>
