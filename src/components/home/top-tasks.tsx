@@ -158,7 +158,7 @@ function TaskLink({
         }
       />
       <span className="sr-only">Estado: {STATUS_LABELS[task.status]}. </span>
-      <p className="min-w-0 wrap-break-word text-body font-medium md:flex-1">
+      <p className="line-clamp-2 min-w-0 wrap-break-word text-body font-medium md:flex-1">
         {task.title}
       </p>
       <div className="flex min-w-0 items-center gap-3 md:max-w-[45%] md:shrink-0">
