@@ -179,7 +179,7 @@ function TaskCard({
           <span className="relative">{rank}</span>
         </span>
 
-        <p className="col-start-2 row-start-1 line-clamp-2 min-w-0 wrap-break-word text-[0.9375rem] font-semibold leading-6">
+        <p className="col-start-2 row-start-1 min-w-0 truncate text-[0.9375rem] font-semibold leading-6">
           {task.title}
         </p>
 
