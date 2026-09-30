@@ -12,8 +12,9 @@ const STAGGERED = 8;
 
 /**
  * Today's changes as a timeline, newest first: the time on the left, a dot on
- * the rail colored by what happened, and a card with the task, its group and
- * the change. Each card opens the task, which comes back here.
+ * the rail colored by what happened, and a card with the task and the change.
+ * Consecutive changes in the same group sit under one group label on the rail.
+ * Each card opens the task, which comes back here.
  */
 export function ActivityTimeline({
   events,
@@ -24,29 +25,47 @@ export function ActivityTimeline({
 }) {
   return (
     <ol className="flex min-w-0 flex-col">
-      {events.map((event, i) => (
-        <li
-          key={event.id}
-          className="group/item animate-rise flex min-w-0 gap-3 md:gap-5"
-          style={
-            { "--delay": `${Math.min(i, STAGGERED) * 55}ms` } as CSSProperties
-          }
-        >
-          <LocalTime
-            date={event.createdAt.toISOString()}
-            timeZone={timeZone}
-            className="tabular w-11 shrink-0 pt-4 text-right text-meta text-muted"
-          />
-          <div className="relative min-w-0 flex-1 border-l border-line-strong pb-4 pl-5 group-last/item:border-transparent md:pl-6">
-            <span
-              aria-hidden="true"
-              className="absolute top-5.5 -left-1.25 size-2.5 rounded-full ring-4 ring-surface"
-              style={{ backgroundColor: eventTone(event) }}
+      {events.flatMap((event, i) => {
+        const delay = {
+          "--delay": `${Math.min(i, STAGGERED) * 55}ms`,
+        } as CSSProperties;
+        const item = (
+          <li
+            key={event.id}
+            className="group/item animate-rise flex min-w-0 gap-3 md:gap-5"
+            style={delay}
+          >
+            <LocalTime
+              date={event.createdAt.toISOString()}
+              timeZone={timeZone}
+              className="tabular w-11 shrink-0 pt-4 text-right text-meta text-muted"
             />
-            <EventCard event={event} />
-          </div>
-        </li>
-      ))}
+            <div className="relative min-w-0 flex-1 border-l border-line-strong pb-4 pl-5 group-last/item:border-transparent md:pl-6">
+              <span
+                aria-hidden="true"
+                className="absolute top-5 -left-1.25 size-2.5 rounded-full ring-4 ring-surface"
+                style={{ backgroundColor: eventTone(event) }}
+              />
+              <EventCard event={event} />
+            </div>
+          </li>
+        );
+        // Consecutive changes in the same group share one label on the rail.
+        if (i > 0 && events[i - 1].groupId === event.groupId) return [item];
+        return [
+          <li
+            key={`group-${event.id}`}
+            className="animate-rise flex min-w-0 gap-3 md:gap-5"
+            style={delay}
+          >
+            <span aria-hidden="true" className="w-11 shrink-0" />
+            <p className="min-w-0 flex-1 truncate border-l border-line-strong pt-1 pb-2 pl-5 text-meta font-semibold text-muted md:pl-6">
+              {event.groupName}
+            </p>
+          </li>,
+          item,
+        ];
+      })}
     </ol>
   );
 }
@@ -55,23 +74,19 @@ function EventCard({ event }: { event: ActivityEvent }) {
   return (
     <Link
       href={taskHref(event.groupId, event.taskId, "actividad")}
-      className="group flex min-w-0 flex-col gap-2 rounded-2xl border border-line bg-raised p-4 shadow-panel transition-[translate,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/50"
+      className="group flex min-w-0 flex-col gap-1.5 rounded-2xl border border-line bg-raised px-4 py-3 transition-[translate,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/50"
     >
-      <div className="min-w-0">
-        <p className="line-clamp-2 wrap-break-word text-body font-semibold leading-snug">
-          {event.taskTitle}
+      <p className="line-clamp-2 wrap-break-word text-body font-semibold leading-snug">
+        {event.taskTitle}
+      </p>
+      {event.type === "comment_added" && event.body ? (
+        <p className="line-clamp-3 wrap-break-word text-meta text-muted">
+          <span className="font-medium text-ink">Nueva nota:</span> {event.body}
         </p>
-        <p className="mt-0.5 truncate text-meta text-muted">
-          {event.groupName}
-        </p>
-      </div>
-      <div className="text-meta text-muted">
-        <EventSummary event={event} />
-      </div>
-      {event.type === "comment_added" && event.body && (
-        <p className="line-clamp-3 wrap-break-word border-l-2 border-line-strong pl-3 text-ui text-ink">
-          {event.body}
-        </p>
+      ) : (
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-meta text-muted">
+          <EventSummary event={event} />
+        </div>
       )}
     </Link>
   );
@@ -96,40 +111,22 @@ function EventSummary({ event }: { event: ActivityEvent }) {
         return <span className="font-medium text-ink">Estado actualizado</span>;
       }
       return (
-        <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
+        <span className="inline-flex items-center gap-1.5">
           {event.fromStatus && (
             <>
-              <StatusPill status={event.fromStatus} muted />
+              <span>{STATUS_LABELS[event.fromStatus]}</span>
               <ArrowRightIcon />
             </>
           )}
-          <StatusPill status={event.toStatus} />
+          <span className="inline-flex items-center gap-1.5 font-medium text-ink">
+            <span
+              aria-hidden="true"
+              className="size-1.5 rounded-full"
+              style={{ backgroundColor: STATUS_TONE[event.toStatus] }}
+            />
+            {STATUS_LABELS[event.toStatus]}
+          </span>
         </span>
       );
   }
-}
-
-/** The state a task moved to is solid; the one it left is the same, dimmed. */
-function StatusPill({
-  status,
-  muted = false,
-}: {
-  status: keyof typeof STATUS_TONE;
-  muted?: boolean;
-}) {
-  const tone = STATUS_TONE[status];
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[12px] font-medium ${muted ? "text-muted" : "text-ink"}`}
-      style={{
-        backgroundColor: `color-mix(in srgb, ${tone} ${muted ? 8 : 16}%, transparent)`,
-      }}
-    >
-      <span
-        className="size-1.5 rounded-full"
-        style={{ backgroundColor: tone }}
-      />
-      {STATUS_LABELS[status]}
-    </span>
-  );
 }
