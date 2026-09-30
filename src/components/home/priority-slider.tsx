@@ -136,11 +136,19 @@ export function PrioritySlider({
             // biome-ignore lint/suspicious/noArrayIndexKey: the reel's order is the priority order and never reshuffles in place
             key={i}
             aria-current={i === active ? "true" : undefined}
-            className={`group/slide flex w-full min-w-0 shrink-0 snap-start snap-always transition-[scale,opacity] duration-500 ${EASE} lg:block lg:w-auto lg:shrink ${
-              i === active ? "" : "max-lg:scale-[0.92] max-lg:opacity-40"
-            }`}
+            className="group/slide flex w-full min-w-0 shrink-0 snap-start snap-always lg:block lg:w-auto lg:shrink"
           >
-            {slide}
+            {/* The scale lives on this wrapper, not the snap item: browsers build the
+                snap area from the transformed box, so scaling the <li> shifts its snap
+                point by 4% of its width while it activates and the reel overshoots
+                and snaps back (only mid-reel cards, the ends are clamped). */}
+            <div
+              className={`flex min-w-0 flex-1 transition-[scale,opacity] duration-500 ${EASE} lg:block ${
+                i === active ? "" : "max-lg:scale-[0.92] max-lg:opacity-40"
+              }`}
+            >
+              {slide}
+            </div>
           </li>
         ))}
       </ol>
