@@ -28,40 +28,60 @@ export const CHIPS: {
 ];
 
 /**
- * The day at a glance: the total on top, then one chip per kind of change that
- * happened (kinds with nothing to count are left out).
+ * The day at a glance: the total as one plain sentence, the makeup of the day
+ * as a proportional bar and a legend with a count per kind of change (kinds
+ * with nothing to count are left out).
  */
 export function ActivitySummary({ summary }: { summary: Summary }) {
   const chips = CHIPS.filter((chip) => summary[chip.key] > 0);
 
   return (
-    <div className="flex flex-col gap-5 rounded-2xl border border-line bg-raised p-5 shadow-panel md:p-6">
-      <div>
-        <p className="tabular text-[40px] font-semibold leading-none tracking-tight">
-          {summary.changes}
-        </p>
-        <p className="mt-2 text-meta text-muted">
-          {summary.changes === 1 ? "cambio" : "cambios"} en {summary.tasks}{" "}
-          {summary.tasks === 1 ? "tarea" : "tareas"} hoy
-        </p>
-      </div>
+    <section className="flex flex-col gap-4 rounded-2xl border border-line bg-raised p-5 shadow-panel md:p-6">
+      <p className="tabular text-ui text-muted">
+        <span className="font-semibold text-ink">{summary.changes}</span>{" "}
+        {summary.changes === 1 ? "cambio" : "cambios"} en {summary.tasks}{" "}
+        {summary.tasks === 1 ? "tarea" : "tareas"} hoy
+      </p>
       {chips.length > 0 && (
-        <ul className="flex flex-wrap gap-2">
-          {chips.map((chip) => (
-            <li
-              key={chip.key}
-              className="tabular inline-flex items-center gap-2 rounded-full bg-sunken px-3 py-1.5 text-meta font-medium"
-            >
-              <span
-                aria-hidden="true"
-                className="size-2 rounded-full"
-                style={{ backgroundColor: chip.color }}
-              />
-              {summary[chip.key]} {chip.label(summary[chip.key])}
-            </li>
-          ))}
-        </ul>
+        <>
+          <div
+            aria-hidden="true"
+            className="h-2 overflow-hidden rounded-full bg-sunken"
+          >
+            {/* The negative margin clips the last segment's trailing gap. */}
+            <div className="-mr-0.5 flex h-full">
+              {chips.map((chip) => (
+                <span
+                  key={chip.key}
+                  className="mr-0.5 block h-full basis-0 min-w-1"
+                  style={{
+                    flexGrow: summary[chip.key],
+                    backgroundColor: chip.color,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+          <ul className="flex flex-wrap gap-x-5 gap-y-2">
+            {chips.map((chip) => (
+              <li
+                key={chip.key}
+                className="tabular inline-flex items-center gap-2 text-meta"
+              >
+                <span
+                  aria-hidden="true"
+                  className="size-2 rounded-full"
+                  style={{ backgroundColor: chip.color }}
+                />
+                <span className="font-semibold">{summary[chip.key]}</span>
+                <span className="text-muted">
+                  {chip.label(summary[chip.key])}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
-    </div>
+    </section>
   );
 }
