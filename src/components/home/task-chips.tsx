@@ -64,13 +64,16 @@ export function PriorityChip({
 export function DueChip({
   dueDate,
   serverNow,
+  plain = false,
 }: {
   dueDate: Date | null;
   serverNow: string;
+  /** No background or side padding: just the calendar and label, flush with its neighbors. */
+  plain?: boolean;
 }) {
   if (!dueDate) return null;
   return (
-    <span className={`${CHIP} bg-sunken`}>
+    <span className={`${CHIP} ${plain ? "px-0" : "bg-sunken"}`}>
       <CalendarIcon className="size-3.5 text-muted" />
       <DueLabel dueDate={dueDate.toISOString()} serverNow={serverNow} />
     </span>

@@ -187,9 +187,9 @@ function TaskCard({
           <p className="max-w-44 truncate pr-1 text-meta text-muted">
             {task.groupName}
           </p>
-          <StatusChip status={task.status} />
-          <PriorityChip priority={task.priority} />
-          <DueChip dueDate={task.dueDate} serverNow={serverNow} />
+          <StatusChip status={task.status} plain />
+          <PriorityChip priority={task.priority} plain />
+          <DueChip dueDate={task.dueDate} serverNow={serverNow} plain />
         </div>
 
         <div className="col-start-3 row-span-2 row-start-1 flex items-center gap-3">
