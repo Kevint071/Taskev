@@ -164,7 +164,7 @@ function ConversationRow({
           aria-describedby={
             error ? `rename-error-${conversation.id}` : undefined
           }
-          className="h-9 w-full rounded-control border border-control bg-raised px-2.5 text-ui text-ink focus-visible:border-accent"
+          className="h-9 w-full rounded-control border border-control bg-raised px-2.5 text-ui text-ink outline-none focus-visible:border-accent"
         />
         {error ? (
           <p

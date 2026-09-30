@@ -187,7 +187,7 @@ export function NewTaskView({
   return (
     <div
       style={{ "--tone": STATUS_TONE[draft.status] } as CSSProperties}
-      className="mx-auto flex w-full max-w-[640px] flex-1 flex-col 2xl:max-w-[800px]"
+      className="mx-auto flex w-full max-w-160 flex-1 flex-col 2xl:max-w-200"
     >
       <div className="-mx-2 flex h-11 items-center justify-between">
         <Link
@@ -217,7 +217,7 @@ export function NewTaskView({
               : "text-muted hover:bg-sunken hover:text-ink"
           }`}
         >
-          <PinIcon filled={draft.pinnedToday} className="size-[18px]" />
+          <PinIcon filled={draft.pinnedToday} className="size-4.5" />
         </button>
       </div>
 
@@ -262,7 +262,7 @@ export function NewTaskView({
                 }}
                 rows={1}
                 maxLength={MAX_TASK_TITLE_LENGTH}
-                className="-mx-1 block w-full resize-none overflow-hidden rounded-[4px] bg-transparent px-1 text-[23px] leading-[29px] font-semibold tracking-[-0.02em] text-pretty text-ink caret-accent placeholder:text-muted sm:text-page"
+                className="-mx-1 block w-full resize-none overflow-hidden rounded-sm bg-transparent px-1 text-[23px] leading-7.25 font-semibold tracking-[-0.02em] text-pretty text-ink caret-accent outline-none placeholder:text-muted sm:text-page"
               />
             </label>
 
@@ -376,7 +376,7 @@ export function NewTaskView({
                   autosize(e.target);
                 }}
                 rows={3}
-                className="description-scrollbar block max-h-[440px] min-h-24 w-full resize-none overflow-y-auto rounded-xl border border-control bg-sunken/55 px-4 py-3 text-[15px] leading-7 text-ink caret-accent transition-[background-color,border-color,box-shadow] placeholder:text-muted hover:border-ink/40 focus:border-accent focus:bg-raised focus-visible:ring-2 focus-visible:ring-accent/15"
+                className="description-scrollbar block max-h-110 min-h-24 w-full resize-none overflow-y-auto rounded-xl border border-control bg-sunken/55 px-4 py-3 text-[15px] leading-7 text-ink caret-accent transition-[background-color,border-color,box-shadow] placeholder:text-muted hover:border-ink/40 focus:border-accent focus:bg-raised focus-visible:ring-2 focus-visible:ring-accent/15"
               />
             </label>
           </section>
@@ -430,7 +430,7 @@ export function NewTaskView({
           <div className="flex flex-col gap-2 pb-2">
             <p
               aria-live="polite"
-              className="tabular text-center text-[40px] leading-[44px] font-semibold tracking-[-0.03em]"
+              className="tabular text-center text-[40px] leading-11 font-semibold tracking-[-0.03em]"
             >
               {draft.progressPct}
               <span className="text-muted">%</span>

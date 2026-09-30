@@ -495,7 +495,7 @@ export function TaskDetailView({
   return (
     <div
       style={{ "--tone": STATUS_TONE[task.status] } as CSSProperties}
-      className="mx-auto flex w-full max-w-[640px] flex-1 flex-col 2xl:max-w-[800px]"
+      className="mx-auto flex w-full max-w-160 flex-1 flex-col 2xl:max-w-200"
     >
       <div className="-mx-2 flex h-11 items-center justify-between">
         {back ? (
@@ -530,7 +530,7 @@ export function TaskDetailView({
                 : "text-muted hover:bg-sunken hover:text-ink"
             }`}
           >
-            <PinIcon filled={task.pinnedToday} className="size-[18px]" />
+            <PinIcon filled={task.pinnedToday} className="size-4.5" />
           </button>
           {onDelete && (
             <button
@@ -540,7 +540,7 @@ export function TaskDetailView({
               title="Eliminar tarea"
               className="flex size-11 items-center justify-center rounded-full text-muted transition-colors hover:bg-danger/10 hover:text-danger"
             >
-              <TrashIcon className="size-[18px]" />
+              <TrashIcon className="size-4.5" />
             </button>
           )}
         </div>
@@ -570,7 +570,7 @@ export function TaskDetailView({
                 }}
                 rows={1}
                 maxLength={MAX_TASK_TITLE_LENGTH}
-                className={`-mx-1 block w-full resize-none overflow-hidden rounded-[4px] bg-transparent px-1 text-[23px] leading-[29px] font-semibold tracking-[-0.02em] text-pretty caret-accent sm:text-page ${
+                className={`-mx-1 block w-full resize-none overflow-hidden rounded-sm bg-transparent px-1 text-[23px] leading-7.25 font-semibold tracking-[-0.02em] text-pretty caret-accent outline-none sm:text-page ${
                   done ? "text-muted line-through decoration-1" : "text-ink"
                 }`}
               />
@@ -748,7 +748,7 @@ export function TaskDetailView({
                   }
                 }}
                 rows={3}
-                className={`description-scrollbar block min-h-24 w-full resize-none overflow-y-auto rounded-xl border border-control bg-sunken/55 px-4 py-3 text-[15px] leading-7 text-ink caret-accent transition-[background-color,border-color,box-shadow] placeholder:text-muted hover:border-ink/40 focus:border-accent focus:bg-raised focus-visible:ring-2 focus-visible:ring-accent/15 ${descriptionExpanded ? "max-h-[440px]" : "max-h-[160px]"}`}
+                className={`description-scrollbar block min-h-24 w-full resize-none overflow-y-auto rounded-xl border border-control bg-sunken/55 px-4 py-3 text-[15px] leading-7 text-ink caret-accent transition-[background-color,border-color,box-shadow] placeholder:text-muted hover:border-ink/40 focus:border-accent focus:bg-raised focus-visible:ring-2 focus-visible:ring-accent/15 ${descriptionExpanded ? "max-h-110" : "max-h-40"}`}
               />
             </label>
           </FlashWrap>
@@ -773,7 +773,7 @@ export function TaskDetailView({
               <p className="text-meta font-medium text-muted first-letter:uppercase">
                 {group.label}
               </p>
-              <ol className="ml-[3px] flex flex-col gap-4 border-l border-line pl-4">
+              <ol className="ml-0.75 flex flex-col gap-4 border-l border-line pl-4">
                 {group.items.map((c) => (
                   <li
                     key={c.id}
@@ -781,7 +781,7 @@ export function TaskDetailView({
                   >
                     <span
                       aria-hidden="true"
-                      className="absolute top-2 -left-[19.5px] size-[7px] rounded-full bg-line-strong"
+                      className="absolute top-2 left-[-19.5px] size-1.75 rounded-full bg-line-strong"
                     />
                     <time
                       dateTime={c.createdAt}
@@ -789,7 +789,7 @@ export function TaskDetailView({
                     >
                       {formatTime(c.createdAt)}
                     </time>
-                    <p className="text-[15px] leading-6 break-words whitespace-pre-wrap">
+                    <p className="text-[15px] leading-6 wrap-break-word whitespace-pre-wrap">
                       {c.body}
                     </p>
                   </li>
@@ -846,7 +846,7 @@ export function TaskDetailView({
             disabled={!newComment.trim()}
             className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink transition-colors hover:bg-accent/90 disabled:bg-line disabled:text-muted"
           >
-            <SendIcon className="size-[18px]" />
+            <SendIcon className="size-4.5" />
           </button>
         </div>
       </form>
@@ -876,7 +876,7 @@ export function TaskDetailView({
           <div className="flex flex-col gap-2 pb-2">
             <p
               aria-live="polite"
-              className="tabular text-center text-[40px] leading-[44px] font-semibold tracking-[-0.03em]"
+              className="tabular text-center text-[40px] leading-11 font-semibold tracking-[-0.03em]"
             >
               {progressDraft}
               <span className="text-muted">%</span>
