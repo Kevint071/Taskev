@@ -88,6 +88,10 @@ export function AppShell({
   // transcript scrolls inside it, so the composer never moves with the page.
   // On desktop its conversation list also sits flush against the right edge.
   const chatScreen = pathname.startsWith("/asistente");
+  // While the phone keyboard is up the tab bar would ride on top of it, so it
+  // steps aside on the chat screen.
+  const typing = useTextFieldFocused(chatScreen);
+  const hideTabBar = focusScreen || (chatScreen && typing);
 
   // The focus screen is pinned to the window instead of sized with `h-dvh`:
   // installed Android apps resolve `dvh` too tall on a fresh load (until the
@@ -99,7 +103,7 @@ export function AppShell({
       }`}
     >
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-dvh w-[232px] shrink-0 flex-col border-r border-line bg-raised px-3 py-4 md:flex">
+      <aside className="sticky top-0 hidden h-dvh w-58 shrink-0 flex-col border-r border-line bg-raised px-3 py-4 md:flex">
         <Link href="/" className="mb-6 w-fit rounded-control px-2 py-1">
           <Brand />
         </Link>
@@ -131,14 +135,18 @@ export function AppShell({
             focusScreen
               ? "min-h-0 overflow-y-auto overscroll-contain px-0 pt-0 pb-0"
               : chatScreen
-                ? "min-h-0 overflow-y-auto overscroll-contain p-0 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0"
-                : `mx-auto max-w-[880px] px-4 pb-28 md:px-10 md:pb-16 ${
+                ? `min-h-0 overflow-y-auto overscroll-contain p-0 md:pb-0 ${
+                    typing
+                      ? "pb-0"
+                      : "pb-[calc(4rem+env(safe-area-inset-bottom))]"
+                  }`
+                : `mx-auto max-w-220 px-4 pb-28 md:px-10 md:pb-16 ${
                     groupDetailScreen ? "pt-4 md:pt-7" : "pt-6 md:pt-10"
                   }`
           }`}
         >
           {focusScreen ? (
-            <div className="mx-auto flex w-full max-w-[880px] flex-1 flex-col gap-8 px-4 pt-3 pb-0 md:px-10 md:pt-10">
+            <div className="mx-auto flex w-full max-w-220 flex-1 flex-col gap-8 px-4 pt-3 pb-0 md:px-10 md:pt-10">
               {children}
             </div>
           ) : (
@@ -152,7 +160,7 @@ export function AppShell({
         aria-label="Principal"
         data-bottom-bar=""
         className={`fixed inset-x-0 bottom-0 z-10 grid-cols-4 border-t border-line bg-raised/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden ${
-          focusScreen ? "hidden" : "grid"
+          hideTabBar ? "hidden" : "grid"
         }`}
       >
         {NAV.map((item) => {
@@ -180,6 +188,38 @@ export function AppShell({
       </nav>
     </div>
   );
+}
+
+function isTextField(target: EventTarget | null) {
+  return (
+    target instanceof HTMLElement &&
+    (target.matches("textarea, input:not([type=checkbox], [type=radio])") ||
+      target.isContentEditable)
+  );
+}
+
+// True while a text field has focus, i.e. while a phone's keyboard is open.
+function useTextFieldFocused(enabled: boolean) {
+  const [focused, setFocused] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) {
+      setFocused(false);
+      return;
+    }
+    const onFocusIn = (event: FocusEvent) =>
+      setFocused(isTextField(event.target));
+    const onFocusOut = () => setFocused(false);
+    setFocused(isTextField(document.activeElement));
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+    };
+  }, [enabled]);
+
+  return focused;
 }
 
 function SideLink({ item, active }: { item: NavItem; active: boolean }) {
@@ -280,7 +320,7 @@ function UserMenu({ user }: { user: { email: string; name: string | null } }) {
             onClick={() => signOut({ callbackUrl: "/" })}
             className={`mt-1 ${menuItemClass}`}
           >
-            <LogOutIcon className="size-[18px]" />
+            <LogOutIcon className="size-4.5" />
             Cerrar sesión
           </button>
         </div>

@@ -1,5 +1,5 @@
 import { Analytics } from "@vercel/analytics/next";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Instrument_Sans } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -16,6 +16,12 @@ const instrumentSans = Instrument_Sans({
 export const metadata: Metadata = {
   title: "Taskev",
   description: "Grupos y tareas ordenados por lo que más importa hoy",
+};
+
+// The on-screen keyboard shrinks the layout viewport instead of panning the
+// page over it, so the window-pinned screens resize and nothing scrolls away.
+export const viewport: Viewport = {
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
