@@ -3,8 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { MAX_GROUP_NAME_LENGTH } from "@/lib/constraints";
+import { Input, Textarea } from "@/components/ui/input";
+import {
+  MAX_GROUP_DESCRIPTION_LENGTH,
+  MAX_GROUP_NAME_LENGTH,
+} from "@/lib/constraints";
 
 /** Inline form that creates a group; closing it discards what was typed. */
 export function CreateGroupForm({
@@ -15,6 +18,7 @@ export function CreateGroupForm({
   onCreated: () => void;
 }) {
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -28,7 +32,10 @@ export function CreateGroupForm({
     const res = await fetch("/api/groups", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({
+        name,
+        description: description.trim() || undefined,
+      }),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -49,7 +56,7 @@ export function CreateGroupForm({
           onClose();
         }
       }}
-      className="animate-reveal flex flex-col gap-2"
+      className="animate-reveal flex flex-col gap-2 rounded-panel border border-accent/40 bg-raised p-3 shadow-panel"
     >
       <div className="flex gap-4">
         <div className="relative min-w-0 flex-1">
@@ -71,6 +78,15 @@ export function CreateGroupForm({
           Crear
         </Button>
       </div>
+      <Textarea
+        aria-label="Descripción del grupo (opcional)"
+        placeholder="Descripción (opcional): ¿para qué es este grupo?"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        maxLength={MAX_GROUP_DESCRIPTION_LENGTH}
+        rows={2}
+        className="w-full resize-none"
+      />
       <FormError message={error} />
     </form>
   );
