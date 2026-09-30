@@ -21,7 +21,8 @@ const STEP_MS = 70;
  * nothing when no task is due.
  *
  * Each task is a tile with its status color on the left edge, its group, and
- * a row of plain status and priority labels plus progress once started.
+ * a row of plain status and priority labels plus the progress bar (empty at
+ * 0%, so every tile has the same layout).
  */
 export function DueTodaySection({
   tasks,
@@ -74,25 +75,25 @@ export function DueTodaySection({
                     <p className="min-w-0 truncate text-meta text-muted">
                       {task.groupName}
                     </p>
-                    <p className="line-clamp-2 wrap-break-word text-body font-medium">
+                    <p className="line-clamp-2 min-h-13 wrap-break-word text-body font-medium">
                       {task.title}
                     </p>
                   </div>
                   <ChevronRightIcon className="mt-1 size-4 shrink-0 text-muted transition-transform duration-300 group-hover/tile:translate-x-1 group-hover/tile:text-accent" />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusChip status={task.status} plain />
-                  <PriorityChip priority={task.priority} plain />
-                </div>
+                <div className="mt-auto flex flex-col gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusChip status={task.status} plain />
+                    <PriorityChip priority={task.priority} plain />
+                  </div>
 
-                {task.progressPct > 0 && (
                   <ProgressMeter
                     pct={task.progressPct}
                     tone={tone}
                     delay={delay + 320}
                   />
-                )}
+                </div>
               </Link>
             </li>
           );
