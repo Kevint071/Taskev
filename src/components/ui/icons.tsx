@@ -280,6 +280,19 @@ export function SendIcon({ className }: { className?: string } = {}) {
   );
 }
 
+export function StopIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`shrink-0 ${className ?? "size-5"}`}
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <rect x="5" y="5" width="10" height="10" rx="2.5" />
+    </svg>
+  );
+}
+
 export function ChevronRightIcon({ className }: { className?: string } = {}) {
   return (
     <svg

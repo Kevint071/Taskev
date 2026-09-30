@@ -24,6 +24,7 @@ import {
   PlusIcon,
   SendIcon,
   SparklesIcon,
+  StopIcon,
   TriangleAlertIcon,
 } from "@/components/ui/icons";
 import { LoadingRows } from "@/components/ui/panel";
@@ -227,6 +228,8 @@ export function AssistantView({
   const generation = useRef(0);
   // The conversation whose content is on screen (or being loaded).
   const shownId = useRef<string | null>(null);
+  // The request in flight, so the stop button can abandon it.
+  const inFlight = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -401,10 +404,13 @@ export function AssistantView({
 
   async function request(body: RequestBody) {
     const token = generation.current;
+    const controller = new AbortController();
+    inFlight.current = controller;
     setBusy(true);
     try {
       const res = await fetch("/api/assistant", {
         method: "POST",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           conversationId: shownId.current,
@@ -425,7 +431,7 @@ export function AssistantView({
       });
       if (handleUnauthenticated(res)) return;
       const data = await res.json().catch(() => ({}));
-      if (token !== generation.current) return;
+      if (token !== generation.current || controller.signal.aborted) return;
       if (!res.ok) {
         setItems((prev) => [
           ...prev,
@@ -456,7 +462,8 @@ export function AssistantView({
         ),
       ]);
     } catch {
-      if (token !== generation.current) return;
+      // A stopped request is not an error; stop() already updated the screen.
+      if (token !== generation.current || controller.signal.aborted) return;
       setItems((prev) => [
         ...prev,
         errorItem(
@@ -464,8 +471,24 @@ export function AssistantView({
         ),
       ]);
     } finally {
-      if (token === generation.current) setBusy(false);
+      // Once stopped, a newer request may own the busy flag.
+      if (token === generation.current && inFlight.current === controller) {
+        inFlight.current = null;
+        setBusy(false);
+      }
     }
+  }
+
+  function stop() {
+    if (!inFlight.current) return;
+    inFlight.current.abort();
+    inFlight.current = null;
+    setBusy(false);
+    setItems((prev) => [
+      ...prev,
+      { kind: "action", text: "Respuesta detenida", isError: false },
+    ]);
+    inputRef.current?.focus();
   }
 
   function changeDraft(text: string) {
@@ -636,6 +659,37 @@ export function AssistantView({
       : conversations.length === 1
         ? "1 conversación"
         : `${conversations.length} conversaciones`;
+  // Rendered twice (below/above the input, and beside the send button), one of
+  // them hidden by CSS at each breakpoint.
+  const modelControl = (align: "left" | "right") =>
+    modelOptions.length > 1 ? (
+      <OptionPicker
+        label="Modelo"
+        value={models[provider]}
+        options={modelOptions}
+        onChange={pickModel}
+        disabled={providerLocked}
+        title={
+          pending
+            ? "Confirma o cancela la acción pendiente para cambiar de modelo"
+            : undefined
+        }
+        opensUp
+        align={align}
+        sizeToValue
+        triggerClassName="h-9 max-w-full gap-1! border-transparent bg-transparent px-1 hover:text-accent focus-visible:border-accent lg:h-10"
+      />
+    ) : (
+      <span className="inline-flex h-9 max-w-full items-center px-1 text-meta font-medium text-muted lg:h-10">
+        <span className="truncate">
+          {modelsLoading
+            ? "Cargando modelos…"
+            : copilotModels.status === "error" && provider === "copilot"
+              ? "No se pudieron cargar los modelos"
+              : modelLabel}
+        </span>
+      </span>
+    );
   const list = (
     <ConversationList
       conversations={conversations}
@@ -671,6 +725,7 @@ export function AssistantView({
               disabled={providerLocked}
               title={providerLockedTitle}
               className="ml-auto"
+              sizeToValue
               triggerClassName="h-11 border-line-strong bg-raised pr-2.5 pl-3.5 shadow-panel hover:border-ink/30 focus-visible:border-accent lg:h-9 lg:pl-3"
             />
           ) : (
@@ -777,13 +832,13 @@ export function AssistantView({
           </section>
         </div>
 
-        <div className="px-4 pt-2 pb-4 md:px-10 md:pb-6">
+        <div className="flex flex-col px-4 pt-2 pb-4 md:px-10 md:pb-6">
           <form
             onSubmit={(e) => {
               e.preventDefault();
               send(draft);
             }}
-            className="relative flex flex-col gap-1 rounded-3xl border border-line-strong bg-raised p-2 shadow-[0_8px_30px_-12px_rgba(26,35,50,0.25)] transition-[border-color,box-shadow] focus-within:border-accent focus-within:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent)_16%,transparent),0_8px_30px_-12px_rgba(26,35,50,0.25)]"
+            className="relative flex flex-col gap-1 rounded-[31px] border border-line-strong bg-raised p-2 shadow-[0_8px_30px_-12px_rgba(26,35,50,0.25)] transition-[border-color,box-shadow] focus-within:border-accent focus-within:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent)_16%,transparent),0_8px_30px_-12px_rgba(26,35,50,0.25)]"
           >
             {menuOpen ? (
               <div
@@ -839,76 +894,79 @@ export function AssistantView({
             <label htmlFor="assistant-input" className="sr-only">
               Mensaje para el asistente
             </label>
-            <textarea
-              id="assistant-input"
-              ref={inputRef}
-              rows={1}
-              value={draft}
-              onChange={(e) => changeDraft(e.target.value)}
-              onKeyDown={handleKeyDown}
-              role="combobox"
-              aria-expanded={menuOpen}
-              aria-controls="assistant-commands"
-              aria-autocomplete="list"
-              aria-activedescendant={
-                menuOpen && activeCommand
-                  ? `assistant-command-${activeCommand.name}`
-                  : undefined
-              }
-              placeholder="Pregunta o escribe / para ver comandos…"
-              maxLength={4000}
-              className="field-sizing-content max-h-48 min-h-11 w-full resize-none bg-transparent px-3 pt-2.5 pb-1 text-ink outline-none placeholder:text-muted"
-            />
-            <div className="flex items-center gap-2 pl-1">
-              {modelOptions.length > 1 ? (
-                <OptionPicker
-                  label="Modelo"
-                  value={models[provider]}
-                  options={modelOptions}
-                  onChange={pickModel}
-                  disabled={providerLocked}
-                  title={
-                    pending
-                      ? "Confirma o cancela la acción pendiente para cambiar de modelo"
-                      : undefined
-                  }
-                  icon={
-                    <SparklesIcon className="size-3.5 shrink-0 text-accent" />
-                  }
-                  opensUp
-                  align="left"
-                  sizeToValue
-                  triggerClassName="h-8 border-transparent bg-sunken pr-2 pl-2.5 hover:border-ink/20 focus-visible:border-accent"
-                />
+            {/* Centered while the (possibly wrapped) placeholder shows; pinned to
+                the last line once there is text to grow. */}
+            <div
+              className={`flex gap-2 ${draft === "" ? "items-center" : "items-end"}`}
+            >
+              <textarea
+                id="assistant-input"
+                ref={inputRef}
+                rows={1}
+                value={draft}
+                onChange={(e) => changeDraft(e.target.value)}
+                onKeyDown={handleKeyDown}
+                role="combobox"
+                aria-expanded={menuOpen}
+                aria-controls="assistant-commands"
+                aria-autocomplete="list"
+                aria-activedescendant={
+                  menuOpen && activeCommand
+                    ? `assistant-command-${activeCommand.name}`
+                    : undefined
+                }
+                placeholder="Pregunta o escribe / para ver comandos…"
+                maxLength={4000}
+                className="field-sizing-content max-h-48 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-3 py-2.5 text-ink outline-none placeholder:text-muted"
+              />
+              {/* From lg up the model sits beside the send button. */}
+              <div className="hidden shrink-0 lg:block">
+                {modelControl("right")}
+              </div>
+              {/* Send and stop are separate elements, so a click that starts a
+                  request never lands on a button that has already changed role. */}
+              {busy ? (
+                <Button
+                  key="stop"
+                  type="button"
+                  variant="primary"
+                  onClick={stop}
+                  aria-label="Detener"
+                  title="Detener"
+                  className="size-10! shrink-0 rounded-full px-0"
+                >
+                  <StopIcon />
+                </Button>
               ) : (
-                <span className="inline-flex h-8 max-w-[60vw] items-center gap-1.5 rounded-full bg-sunken px-2.5 text-meta font-medium text-muted">
-                  <SparklesIcon className="size-3.5 shrink-0 text-accent" />
-                  <span className="truncate">
-                    {modelsLoading
-                      ? "Cargando modelos…"
-                      : copilotModels.status === "error" &&
-                          provider === "copilot"
-                        ? "No se pudieron cargar los modelos"
-                        : modelLabel}
-                  </span>
-                </span>
+                <Button
+                  key="send"
+                  type="submit"
+                  variant="primary"
+                  disabled={loading || draft.trim() === ""}
+                  aria-label="Enviar"
+                  className="size-10! shrink-0 rounded-full px-0 transition-[background-color,opacity,transform] enabled:hover:scale-105 disabled:bg-accent/60 disabled:text-accent-ink/80 disabled:opacity-100"
+                >
+                  <SendIcon />
+                </Button>
               )}
-              <p className="hidden min-w-0 flex-1 truncate text-meta text-muted md:block">
-                {draft.length > 3500
-                  ? `${draft.length}/4000`
-                  : "Intro para enviar · Mayús+Intro para nueva línea"}
-              </p>
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={busy || loading || draft.trim() === ""}
-                aria-label="Enviar"
-                className="ml-auto size-10 rounded-full px-0 transition-[background-color,opacity,transform] enabled:hover:scale-105 disabled:bg-sunken disabled:text-muted disabled:opacity-100"
-              >
-                <SendIcon />
-              </Button>
             </div>
           </form>
+          {/* Above the input on mobile, below it on md; from lg the model sits
+              beside the send button, so only the counter stays in this row. */}
+          <div
+            className={`order-first mb-1 flex items-center gap-2 px-3 md:order-0 md:mt-1 md:mb-0 ${
+              draft.length > 3500 ? "" : "lg:hidden"
+            }`}
+          >
+            <div className="min-w-0 shrink lg:hidden">
+              {modelControl("left")}
+            </div>
+            {draft.length > 3500 ? (
+              <p className="ml-auto shrink-0 pr-2 text-meta text-muted">
+                {draft.length}/4000
+              </p>
+            ) : null}
+          </div>
         </div>
       </div>
 
