@@ -90,8 +90,8 @@ export function AppShell({
   const chatScreen = pathname.startsWith("/asistente");
   // While the phone keyboard is up the tab bar would ride on top of it, so it
   // steps aside on the chat screen.
-  const typing = useTextFieldFocused(chatScreen);
-  const hideTabBar = focusScreen || (chatScreen && typing);
+  const keyboardOpen = useKeyboardOpen(chatScreen);
+  const hideTabBar = focusScreen || (chatScreen && keyboardOpen);
 
   // The focus screen is pinned to the window instead of sized with `h-dvh`:
   // installed Android apps resolve `dvh` too tall on a fresh load (until the
@@ -136,7 +136,7 @@ export function AppShell({
               ? "min-h-0 overflow-y-auto overscroll-contain px-0 pt-0 pb-0"
               : chatScreen
                 ? `min-h-0 overflow-y-auto overscroll-contain p-0 md:pb-0 ${
-                    typing
+                    keyboardOpen
                       ? "pb-0"
                       : "pb-[calc(4rem+env(safe-area-inset-bottom))]"
                   }`
@@ -198,28 +198,51 @@ function isTextField(target: EventTarget | null) {
   );
 }
 
-// True while a text field has focus, i.e. while a phone's keyboard is open.
-function useTextFieldFocused(enabled: boolean) {
-  const [focused, setFocused] = useState(false);
+// Smallest shrink of the viewport that counts as a keyboard, so a collapsing
+// browser toolbar is not mistaken for one.
+const KEYBOARD_MIN_HEIGHT_PX = 150;
+
+// True while a phone's on-screen keyboard is showing. Focus alone is not
+// enough: the Android back gesture hides the keyboard but leaves the field
+// focused, so the viewport height is what says whether it is really open.
+function useKeyboardOpen(enabled: boolean) {
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (!enabled) {
-      setFocused(false);
+      setOpen(false);
       return;
     }
-    const onFocusIn = (event: FocusEvent) =>
-      setFocused(isTextField(event.target));
-    const onFocusOut = () => setFocused(false);
-    setFocused(isTextField(document.activeElement));
-    document.addEventListener("focusin", onFocusIn);
-    document.addEventListener("focusout", onFocusOut);
+    const viewport = window.visualViewport;
+    // Tallest viewport seen at the current width, i.e. with no keyboard.
+    let baseline = { width: window.innerWidth, height: 0 };
+
+    function update() {
+      const width = window.innerWidth;
+      const height = viewport?.height ?? window.innerHeight;
+      baseline =
+        width === baseline.width
+          ? { width, height: Math.max(baseline.height, height) }
+          : { width, height };
+      setOpen(
+        isTextField(document.activeElement) &&
+          baseline.height - height > KEYBOARD_MIN_HEIGHT_PX,
+      );
+    }
+
+    update();
+    const target = viewport ?? window;
+    target.addEventListener("resize", update);
+    document.addEventListener("focusin", update);
+    document.addEventListener("focusout", update);
     return () => {
-      document.removeEventListener("focusin", onFocusIn);
-      document.removeEventListener("focusout", onFocusOut);
+      target.removeEventListener("resize", update);
+      document.removeEventListener("focusin", update);
+      document.removeEventListener("focusout", update);
     };
   }, [enabled]);
 
-  return focused;
+  return open;
 }
 
 function SideLink({ item, active }: { item: NavItem; active: boolean }) {
