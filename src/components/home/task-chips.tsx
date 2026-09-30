@@ -10,14 +10,23 @@ const CHIP =
   "inline-flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-meta font-medium";
 
 /** The status as a chip tinted with its own color, so it reads before the text does. */
-export function StatusChip({ status }: { status: OverviewTask["status"] }) {
+export function StatusChip({
+  status,
+  plain = false,
+}: {
+  status: OverviewTask["status"];
+  /** No background or side padding: just the dot and label, flush with its neighbors. */
+  plain?: boolean;
+}) {
   return (
     <span
-      className={CHIP}
+      className={`${CHIP} ${plain ? "px-0" : ""}`}
       style={
         {
           color: "var(--ink)",
-          backgroundColor: `color-mix(in srgb, ${STATUS_TONE[status]} 16%, transparent)`,
+          backgroundColor: plain
+            ? undefined
+            : `color-mix(in srgb, ${STATUS_TONE[status]} 16%, transparent)`,
         } as CSSProperties
       }
     >

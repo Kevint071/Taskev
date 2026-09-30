@@ -7,7 +7,7 @@ import { STATUS_TONE } from "@/components/ui/status-badge";
 import { taskHref } from "@/lib/back-navigation";
 import type { OverviewTask } from "@/lib/data/overview";
 import { dueOnDay, startOfDayKey } from "@/lib/today";
-import { DueChip, PriorityChip, ProgressMeter, StatusChip } from "./task-chips";
+import { PriorityChip, ProgressMeter, StatusChip } from "./task-chips";
 
 const noopSubscribe = () => () => {};
 
@@ -21,16 +21,14 @@ const STEP_MS = 70;
  * nothing when no task is due.
  *
  * Each task is a tile with its status color on the left edge, its group, and
- * a row of chips (status, priority, due date) plus progress once started.
+ * a row of plain status and priority labels plus progress once started.
  */
 export function DueTodaySection({
   tasks,
   serverToday,
-  serverNow,
 }: {
   tasks: OverviewTask[];
   serverToday: number;
-  serverNow: string;
 }) {
   const hydrated = useSyncExternalStore(
     noopSubscribe,
@@ -84,9 +82,8 @@ export function DueTodaySection({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <StatusChip status={task.status} />
-                  <PriorityChip priority={task.priority} />
-                  <DueChip dueDate={task.dueDate} serverNow={serverNow} />
+                  <StatusChip status={task.status} plain />
+                  <PriorityChip priority={task.priority} plain />
                 </div>
 
                 {task.progressPct > 0 && (

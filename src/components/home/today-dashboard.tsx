@@ -99,11 +99,7 @@ export async function TodayDashboard({
       )}
 
       {top.length > 0 && (
-        <DueTodaySection
-          tasks={dueAround}
-          serverToday={serverToday}
-          serverNow={now.toISOString()}
-        />
+        <DueTodaySection tasks={dueAround} serverToday={serverToday} />
       )}
 
       <TodayMetrics completedAt={completedAt} serverNow={now.toISOString()} />
