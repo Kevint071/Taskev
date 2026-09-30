@@ -115,7 +115,7 @@ export function Toast({
       onFocus={hold}
       onBlur={release}
       style={{ "--toast": tone.fill, "--toast-ink": tone.ink } as CSSProperties}
-      className={`${leaving ? "animate-toast-out" : "animate-toast-in"} fixed top-20 right-3 z-60 w-fit max-w-[min(18rem,calc(100vw-1.5rem))] sm:top-24 sm:right-4 sm:max-w-[22.5rem]`}
+      className={`${leaving ? "animate-toast-out" : "animate-toast-in"} fixed top-20 right-3 z-60 w-fit max-w-[min(18rem,calc(100vw-1.5rem))] sm:top-24 sm:right-4 sm:max-w-90`}
     >
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: tapping anywhere is a pointer shortcut; the close button is the keyboard path */}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: same shortcut */}

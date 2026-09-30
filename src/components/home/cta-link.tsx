@@ -26,7 +26,7 @@ export function CtaLink({
       }`}
     >
       {children}
-      <ArrowRightIcon className="size-[18px] transition-transform duration-200 group-hover:translate-x-0.5" />
+      <ArrowRightIcon className="size-4.5 transition-transform duration-200 group-hover:translate-x-0.5" />
     </Link>
   );
 }

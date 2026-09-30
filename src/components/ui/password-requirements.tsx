@@ -60,7 +60,7 @@ export function PasswordRequirements({
     >
       {rules.map((rule) => (
         <li key={rule.id} className="flex min-w-0 flex-col gap-1.5">
-          <span className="relative h-[3px] rounded-full bg-line-strong/50">
+          <span className="relative h-0.75 rounded-full bg-line-strong/50">
             <span
               className={`block size-full origin-left rounded-full bg-status-done transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 rule.ok ? "scale-x-100" : "scale-x-0"
@@ -93,14 +93,14 @@ export function PasswordRequirements({
 /** Radio-style badge: the ring fills with a springy pop and its tick draws itself. */
 function RadioMark({ ok }: { ok: boolean }) {
   return (
-    <span className="relative size-[18px] shrink-0">
+    <span className="relative size-4.5 shrink-0">
       <span
         className={`absolute inset-0 rounded-full border-2 transition-colors duration-300 ${
           ok ? "border-status-done" : "border-line-strong"
         }`}
       />
       <span
-        className={`absolute inset-0 rounded-full bg-status-done transition-transform duration-[380ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+        className={`absolute inset-0 rounded-full bg-status-done transition-transform duration-380 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
           ok ? "scale-100" : "scale-0"
         }`}
       />

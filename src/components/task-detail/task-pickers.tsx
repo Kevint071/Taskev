@@ -108,7 +108,7 @@ export function DuePicker({
         ref={stripRef}
         role="group"
         aria-label="Elegir otro día"
-        className="-mx-4 flex gap-1 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="-mx-4 flex gap-1 overflow-x-auto px-4 scrollbar-none [&::-webkit-scrollbar]:hidden"
       >
         {days.map((day, i) => {
           const offset = range.start + i;
@@ -135,7 +135,7 @@ export function DuePicker({
               }`}
             >
               <small
-                className={`text-[0.75rem] leading-[14px] ${
+                className={`text-[0.75rem] leading-3.5 ${
                   isSelected ? "opacity-75" : "text-muted"
                 }`}
               >
@@ -147,7 +147,7 @@ export function DuePicker({
               {isToday && (
                 <span
                   aria-hidden="true"
-                  className={`absolute bottom-1 size-[3px] rounded-full ${
+                  className={`absolute bottom-1 size-0.75 rounded-full ${
                     isSelected ? "bg-accent-ink" : "bg-accent"
                   }`}
                 />

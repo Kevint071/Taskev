@@ -249,18 +249,18 @@ export function TaskFlow() {
     >
       <div
         aria-hidden="true"
-        className="relative mx-auto w-full max-w-[560px] [--spread:0.3] [--tag-spread:1] sm:[--spread:1.15] sm:[--tag-spread:1.7]"
+        className="relative mx-auto w-full max-w-140 [--spread:0.3] [--tag-spread:1] sm:[--spread:1.15] sm:[--tag-spread:1.7]"
         style={{ height: STAGE_HEIGHT }}
       >
         <div
-          className="pointer-events-none absolute -inset-x-[12%] -inset-y-[8%] rounded-[50%] bg-accent blur-3xl transition-opacity duration-1000"
+          className="pointer-events-none absolute inset-x-[-12%] inset-y-[-8%] rounded-[50%] bg-accent blur-3xl transition-opacity duration-1000"
           style={{ opacity: ordered ? 0.2 : 0.08 }}
         />
 
         {TAGS.map((tag, i) => (
           <div
             key={tag.label}
-            className="absolute top-0 left-1/2 z-40 hidden w-max transition-[transform,opacity] duration-[900ms] ease-[cubic-bezier(0.2,0.9,0.25,1.1)] sm:block"
+            className="absolute top-0 left-1/2 z-40 hidden w-max transition-[transform,opacity] duration-900 ease-[cubic-bezier(0.2,0.9,0.25,1.1)] sm:block"
             style={{
               transform: ordered
                 ? "translate(-50%, 170px) scale(0.5)"
@@ -288,7 +288,7 @@ export function TaskFlow() {
           return (
             <div
               key={chip.id}
-              className="absolute top-0 left-1/2 w-[92%] max-w-[340px] transition-[transform,opacity] duration-[900ms] ease-[cubic-bezier(0.2,0.9,0.25,1.1)] will-change-transform sm:w-[68%]"
+              className="absolute top-0 left-1/2 w-[92%] max-w-85 transition-[transform,opacity] duration-900 ease-[cubic-bezier(0.2,0.9,0.25,1.1)] will-change-transform sm:w-[68%]"
               style={{
                 transform: view.transform,
                 opacity: view.opacity,

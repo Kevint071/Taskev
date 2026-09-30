@@ -8,7 +8,7 @@ const iconProps = {
   strokeWidth: 1.6,
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
-  className: "size-[18px] shrink-0",
+  className: "size-4.5 shrink-0",
   "aria-hidden": "true" as const,
 };
 

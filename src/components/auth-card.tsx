@@ -19,7 +19,7 @@ export function AuthCard({
       <Link href="/" className="w-fit" aria-label="Taskev, ir al inicio">
         <Brand />
       </Link>
-      <div className="mx-auto flex w-full max-w-[360px] flex-1 flex-col justify-center gap-6 py-12">
+      <div className="mx-auto flex w-full max-w-90 flex-1 flex-col justify-center gap-6 py-12">
         <div>
           <h1 className="text-page font-semibold">{title}</h1>
           {subtitle && <p className="mt-1.5 text-muted">{subtitle}</p>}

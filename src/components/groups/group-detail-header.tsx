@@ -28,7 +28,7 @@ export function GroupDetailHeader({
       <header className="flex items-start justify-between gap-6">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-page font-semibold break-words">
+            <h1 className="text-page font-semibold wrap-break-word">
               {group.name}
             </h1>
             {group.archivedAt && (

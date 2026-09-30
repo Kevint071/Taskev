@@ -239,7 +239,7 @@ function ThemeMock({ dark }: { dark: boolean }) {
       style={{ background: p.surface }}
     >
       <span
-        className="flex w-1/4 flex-col gap-1 rounded-[4px] p-1"
+        className="flex w-1/4 flex-col gap-1 rounded-sm p-1"
         style={{ background: p.raised }}
       >
         <span
@@ -261,7 +261,7 @@ function ThemeMock({ dark }: { dark: boolean }) {
           style={{ background: p.ink }}
         />
         <span
-          className="flex flex-1 flex-col gap-1 rounded-[4px] border p-1.5"
+          className="flex flex-1 flex-col gap-1 rounded-sm border p-1.5"
           style={{ background: p.raised, borderColor: p.line }}
         >
           <span
@@ -324,7 +324,7 @@ export function AppearanceSection() {
                 className="peer sr-only"
               />
               <span
-                className={`relative block aspect-[4/3] overflow-hidden rounded-xl border-2 transition-all peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent ${
+                className={`relative block aspect-4/3 overflow-hidden rounded-xl border-2 transition-all peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent ${
                   selected
                     ? "border-accent shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent)_16%,transparent)]"
                     : "border-line group-hover:border-line-strong"

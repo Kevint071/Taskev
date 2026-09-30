@@ -127,7 +127,7 @@ export function TaskSection({
               <li key={task.id} className="relative">
                 <span
                   aria-hidden="true"
-                  className="absolute inset-y-1.5 left-0 w-[3px] rounded-full"
+                  className="absolute inset-y-1.5 left-0 w-0.75 rounded-full"
                   style={{ backgroundColor: STATUS_COLOR[task.status] }}
                 />
                 <Link
@@ -137,7 +137,7 @@ export function TaskSection({
                   <span className="min-w-0 flex-1 truncate font-medium">
                     {task.title}
                   </span>
-                  <span className="shrink-0 truncate max-w-[7rem] text-meta text-muted">
+                  <span className="shrink-0 truncate max-w-28 text-meta text-muted">
                     {task.groupName}
                   </span>
                   {tone === "progress" ? (
@@ -196,7 +196,7 @@ export function ProgressRing({
       }}
     >
       <span
-        className={`tabular flex items-center justify-center rounded-full bg-raised font-bold text-ink ${md ? "size-7 text-[0.6875rem]" : "size-[22px] text-[0.625rem]"}`}
+        className={`tabular flex items-center justify-center rounded-full bg-raised font-bold text-ink ${md ? "size-7 text-[0.6875rem]" : "size-5.5 text-[0.625rem]"}`}
       >
         {pct}
       </span>

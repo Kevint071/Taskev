@@ -54,7 +54,7 @@ export function ThemeToggle({
             aria-checked={active}
             tabIndex={active ? 0 : -1}
             onClick={() => setTheme(option.value)}
-            className={`flex-1 rounded-[4px] font-medium transition-colors ${
+            className={`flex-1 rounded-sm font-medium transition-colors ${
               compact ? "h-7 px-2 text-meta" : "h-8 px-3.5"
             } ${
               active
