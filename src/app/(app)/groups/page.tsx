@@ -22,11 +22,17 @@ export default function GroupsPage() {
     else reload();
   }
 
+  const openTotal = groups.reduce((sum, g) => sum + g.openCount, 0);
+  const summary =
+    !loading && !showArchived && groups.length > 0
+      ? `${groups.length} ${groups.length === 1 ? "grupo activo" : "grupos activos"} y ${openTotal} ${openTotal === 1 ? "tarea abierta" : "tareas abiertas"}.`
+      : "Agrupa tus tareas por objetivo. Archiva lo que ya no está activo.";
+
   return (
     <>
       <PageHeader
         title="Grupos"
-        description="Agrupa tus tareas por objetivo. Archiva lo que ya no está activo."
+        description={summary}
         actions={
           !creating && (
             <Button variant="primary" onClick={() => setCreating(true)}>
@@ -53,6 +59,7 @@ export default function GroupsPage() {
           groups={groups}
           loading={loading}
           showArchived={showArchived}
+          onCreate={creating ? undefined : () => setCreating(true)}
           onUpdated={reload}
           onError={(message) =>
             setToast({ id: Date.now(), message, tone: "error" })
