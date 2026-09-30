@@ -1,19 +1,28 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { STATUS_LABELS } from "@/components/group-types";
-import { STATUS_TONE } from "@/components/ui/status-badge";
+import { ChevronRightIcon } from "@/components/ui/icons";
+import { STATUS_DOT, STATUS_TONE } from "@/components/ui/status-badge";
 import { taskHref } from "@/lib/back-navigation";
 import type { OverviewTask } from "@/lib/data/overview";
-import { DueLabel } from "./due-label";
+import { PrioritySlider } from "./priority-slider";
+import { DueChip, PriorityChip, ProgressDial, StatusChip } from "./task-chips";
 
 const STEP_MS = 140;
 
+// Phone card reveal: these classes only apply while the card is the active one, so each
+// time it becomes active its band and attributes play in again (see `PrioritySlider`).
+const REVEAL = "group-aria-[current=true]/slide:animate-attr-in";
+const SWEEP = "group-aria-[current=true]/slide:animate-band-sweep";
+const at = (ms: number) => ({ "--delay": `${ms}ms` }) as CSSProperties;
+
 /**
- * The day's top tasks as a queue: a dashed thread runs down the left edge and
- * each task hangs from it on a numbered node, so the order of attack reads at a
- * glance. On load the nodes pop in one after another and the thread draws itself
- * down to the next one; only the first node is filled with the accent and pings.
- * Rows also show what is in flight: an "En curso" marker and progress once started.
+ * The day's top tasks with everything that matters about each: status,
+ * priority, due date and progress. From `lg` they are compact rows in a single
+ * panel (rank, title and a line of chips on the left, a progress ring on the
+ * right); on a phone they are cards in a reel that shows one at a time (see
+ * `PrioritySlider`). Rows and cards rise in one after another while their
+ * stripe, rank and progress fill in; the first rank pings.
  */
 export function TopTasks({
   tasks,
@@ -28,141 +37,169 @@ export function TopTasks({
         {tasks.length > 1 ? "Prioridades de hoy" : "Siguiente tarea"}
       </h2>
 
-      <ol>
+      <PrioritySlider label="Prioridades de hoy">
         {tasks.map((task, i) => (
-          <li
+          <TaskCard
             key={task.id}
-            className="animate-rise group/item relative grid grid-cols-[28px_minmax(0,1fr)] gap-x-3.5"
-            style={{ "--delay": `${i * STEP_MS}ms` } as CSSProperties}
-          >
-            {/* The node sits at the row's vertical center, so the thread is split
-                in two halves: below this node and above it (coming from the previous one). */}
-            {i > 0 && (
-              <span
-                aria-hidden="true"
-                className="animate-thread-draw absolute top-0 bottom-[calc(50%+14px)] left-3.25 border-l border-dashed border-line-strong"
-                style={{ "--delay": `${i * STEP_MS + 380}ms` } as CSSProperties}
-              />
-            )}
-            {i < tasks.length - 1 && (
-              <span
-                aria-hidden="true"
-                className="animate-thread-draw absolute top-[calc(50%+14px)] bottom-0 left-3.25 border-l border-dashed border-line-strong"
-                style={{ "--delay": `${i * STEP_MS + 260}ms` } as CSSProperties}
-              />
-            )}
-            <span
-              aria-hidden="true"
-              className={`animate-node-pop tabular relative flex size-7 self-center items-center justify-center rounded-full text-meta font-semibold transition-colors ${
-                i === 0
-                  ? "bg-accent text-accent-ink ring-4 ring-accent/15"
-                  : "border border-line-strong bg-surface text-muted group-hover/item:border-accent group-hover/item:text-accent"
-              }`}
-              style={{ "--delay": `${i * STEP_MS + 120}ms` } as CSSProperties}
-            >
-              {i === 0 && (
-                <span
-                  className="motion-safe:animate-node-ping absolute inset-0 rounded-full bg-accent"
-                  style={{ "--delay": `${STEP_MS * 3}ms` } as CSSProperties}
-                />
-              )}
-              <span className="relative">{i + 1}</span>
-            </span>
-            <TaskLink
-              task={task}
-              serverNow={serverNow}
-              delay={i * STEP_MS + 320}
-            />
-          </li>
+            task={task}
+            rank={i + 1}
+            serverNow={serverNow}
+            delay={i * STEP_MS}
+          />
         ))}
-      </ol>
+      </PrioritySlider>
     </section>
   );
 }
 
-function Progress({ pct, delay }: { pct: number; delay: number }) {
-  return (
-    <span
-      role="img"
-      aria-label={`Progreso ${pct}%`}
-      className="inline-flex items-center gap-1.5"
-    >
-      <span
-        aria-hidden="true"
-        className="h-1 w-14 overflow-hidden rounded-full bg-sunken"
-      >
-        <span
-          className="animate-bar-fill block h-full rounded-full bg-accent"
-          style={{ width: `${pct}%`, "--delay": `${delay}ms` } as CSSProperties}
-        />
-      </span>
-      <span aria-hidden="true" className="tabular text-meta text-muted">
-        {pct}%
-      </span>
-    </span>
-  );
-}
-
-function Meta({
+/**
+ * Two layouts of the same task. Phone: a fixed-height card in three rows (rank
+ * and group with the status chip, the title with two lines always reserved,
+ * then priority and due date with the progress ring), so all cards in the reel
+ * are the same height whatever their content. `lg`: a compact row (rank circle,
+ * title and chips line, ring), which the wrappers below switch to.
+ */
+function TaskCard({
   task,
+  rank,
   serverNow,
   delay,
 }: {
   task: OverviewTask;
+  rank: number;
   serverNow: string;
   delay: number;
 }) {
-  return (
-    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 md:justify-end">
-      <p className="min-w-0 wrap-break-word text-meta text-muted">
-        {task.groupName}
-      </p>
-      {task.progressPct > 0 && (
-        <Progress pct={task.progressPct} delay={delay} />
-      )}
-      {task.dueDate && (
-        <span className="inline-flex rounded-full bg-sunken px-2.5 py-0.5 text-meta font-semibold">
-          <DueLabel
-            dueDate={task.dueDate.toISOString()}
-            serverNow={serverNow}
-          />
-        </span>
-      )}
-    </div>
-  );
-}
+  const tone = STATUS_TONE[task.status];
+  const first = rank === 1;
 
-function TaskLink({
-  task,
-  serverNow,
-  delay,
-}: {
-  task: OverviewTask;
-  serverNow: string;
-  delay: number;
-}) {
   return (
     <Link
       href={taskHref(task.groupId, task.id, "hoy")}
-      className="group/task relative -mx-2 flex min-w-0 flex-col gap-1 rounded-xl py-2.5 pr-4 pl-2 transition-[background-color,transform] duration-200 hover:bg-sunken active:scale-[0.99] md:flex-row md:items-center md:justify-between md:gap-6"
+      style={{ "--tone": tone, "--delay": `${delay}ms` } as CSSProperties}
+      className={`animate-rise group/card relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-raised shadow-panel transition-[translate,scale,box-shadow,border-color,background-color] duration-300 ease-out hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--tone)_55%,var(--line))] hover:shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--ink)_55%,transparent)] active:scale-[0.99] lg:flex-none lg:rounded-none lg:border-0 lg:shadow-none lg:hover:translate-y-0 lg:hover:bg-sunken lg:hover:shadow-none lg:active:scale-100 ${
+        first ? "border-accent/35 lg:bg-accent/5" : "border-line"
+      }`}
     >
-      {/* The status as a colored bar on the right edge, like the task list's left one. */}
+      {/* Row layout: the status color as a stripe that draws itself down the
+          left edge (the phone card has its status band instead). */}
       <span
         aria-hidden="true"
-        className="animate-grow-y absolute inset-y-2 right-0 w-0.75 rounded-full"
-        style={
-          {
-            backgroundColor: STATUS_TONE[task.status],
-            "--delay": `${delay}ms`,
-          } as CSSProperties
-        }
+        className="animate-grow-y absolute inset-y-3 left-0 hidden w-1 rounded-r-full bg-(--tone) lg:block"
+        style={{ "--delay": `${delay + 200}ms` } as CSSProperties}
       />
-      <span className="sr-only">Estado: {STATUS_LABELS[task.status]}. </span>
-      <p className="line-clamp-2 min-w-0 wrap-break-word text-body font-medium md:flex-1">
-        {task.title}
-      </p>
-      <div className="flex min-w-0 items-center gap-3 md:max-w-[45%] md:shrink-0">
-        <Meta task={task} serverNow={serverNow} delay={delay} />
+      <span className="sr-only">Prioridad {rank}.</span>
+
+      {/* Phone card */}
+      <div className="flex flex-1 flex-col lg:hidden">
+        {/* The status is the card's header band, tinted with its color: it
+            sweeps in from the left and the label settles over it. */}
+        <div className="relative flex items-center justify-between gap-3 px-4 py-2.5">
+          <span
+            aria-hidden="true"
+            className={`absolute inset-0 bg-[color-mix(in_srgb,var(--tone)_16%,transparent)] ${SWEEP}`}
+            style={at(0)}
+          />
+          <span
+            className={`relative flex items-center gap-2 text-meta font-semibold ${REVEAL}`}
+            style={at(160)}
+          >
+            <span
+              aria-hidden="true"
+              className={`relative size-2 rounded-full ${STATUS_DOT[task.status]}`}
+            >
+              {task.status === "en_curso" && (
+                <span className="animate-node-ping absolute inset-0 rounded-full bg-(--tone)" />
+              )}
+            </span>
+            {STATUS_LABELS[task.status]}
+          </span>
+          <span
+            aria-hidden="true"
+            className={`tabular relative text-meta font-semibold ${first ? "text-accent" : "text-muted"} ${REVEAL}`}
+            style={at(220)}
+          >
+            #{rank}
+          </span>
+        </div>
+
+        <div className="flex flex-1 flex-col gap-1.5 p-4">
+          <p
+            className={`min-w-0 truncate text-meta text-muted ${REVEAL}`}
+            style={at(300)}
+          >
+            {task.groupName}
+          </p>
+
+          <p
+            className={`line-clamp-2 min-h-13 wrap-break-word text-body font-semibold ${REVEAL}`}
+            style={at(380)}
+          >
+            {task.title}
+          </p>
+
+          <div className="mt-auto flex items-center justify-between gap-3 border-t border-line pt-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <span className={REVEAL} style={at(480)}>
+                <PriorityChip priority={task.priority} plain />
+              </span>
+              <span className={REVEAL} style={at(560)}>
+                <DueChip dueDate={task.dueDate} serverNow={serverNow} />
+              </span>
+            </div>
+            <span className={REVEAL} style={at(620)}>
+              <ProgressDial
+                pct={task.progressPct}
+                tone={tone}
+                delay={700}
+                sweepClass="group-aria-[current=true]/slide:animate-ring-fill"
+              />
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Row from `lg` */}
+      <div className="hidden grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 px-5 py-3.5 lg:grid">
+        <span
+          aria-hidden="true"
+          className={`animate-node-pop tabular relative col-start-1 row-span-2 row-start-1 flex size-8 shrink-0 items-center justify-center rounded-full text-ui font-semibold transition-colors ${
+            first
+              ? "bg-accent text-accent-ink ring-4 ring-accent/15"
+              : "border border-line-strong bg-surface text-muted group-hover/card:border-accent group-hover/card:text-accent"
+          }`}
+          style={{ "--delay": `${delay + 120}ms` } as CSSProperties}
+        >
+          {first && (
+            <span
+              className="animate-node-ping absolute inset-0 rounded-full bg-accent"
+              style={{ "--delay": `${STEP_MS * 3}ms` } as CSSProperties}
+            />
+          )}
+          <span className="relative">{rank}</span>
+        </span>
+
+        <p className="col-start-2 row-start-1 line-clamp-2 min-w-0 wrap-break-word text-[0.9375rem] font-semibold leading-6">
+          {task.title}
+        </p>
+
+        <div className="col-start-2 row-start-2 flex min-w-0 flex-wrap items-center gap-2">
+          <p className="max-w-44 truncate pr-1 text-meta text-muted">
+            {task.groupName}
+          </p>
+          <StatusChip status={task.status} />
+          <PriorityChip priority={task.priority} />
+          <DueChip dueDate={task.dueDate} serverNow={serverNow} />
+        </div>
+
+        <div className="col-start-3 row-span-2 row-start-1 flex items-center gap-3">
+          <ProgressDial
+            pct={task.progressPct}
+            tone={tone}
+            delay={delay + 320}
+          />
+          <ChevronRightIcon className="size-4 shrink-0 text-muted transition-transform duration-300 group-hover/card:translate-x-1 group-hover/card:text-accent" />
+        </div>
       </div>
     </Link>
   );

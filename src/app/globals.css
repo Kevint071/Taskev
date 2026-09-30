@@ -301,6 +301,57 @@
     backwards;
 }
 
+/* "Hoy" priority rows: the progress ring sweeps from empty to its value (the end state is the inline stroke-dashoffset, on a pathLength of 100). */
+@keyframes ring-fill {
+  from {
+    stroke-dashoffset: 100;
+  }
+}
+
+@utility animate-ring-fill {
+  stroke-dasharray: 100;
+  animation: ring-fill 900ms cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0ms)
+    backwards;
+}
+
+/* "Hoy" priorities reel: when a card becomes the active one its status band sweeps
+   in and its attributes settle one after another (`--delay` staggers them). Applied
+   only while the card is active, so every activation replays them. */
+@keyframes attr-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@utility animate-attr-in {
+  animation: attr-in 480ms cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0ms)
+    backwards;
+}
+
+@keyframes band-sweep {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+@utility animate-band-sweep {
+  animation: band-sweep 620ms cubic-bezier(0.65, 0, 0.35, 1) var(--delay, 0ms)
+    backwards;
+}
+
+/* "Hoy" priorities reel: the active dot fills over the wait before the reel advances by itself. */
+@keyframes dot-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@utility animate-dot-fill {
+  transform-origin: left;
+  animation: dot-fill var(--autoplay-ms, 6000ms) linear forwards;
+}
+
 /* A task that exists on screen but is still being saved in the background. */
 @keyframes syncing {
   50% {
