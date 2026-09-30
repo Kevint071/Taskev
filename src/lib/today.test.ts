@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   buildTodayMetrics,
   buildTodaySections,
+  buildWeekActivity,
   dueAroundDay,
   dueOnDay,
   type TodayTask,
@@ -293,33 +294,33 @@ test("buildTodayMetrics: counts completions today and this week", () => {
   assert.equal(metrics.completedThisWeek, 2);
 });
 
-test("buildTodayMetrics: streak counts consecutive days ending today", () => {
-  const metrics = buildTodayMetrics(
+test("buildWeekActivity: seven days, oldest first, ending today", () => {
+  const week = buildWeekActivity([], now);
+
+  assert.equal(week.length, 7);
+  assert.equal(week[0].dayKey, utcDay("2026-09-10").getTime());
+  assert.equal(week[6].dayKey, utcDay("2026-09-16").getTime());
+  assert.ok(week.every((day) => day.count === 0));
+});
+
+test("buildWeekActivity: counts completions per day and ignores the rest", () => {
+  const week = buildWeekActivity(
     [
       utcDay("2026-09-16"),
-      utcDay("2026-09-15"),
+      utcDay("2026-09-16"),
       utcDay("2026-09-14"),
-      utcDay("2026-09-12"),
+      utcDay("2026-09-10"),
+      utcDay("2026-09-09"), // before the window
+      utcDay("2026-09-17"), // after today
+      null,
     ],
     now,
   );
 
-  assert.equal(metrics.streak, 3);
-});
-
-test("buildTodayMetrics: streak gives today a grace day when nothing is done yet", () => {
-  const metrics = buildTodayMetrics(
-    [utcDay("2026-09-15"), utcDay("2026-09-14")],
-    now,
+  assert.deepEqual(
+    week.map((day) => day.count),
+    [1, 0, 0, 0, 1, 0, 2],
   );
-
-  assert.equal(metrics.streak, 2);
-});
-
-test("buildTodayMetrics: streak is zero once a day is skipped", () => {
-  const metrics = buildTodayMetrics([utcDay("2026-09-13")], now);
-
-  assert.equal(metrics.streak, 0);
 });
 
 test("dueOnDay keeps open tasks due on exactly that day", () => {

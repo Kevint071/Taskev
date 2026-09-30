@@ -47,8 +47,8 @@
   --sunken: #050608;
   --line: #23272f;
   --line-strong: #343a44;
-  --ink: #f2f4f8;
-  --muted: #aab4c8;
+  --ink: #d5dae4;
+  --muted: #97a1b5;
   --accent: #8fa4f5;
   --accent-soft: #1c2338;
   --accent-ink: #0a0c10;
@@ -66,7 +66,7 @@
   --chat-bot-to: #151921;
   --chat-bot-line: #2b3240;
   /* Slightly softer than --ink so long chat text doesn't glare on dark. */
-  --chat-ink: #d3d9e4;
+  --chat-ink: #c6cdda;
   color-scheme: dark;
 }
 
@@ -228,6 +228,72 @@
 
 @utility animate-rise {
   animation: rise 420ms cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0ms)
+    backwards;
+}
+
+/* "Hoy" progress: bars growing up from the baseline, staggered by `--delay`. */
+@keyframes grow-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@utility animate-grow-y {
+  transform-origin: bottom;
+  animation: grow-y 700ms cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0ms)
+    backwards;
+}
+
+/* "Hoy" priorities: the thread draws down to the next node, each node pops in,
+   the first one sends out a slow ping, and a progress fill grows from the left. */
+@keyframes thread-draw {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+}
+
+@utility animate-thread-draw {
+  animation: thread-draw 520ms cubic-bezier(0.65, 0, 0.35, 1) var(--delay, 0ms)
+    backwards;
+}
+
+@keyframes node-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+@utility animate-node-pop {
+  animation: node-pop 480ms cubic-bezier(0.34, 1.56, 0.64, 1) var(--delay, 0ms)
+    backwards;
+}
+
+@keyframes node-ping {
+  from {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+@utility animate-node-ping {
+  animation: node-ping 2.6s cubic-bezier(0, 0, 0.2, 1) var(--delay, 0ms)
+    infinite;
+}
+
+@keyframes bar-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@utility animate-bar-fill {
+  transform-origin: left;
+  animation: bar-fill 800ms cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0ms)
     backwards;
 }
 

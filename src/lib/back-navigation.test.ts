@@ -15,6 +15,10 @@ test("resolveBack returns the screen the task was opened from", () => {
     href: "/tasks",
     label: "Tareas",
   });
+  assert.deepEqual(resolveBack("actividad", group), {
+    href: "/actividad",
+    label: "Actividad",
+  });
 });
 
 test("resolveBack falls back to the group when the source is missing or unknown", () => {

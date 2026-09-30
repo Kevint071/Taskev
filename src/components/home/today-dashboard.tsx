@@ -1,9 +1,8 @@
 import { cookies } from "next/headers";
 import { LocalDate } from "@/components/local-date";
-import { TaskSection } from "@/components/task-section";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/panel";
-import { groupEventsByTask } from "@/lib/activity";
+import { activityKind, summarizeActivity } from "@/lib/activity";
 import { getActivitySince } from "@/lib/data/activity";
 import { getUserTaskOverview } from "@/lib/data/overview";
 import {
@@ -12,8 +11,8 @@ import {
   TIME_ZONE_COOKIE,
 } from "@/lib/time-zone";
 import { buildTodaySections, dueAroundDay } from "@/lib/today";
-import { ActivityFeed } from "./activity-feed";
 import { DueTodaySection } from "./due-today-section";
+import { TodayActivity } from "./today-activity";
 import { TodayMetrics } from "./today-metrics";
 import { TopTasks } from "./top-tasks";
 
@@ -34,14 +33,16 @@ export async function TodayDashboard({
   const { top } = buildTodaySections(tasks, now);
   const serverToday = dayKeyInTimeZone(now, timeZone);
   const utcToday = dayKeyInTimeZone(now, "UTC");
-  const activity = groupEventsByTask(events);
+  const activity = summarizeActivity(events);
   const firstName = name?.split(" ")[0];
 
   const openTasks = tasks.filter((t) => t.status !== "completada");
   // Open tasks exist, but none is workable, so the top 3 came out empty.
   const allStalled = top.length === 0 && openTasks.length > 0;
-  const unplanned = openTasks.filter(
-    (t) => !t.dueDate && Number(t.priority) === 0,
+  // Already listed above with their due date, so "Vence hoy" skips them.
+  const topIds = new Set(top.map((t) => t.id));
+  const dueAround = dueAroundDay(tasks, utcToday).filter(
+    (t) => !topIds.has(t.id),
   );
   const completedAt = tasks.flatMap((t) =>
     t.status === "completada" && t.completedAt
@@ -50,7 +51,8 @@ export async function TodayDashboard({
   );
 
   return (
-    <>
+    // data-motion-ok: the page's motion plays even with "reduce animations" on.
+    <div data-motion-ok="" className="flex min-w-0 flex-col gap-10 md:gap-12">
       <header>
         <h1 className="text-page font-semibold">
           {firstName ? `Hoy, ${firstName}` : "Hoy"}
@@ -62,8 +64,6 @@ export async function TodayDashboard({
           />
         </p>
       </header>
-
-      <TodayMetrics completedAt={completedAt} serverNow={now.toISOString()} />
 
       {top.length > 0 ? (
         <TopTasks tasks={top} serverNow={now.toISOString()} />
@@ -99,23 +99,22 @@ export async function TodayDashboard({
       )}
 
       {top.length > 0 && (
-        <DueTodaySection
-          tasks={dueAroundDay(tasks, utcToday)}
-          serverToday={serverToday}
-        />
+        <DueTodaySection tasks={dueAround} serverToday={serverToday} />
       )}
 
-      {unplanned.length > 0 && (
-        <TaskSection
-          title="Sin fecha ni prioridad"
-          tasks={unplanned}
-          empty=""
-          tone="neutral"
-          from="hoy"
+      <TodayMetrics completedAt={completedAt} serverNow={now.toISOString()} />
+
+      {activity.changes > 0 && (
+        <TodayActivity
+          summary={activity}
+          events={events.map((e) => ({
+            at: e.createdAt.toISOString(),
+            kind: activityKind(e),
+          }))}
+          serverNow={now.toISOString()}
+          timeZone={timeZone}
         />
       )}
-
-      {activity.length > 0 && <ActivityFeed tasks={activity} />}
-    </>
+    </div>
   );
 }

@@ -107,16 +107,13 @@ export function dueAroundDay<T extends DatedTask>(
 export type TodayMetrics = {
   completedToday: number;
   completedThisWeek: number;
-  streak: number;
 };
 
 /**
- * Completion metrics for the "Hoy" ritual: how much closed today/this week,
- * and the current daily streak. `completedAt` is stored as UTC midnight of
- * the chosen calendar day, same as `dueDate`, so it's compared directly
- * against `now`'s day key rather than re-derived. The streak gives today a
- * grace period — if nothing is completed yet today, it still counts
- * yesterday's run — so it only breaks once a full day is skipped.
+ * Completion metrics for the "Hoy" ritual: how much closed today and in the
+ * last seven days. `completedAt` is stored as UTC midnight of the chosen
+ * calendar day, same as `dueDate`, so it's compared directly against `now`'s
+ * day key rather than re-derived.
  */
 export function buildTodayMetrics(
   completedAtDates: (Date | null)[],
@@ -124,24 +121,45 @@ export function buildTodayMetrics(
 ): TodayMetrics {
   const today = startOfDayKey(now);
   const weekStart = today - (WEEK_WINDOW_DAYS - 1) * MS_PER_DAY;
-  const days = new Set<number>();
   let completedToday = 0;
   let completedThisWeek = 0;
 
   for (const date of completedAtDates) {
     if (!date) continue;
     const day = date.getTime();
-    days.add(day);
     if (day === today) completedToday++;
     if (day >= weekStart && day <= today) completedThisWeek++;
   }
 
-  let cursor = days.has(today) ? today : today - MS_PER_DAY;
-  let streak = 0;
-  while (days.has(cursor)) {
-    streak++;
-    cursor -= MS_PER_DAY;
+  return { completedToday, completedThisWeek };
+}
+
+export type WeekDay = {
+  /** UTC midnight of the calendar day, like stored due and completion dates. */
+  dayKey: number;
+  count: number;
+};
+
+/**
+ * Completions per calendar day over the last `WEEK_WINDOW_DAYS` days, oldest
+ * first and ending today: the bars of the "Hoy" progress chart. Dates outside
+ * the window (older, or after today) are ignored.
+ */
+export function buildWeekActivity(
+  completedAtDates: (Date | null)[],
+  now: Date,
+): WeekDay[] {
+  const today = startOfDayKey(now);
+  const week: WeekDay[] = Array.from({ length: WEEK_WINDOW_DAYS }, (_, i) => ({
+    dayKey: today - (WEEK_WINDOW_DAYS - 1 - i) * MS_PER_DAY,
+    count: 0,
+  }));
+
+  for (const date of completedAtDates) {
+    if (!date) continue;
+    const slot = week.find((day) => day.dayKey === date.getTime());
+    if (slot) slot.count++;
   }
 
-  return { completedToday, completedThisWeek, streak };
+  return week;
 }

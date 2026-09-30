@@ -33,7 +33,8 @@ const NAV: NavItem[] = [
   {
     href: "/",
     label: "Hoy",
-    match: (p) => p === "/",
+    // Activity is a page under Hoy.
+    match: (p) => p === "/" || p.startsWith("/actividad"),
     icon: (
       <svg {...iconProps} aria-hidden="true">
         <circle cx="10" cy="10" r="3.2" />

@@ -165,7 +165,7 @@ export function TaskRow({
     >
       <span
         aria-hidden="true"
-        className="absolute inset-y-2 left-0 w-[3px] rounded-full"
+        className="absolute inset-y-2 left-0 w-0.75 rounded-full"
         style={{ backgroundColor: STATUS_TONE[task.status] }}
       />
 
