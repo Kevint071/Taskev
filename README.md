@@ -1,57 +1,123 @@
+<div align="center">
+
+<br />
+
 # Taskev
 
-**Sabe en qué trabajar a continuación.**
+### Sabe en qué trabajar a continuación
 
-Taskev es un gestor de tareas enfocado en personas con muchos frentes abiertos compitiendo por su atención. Convierte una larga lista de responsabilidades en una vista clara y útil del trabajo que importa ahora.
+Un gestor de tareas para quien tiene muchos frentes abiertos<br />compitiendo por su atención.
 
-## ¿Por qué Taskev?
+<br />
 
-La mayoría de las listas de tareas te muestran todo lo que podrías hacer. Taskev te ayuda a decidir qué hacer a continuación.
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19-149ECA?style=for-the-badge&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/Neon-PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 
-- **Empieza por hoy.** Abre la aplicación y consulta primero tus tareas más relevantes, según su prioridad, progreso y fecha límite.
-- **Mantén el trabajo organizado.** Organiza las tareas en grupos para que cada una tenga el contexto necesario sin dificultar la revisión de tu día.
-- **Detecta lo que necesita atención.** Identifica rápidamente el trabajo atrasado, bloqueado, en curso y próximo.
-- **Haz visible el progreso.** Sigue el estado y el porcentaje de finalización sin perder de vista el grupo completo.
-- **Planifica con fechas reales.** Usa el calendario para consultar el trabajo programado y las próximas fechas límite.
-- **Mantén el control.** Añade notas y comentarios para conservar las decisiones y el contexto junto a cada tarea.
+[Qué hace](#qué-hace) · [Estados](#cada-tarea-sabe-en-qué-punto-está) · [Asistente IA](#un-asistente-que-conoce-tu-lista) · [Estado](#estado)
 
-## La experiencia
+<br />
 
-### Una vista diaria tranquila
+</div>
 
-El panel de Hoy reúne en un solo lugar las próximas acciones, las fechas límite, las tareas bloqueadas y la actividad reciente. En lugar de decidir cada mañana por dónde empezar, puedes comenzar con el trabajo que ya está identificado como más importante.
+> **El problema:** una lista de tareas te enseña todo lo que podrías hacer.
+> **Taskev:** te enseña lo que toca hacer ahora.
 
-### Grupos que siguen siendo accionables
+<br />
 
-Los grupos reúnen tareas relacionadas en torno a un objetivo común. Cada grupo contiene tareas ordenadas con estado, prioridad, fecha límite, progreso y comentarios.
+## Qué hace
 
-### Una lista de tareas que refleja la realidad
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Hoy</h3>
+      Un panel con lo más relevante según prioridad y progreso, lo que vence hoy, lo atrasado y lo bloqueado. Abres la app y ya sabes por dónde empezar.
+    </td>
+    <td width="50%" valign="top">
+      <h3>Grupos</h3>
+      Agrupa las tareas por objetivo y mira cuánto llevas avanzado de media. Descríbelos, renómbralos y archívalos cuando terminen.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Prioridad y progreso</h3>
+      Ajusta la prioridad con un deslizador y actualiza el avance de cada tarea. Taskev ordena el trabajo por ti.
+    </td>
+    <td width="50%" valign="top">
+      <h3>Calendario</h3>
+      Ve las fechas límite de la semana, dónde se acumula la carga y qué está vencido antes de que sea tarde.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Notas y actividad</h3>
+      Comentarios junto a cada tarea y una línea de actividad por grupo para retomar un tema sin perder el hilo.
+    </td>
+    <td width="50%" valign="top">
+      <h3>Asistente IA</h3>
+      Habla con tus tareas en lenguaje natural usando tus propias API keys.
+    </td>
+  </tr>
+</table>
 
-Las tareas pueden estar disponibles, en curso, pausadas, bloqueadas o completadas. Esto facilita distinguir el trabajo que puedes hacer ahora del que está esperando a otra persona o condición.
+<br />
 
-## Aspectos destacados
+## Cada tarea sabe en qué punto está
 
-- Cuentas personales con inicio de sesión seguro y recuperación de contraseña
-- Organización de tareas por grupos activos y archivados
-- Clasificación por prioridad y relevancia para descubrir la próxima acción
-- Seguimiento del progreso y estados de tarea significativos
-- Panel de Hoy con trabajo atrasado y próximo
-- Vista de calendario para las tareas programadas
-- Comentarios y actividad reciente por grupo
-- Interfaz adaptable con temas claro y oscuro
+«Pendiente» y «hecha» no bastan. Lo que está esperando a otra persona no es lo mismo que lo que puedes empezar ahora, y Taskev lo distingue para que tu lista de trabajo real no se llene de ruido.
 
-## Acerca de Taskev
+| Estado | Qué significa |
+| :--- | :--- |
+| ![disponible](https://img.shields.io/badge/disponible-6B7280?style=flat-square) | Lista para empezar cuando toque. |
+| ![en curso](https://img.shields.io/badge/en_curso-3B82F6?style=flat-square) | Trabajando en ella ahora mismo. |
+| ![pausada](https://img.shields.io/badge/pausada-F59E0B?style=flat-square) | Empezada, pero la dejaste a un lado por ahora. |
+| ![bloqueada](https://img.shields.io/badge/bloqueada-EF4444?style=flat-square) | No puedes avanzar: depende de algo o de alguien. |
+| ![completada](https://img.shields.io/badge/completada-22C55E?style=flat-square) | Terminada. Suma a la barra de progreso de su grupo. |
 
-Taskev está diseñado como una aplicación personal y enfocada en la productividad. El repositorio contiene la aplicación web y su lógica de dominio, con persistencia en PostgreSQL y una interfaz moderna basada en React.
+<br />
 
-### Tecnologías
+## Un asistente que conoce tu lista
 
-- [Next.js](https://nextjs.org/)
-- [React](https://react.dev/)
-- [TypeScript](https://www.typescriptlang.org/)
-- [PostgreSQL](https://www.postgresql.org/)
-- [Drizzle ORM](https://orm.drizzle.team/)
+Escribe lo que necesitas como se lo dirías a una persona, y el asistente trabaja sobre tus tareas reales.
+
+> **Tú:** ¿Qué tengo que entregar esta semana?
+>
+> **Asistente:** Tienes 3 tareas con fecha esta semana. La más urgente vence mañana y está bloqueada.
+>
+> **Tú:** Marca como completada la de revisar el informe.
+
+*Ejemplo ilustrativo.*
+
+Elige el modelo que prefieras. Taskev funciona con tus propias claves, que se guardan cifradas y solo las usas tú:
+
+![Gemini](https://img.shields.io/badge/Gemini-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white)
+![Groq](https://img.shields.io/badge/Groq-F55036?style=for-the-badge)
+![OpenRouter](https://img.shields.io/badge/OpenRouter-6467F2?style=for-the-badge)
+![GitHub Copilot](https://img.shields.io/badge/GitHub_Copilot-181717?style=for-the-badge&logo=github&logoColor=white)
+
+El asistente es opcional: sin ninguna clave, el resto de Taskev funciona igual.
+
+<br />
+
+## Además
+
+- Cuentas personales con recuperación de contraseña
+- Escritorio y móvil
+- Tema claro, oscuro o del sistema
+- Cambios instantáneos: estado, prioridad y progreso se reflejan sin esperar al servidor
+
+<br />
 
 ## Estado
 
-Taskev está en desarrollo activo. El flujo principal está disponible: crear grupos, añadir y priorizar tareas, seguir el progreso, planificar fechas límite y usar el panel de Hoy para centrar la atención.
+Taskev está en **desarrollo activo**. El flujo principal ya funciona: crear grupos, priorizar tareas, seguir el progreso, planificar fechas y consultar al asistente.
+
+<br />
+
+<div align="center">
+
+Licencia [MIT](LICENSE)
+
+</div>
