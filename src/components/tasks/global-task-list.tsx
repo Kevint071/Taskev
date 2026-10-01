@@ -68,7 +68,9 @@ export function GlobalTaskList({
           }
         />
       ) : (
-        <ul className="flex flex-col gap-2">
+        // Below `lg` one bordered panel with hairline dividers; from `lg` the
+        // panel chrome drops away and each row is its own card again.
+        <ul className="flex flex-col overflow-hidden rounded-panel border border-line bg-raised shadow-panel dark:border-white/10 dark:bg-[#101217] lg:gap-2 lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none dark:lg:bg-transparent">
           {tasks.map((task) => (
             <TaskRow
               key={task.id}
@@ -77,6 +79,7 @@ export function GlobalTaskList({
               from={from}
               centerProgressOnDesktop
               inlineGroupStatus
+              flatOnMobile
             />
           ))}
         </ul>
