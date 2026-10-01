@@ -99,6 +99,23 @@ test("keeps the assistant on Taskev and declines unrelated requests", () => {
   assert.match(text, /redirige/);
 });
 
+test("states how Taskev orders tasks so the model never invents the rule", () => {
+  const text = buildSystemInstruction(evening, "UTC");
+  // The order is relevance (priority + due date), not status.
+  assert.match(text, /no se ordenan por estado/);
+  assert.match(text, /prioridad y fecha límite/);
+  // Only on an exact tie does being in progress count.
+  assert.match(text, /en_curso va antes que disponible/);
+  // Blocked and paused go last; pinning only affects "Hoy".
+  assert.match(text, /bloqueadas y pausadas van al final/);
+  assert.match(
+    text,
+    /Fijar una tarea en «Hoy» no cambia su orden dentro del grupo/,
+  );
+  // Anything the prompt doesn't describe must not be made up.
+  assert.match(text, /no lo inventes/);
+});
+
 test("tells the model 'pendientes' spans every status but completada", () => {
   const text = buildSystemInstruction(evening, "UTC");
   assert.match(text, /pendiente/);
