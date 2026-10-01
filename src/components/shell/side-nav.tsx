@@ -11,7 +11,7 @@ function SideLink({ item, active }: { item: NavItem; active: boolean }) {
       className={`flex h-9 items-center gap-2.5 rounded-control px-2 font-medium transition-colors ${
         active
           ? "bg-accent-soft text-accent"
-          : "text-muted hover:bg-sunken hover:text-ink"
+          : "text-muted hover:bg-sunken hover:text-ink dark:text-[color-mix(in_srgb,var(--ink)_55%,var(--muted))]"
       }`}
     >
       {item.icon}
