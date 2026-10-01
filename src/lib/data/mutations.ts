@@ -4,7 +4,11 @@ import { recordTaskEvent } from "@/lib/data/activity";
 import { db } from "@/lib/db";
 import { groups, taskComments, tasks } from "@/lib/db/schema";
 import { positionAtEnd } from "@/lib/ordering";
-import { parseTaskFields, statusRuleError } from "@/lib/task-input";
+import {
+  parseTaskFields,
+  progressRuleError,
+  statusRuleError,
+} from "@/lib/task-input";
 
 /**
  * Writes shared by the route handlers and the assistant's tools. Each one
@@ -112,6 +116,12 @@ export async function createTask(
     );
     if (error) return fail(400, error);
   }
+  // A task created without a status defaults to "disponible".
+  const progressError = progressRuleError(
+    fields.status ?? "disponible",
+    fields.progressPct ?? 0,
+  );
+  if (progressError) return fail(400, progressError);
   // Only a task created as "completada" carries a completion date.
   if (fields.status !== "completada") fields.completedAt = null;
 
@@ -147,6 +157,14 @@ export async function updateTask(
     return fail(400, parsed.error);
   }
   const updates: Partial<typeof tasks.$inferInsert> = { ...parsed.value };
+
+  if (updates.progressPct !== undefined) {
+    const progressError = progressRuleError(
+      updates.status ?? task.status,
+      updates.progressPct,
+    );
+    if (progressError) return fail(400, progressError);
+  }
 
   if (updates.status !== undefined) {
     const resultingProgress = updates.progressPct ?? task.progressPct;

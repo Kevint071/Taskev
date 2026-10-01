@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { MAX_TASK_TITLE_LENGTH } from "./constraints";
-import { parseTaskFields, statusRuleError } from "./task-input";
+import {
+  parseTaskFields,
+  progressRuleError,
+  statusRuleError,
+} from "./task-input";
 
 const EMPTY = "vacío";
 
@@ -87,4 +91,11 @@ test("statusRuleError: disponible needs no progress and no completion date", () 
 test("statusRuleError: other statuses accept any progress", () => {
   assert.equal(statusRuleError("en_curso", 70, null), null);
   assert.equal(statusRuleError("pausada", 0, null), null);
+});
+
+test("progressRuleError: a disponible task cannot carry progress", () => {
+  assert.match(progressRuleError("disponible", 10) ?? "", /disponible/);
+  assert.equal(progressRuleError("disponible", 0), null);
+  assert.equal(progressRuleError("en_curso", 10), null);
+  assert.equal(progressRuleError("completada", 100), null);
 });

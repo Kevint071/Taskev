@@ -3,7 +3,7 @@ import {
   TASK_STATUSES,
   type TaskStatus,
 } from "./constraints";
-import { blockedFromDisponible } from "./progress";
+import { blockedFromDisponible, progressEditBlock } from "./progress";
 
 /** Task fields a request body may set, already validated and normalized. */
 export type TaskFieldValues = {
@@ -128,4 +128,15 @@ export function statusRuleError(
     }
   }
   return null;
+}
+
+/**
+ * Why a task in `status` may not be given `progressPct`, or null when allowed:
+ * "disponible" means untouched, so progress needs another status first.
+ */
+export function progressRuleError(
+  status: TaskStatus,
+  progressPct: number,
+): string | null {
+  return progressPct > 0 ? progressEditBlock(status) : null;
 }
