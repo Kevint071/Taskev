@@ -733,6 +733,25 @@
   animation: ring-pulse 800ms ease-out;
 }
 
+/* Loading placeholders: a slow brightness swell between two visible tones, so
+   the dim phase never sinks into the page background (fading opacity did).
+   Colour only, so it is safe to keep under reduced motion (mark the skeleton
+   with [data-motion-ok]); otherwise the global 0.01ms override turns it into
+   a rapid flicker. */
+@keyframes skeleton-fade {
+  0%,
+  100% {
+    background-color: var(--line);
+  }
+  50% {
+    background-color: var(--line-strong);
+  }
+}
+
+@utility animate-skeleton {
+  animation: skeleton-fade 2.4s ease-in-out infinite;
+}
+
 @keyframes caption-in {
   from {
     opacity: 0;

@@ -56,15 +56,25 @@ export function EmptyState({
   );
 }
 
+/** One placeholder shape of a skeleton; size and radius come from `className`. */
+export function Bone({ className = "" }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`animate-skeleton bg-line ${className}`}
+    />
+  );
+}
+
 export function LoadingRows({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="flex flex-col gap-2" aria-busy="true">
+    <div className="flex flex-col gap-2" aria-busy="true" data-motion-ok="">
       <span className="sr-only">Cargando</span>
       {Array.from({ length: rows }, (_, i) => (
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders
           key={i}
-          className="h-12 animate-pulse rounded-panel bg-sunken"
+          className="h-12 animate-skeleton rounded-panel bg-line"
         />
       ))}
     </div>

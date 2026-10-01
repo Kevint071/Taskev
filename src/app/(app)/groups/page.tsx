@@ -10,6 +10,7 @@ import { GroupGrid } from "@/components/groups/group-grid";
 import {
   GroupsOverview,
   GroupsOverviewSkeleton,
+  GroupsPageSkeleton,
 } from "@/components/groups/groups-overview";
 import {
   NewGroupButton,
@@ -23,7 +24,7 @@ export default function GroupsPage() {
   const [showArchived, setShowArchived] = useState(false);
   const [creating, setCreating] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
-  const { groups, loading, reload } = useGroups(showArchived);
+  const { groups, loading, loaded, reload } = useGroups(showArchived);
 
   function handleCreated() {
     setCreating(false);
@@ -32,6 +33,9 @@ export default function GroupsPage() {
   }
 
   const startCreating = () => setCreating(true);
+
+  // First load: one skeleton for the whole page, so nothing shows ahead of the rest.
+  if (!loaded) return <GroupsPageSkeleton />;
 
   return (
     <>

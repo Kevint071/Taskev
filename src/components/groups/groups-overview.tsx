@@ -2,12 +2,14 @@
 
 import type { ComponentType, CSSProperties } from "react";
 import type { GroupSummary } from "@/components/group-types";
+import { GroupGridSkeleton } from "@/components/groups/group-grid";
 import { useCountUp } from "@/components/groups/use-count-up";
 import {
   CalendarIcon,
   LayersIcon,
   ProgressGaugeIcon,
 } from "@/components/ui/icons";
+import { Bone } from "@/components/ui/panel";
 
 const MAX_BARS = 8;
 
@@ -154,12 +156,56 @@ export function GroupsOverview({ groups }: { groups: GroupSummary[] }) {
   );
 }
 
+/** Whole-page placeholder for the first load: title, overview, tabs and cards. */
+export function GroupsPageSkeleton() {
+  return (
+    <div aria-busy="true" data-motion-ok="" className="contents">
+      <Bone className="h-8.5 w-36 rounded-md" />
+      <GroupsOverviewSkeleton />
+      <section className="flex flex-col gap-5 max-md:pb-20">
+        {/* Phones: two equal tabs across the row; wide screens: tabs at the
+            start and the "Nuevo grupo" action at the end. */}
+        <div
+          aria-hidden="true"
+          className="relative flex h-11 gap-1 md:h-12 md:gap-2"
+        >
+          {["w-16", "w-20"].map((width) => (
+            <div
+              key={width}
+              className="flex flex-1 items-center justify-center md:flex-none md:px-2.5"
+            >
+              <Bone className={`h-4 ${width} rounded-sm`} />
+            </div>
+          ))}
+          <div className="absolute inset-y-0 right-0 hidden items-center md:flex">
+            <Bone className="h-9 w-32 rounded-control" />
+          </div>
+        </div>
+        <GroupGridSkeleton />
+      </section>
+      {/* Phone floating button, where the real one will appear. */}
+      <Bone className="fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-10 size-14 rounded-full md:hidden" />
+    </div>
+  );
+}
+
 /** Same footprint as the overview while the groups load, so nothing jumps. */
 export function GroupsOverviewSkeleton() {
   return (
     <div
       aria-hidden="true"
-      className="h-[4.0625rem] animate-pulse rounded-panel bg-sunken"
-    />
+      data-motion-ok=""
+      className="grid h-16.25 grid-cols-3 divide-x divide-line overflow-hidden rounded-panel border border-line bg-raised shadow-panel"
+    >
+      {["groups", "open", "average"].map((cell) => (
+        <div
+          key={cell}
+          className="flex min-w-0 flex-col justify-center gap-2 px-3.5 sm:px-5"
+        >
+          <Bone className="h-3 w-14 rounded-sm" />
+          <Bone className="h-5 w-10 rounded-sm" />
+        </div>
+      ))}
+    </div>
   );
 }

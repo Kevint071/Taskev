@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { GroupSummary } from "@/components/group-types";
 import { GroupCard } from "@/components/groups/group-card";
+import { Bone } from "@/components/ui/panel";
 
 const GRID = "grid gap-4 sm:grid-cols-2 xl:grid-cols-3";
 const STAGGER_MS = 70;
@@ -9,6 +10,34 @@ const MAX_STAGGERED = 10;
 
 function delayFor(index: number) {
   return Math.min(index, MAX_STAGGERED) * STAGGER_MS;
+}
+
+export function GroupGridSkeleton() {
+  return (
+    <ul className={GRID} aria-busy="true" data-motion-ok="">
+      {Array.from({ length: 6 }, (_, i) => (
+        <li
+          // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders
+          key={i}
+          className="flex h-35 flex-col gap-5 rounded-panel border border-line bg-raised p-4 shadow-panel"
+        >
+          {/* Same anatomy as GroupCard: title and description, then the
+              counts, the percentage and the progress rule. */}
+          <div className="flex flex-col gap-2 pr-9">
+            <Bone className="h-4 w-2/3 rounded-sm" />
+            <Bone className="h-3 w-full rounded-sm" />
+          </div>
+          <div className="mt-auto flex flex-col gap-2.5">
+            <div className="flex items-end justify-between gap-3">
+              <Bone className="h-3.5 w-32 rounded-sm" />
+              <Bone className="h-6 w-10 rounded-sm" />
+            </div>
+            <Bone className="h-1 w-full rounded-full" />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 export function GroupGrid({
@@ -24,19 +53,7 @@ export function GroupGrid({
   onUpdated: () => void;
   onError: (message: string) => void;
 }) {
-  if (loading) {
-    return (
-      <ul className={GRID} aria-busy="true">
-        {Array.from({ length: 6 }, (_, i) => (
-          <li
-            // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders
-            key={i}
-            className="h-40 animate-pulse rounded-panel bg-sunken"
-          />
-        ))}
-      </ul>
-    );
-  }
+  if (loading) return <GroupGridSkeleton />;
 
   if (groups.length === 0) {
     return (
