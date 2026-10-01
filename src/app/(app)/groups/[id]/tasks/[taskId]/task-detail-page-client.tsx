@@ -12,6 +12,7 @@ import {
   type SyncQueue,
   sendJson,
 } from "@/lib/sync-queue";
+import { unpinOnCompletion } from "@/lib/task-input";
 
 /** Client-side editing shell for a single task: sync queue + optimistic updates. */
 export function TaskDetailPageClient({
@@ -63,8 +64,9 @@ export function TaskDetailPageClient({
   }
 
   function updateTask(updates: TaskUpdates) {
-    applyLocal(updates);
-    saveRemote(updates);
+    const next = unpinOnCompletion(updates);
+    applyLocal(next);
+    saveRemote(next);
   }
 
   async function handleDelete() {

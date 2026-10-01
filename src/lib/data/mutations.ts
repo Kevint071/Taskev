@@ -8,6 +8,7 @@ import {
   parseTaskFields,
   progressRuleError,
   statusRuleError,
+  unpinOnCompletion,
 } from "@/lib/task-input";
 
 /**
@@ -104,7 +105,7 @@ export async function createTask(
   if (!parsed.ok) {
     return fail(400, parsed.error);
   }
-  const { title, ...fields } = parsed.value;
+  const { title, ...fields } = unpinOnCompletion(parsed.value);
   if (!title) {
     return fail(400, "El título de la tarea es requerido");
   }
@@ -156,7 +157,9 @@ export async function updateTask(
   if (!parsed.ok) {
     return fail(400, parsed.error);
   }
-  const updates: Partial<typeof tasks.$inferInsert> = { ...parsed.value };
+  const updates: Partial<typeof tasks.$inferInsert> = unpinOnCompletion({
+    ...parsed.value,
+  });
 
   if (updates.progressPct !== undefined) {
     const progressError = progressRuleError(

@@ -5,9 +5,28 @@ import {
   parseTaskFields,
   progressRuleError,
   statusRuleError,
+  unpinOnCompletion,
 } from "./task-input";
 
 const EMPTY = "vacío";
+
+test("unpinOnCompletion: completing a task drops its pin, even if one is requested", () => {
+  assert.deepEqual(unpinOnCompletion({ status: "completada" }), {
+    status: "completada",
+    pinnedToday: false,
+  });
+  assert.deepEqual(
+    unpinOnCompletion({ status: "completada", pinnedToday: true }),
+    { status: "completada", pinnedToday: false },
+  );
+});
+
+test("unpinOnCompletion: leaves every other change untouched", () => {
+  const pin = { pinnedToday: true };
+  assert.equal(unpinOnCompletion(pin), pin);
+  const reopen = { status: "en_curso", pinnedToday: true };
+  assert.equal(unpinOnCompletion(reopen), reopen);
+});
 
 test("parseTaskFields: leaves absent fields out", () => {
   assert.deepEqual(parseTaskFields({}, EMPTY), { ok: true, value: {} });

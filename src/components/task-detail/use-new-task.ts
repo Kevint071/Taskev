@@ -6,6 +6,7 @@ import { MAX_TASK_TITLE_LENGTH } from "@/lib/constraints";
 import { groupTaskViewHref, groupTaskViewOf } from "@/lib/group-task-views";
 import { PROGRESS_MAX } from "@/lib/progress";
 import { ApiError, sendJson } from "@/lib/sync-queue";
+import { unpinOnCompletion } from "@/lib/task-input";
 
 export type Draft = {
   title: string;
@@ -43,7 +44,7 @@ export function useNewTask(groupId: string) {
   }
 
   function update(changes: Partial<Draft>) {
-    setDraft((prev) => ({ ...prev, ...changes }));
+    setDraft((prev) => ({ ...prev, ...unpinOnCompletion(changes) }));
   }
 
   /**

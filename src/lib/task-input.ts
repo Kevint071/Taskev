@@ -103,6 +103,17 @@ export function parseTaskFields(
 }
 
 /**
+ * A task that gets completed no longer belongs among today's priorities, so
+ * setting "completada" also clears its pin. Other changes pass through as is.
+ */
+export function unpinOnCompletion<
+  T extends { status?: string; pinnedToday?: boolean },
+>(updates: T): T {
+  if (updates.status !== "completada") return updates;
+  return { ...updates, pinnedToday: false };
+}
+
+/**
  * Why a task may not take `status` given the progress and completion date it
  * would end up with, or null when the combination is allowed.
  */

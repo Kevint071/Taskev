@@ -15,6 +15,7 @@ import {
   type SyncQueue,
   sendJson,
 } from "@/lib/sync-queue";
+import { unpinOnCompletion } from "@/lib/task-input";
 
 type GroupDetail = Group & { tasks: Task[] };
 
@@ -167,8 +168,9 @@ export function useGroupDetail(id: string) {
   }
 
   function updateTask(key: string, updates: TaskUpdates) {
-    applyLocal(key, updates);
-    saveRemote(key, updates);
+    const next = unpinOnCompletion(updates);
+    applyLocal(key, next);
+    saveRemote(key, next);
   }
 
   return {
