@@ -11,7 +11,9 @@ const nextConfig: NextConfig = {
     return {
       beforeFiles: SESSION_COOKIE_NAMES.map((key) => ({
         source: "/",
-        has: [{ type: "cookie" as const, key }],
+        // Without `value`, Next forwards the matched cookie to the destination
+        // as a query param, which would put the session JWT in the URL.
+        has: [{ type: "cookie" as const, key, value: ".+" }],
         destination: "/hoy",
       })),
       afterFiles: [],
