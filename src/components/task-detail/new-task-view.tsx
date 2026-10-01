@@ -376,7 +376,7 @@ export function NewTaskView({
                   autosize(e.target);
                 }}
                 rows={3}
-                className="description-scrollbar block max-h-110 min-h-24 w-full resize-none overflow-y-auto rounded-xl border border-control bg-sunken/55 px-4 py-3 text-[15px] leading-7 text-ink caret-accent transition-[background-color,border-color,box-shadow] placeholder:text-muted hover:border-ink/40 focus:border-accent focus:bg-raised focus-visible:ring-2 focus-visible:ring-accent/15"
+                className="block max-h-110 min-h-24 w-full resize-none overflow-y-auto rounded-xl border border-control bg-sunken/55 px-4 py-3 text-[15px] leading-7 text-ink caret-accent transition-[background-color,border-color,box-shadow] placeholder:text-muted hover:border-ink/40 focus:border-accent focus:bg-raised focus-visible:ring-2 focus-visible:ring-accent/15"
               />
             </label>
           </section>

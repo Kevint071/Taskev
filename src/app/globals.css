@@ -170,6 +170,126 @@
     background-color: var(--raised);
     color: var(--ink);
   }
+
+  /* Rounded scrollbars on desktop that stay visible without being heavy;
+     touch devices keep their overlay ones. Kept in the base layer so
+     utilities such as `scrollbar-none` win. The transparent border insets an
+     6px pill inside the 12px track. */
+  @media (hover: hover) and (pointer: fine) {
+    *::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+
+    *::-webkit-scrollbar-track,
+    *::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      min-height: 48px;
+      border: 3px solid transparent;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--accent) 72%, transparent);
+      background-clip: content-box;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+      background-clip: content-box;
+    }
+
+    *::-webkit-scrollbar-thumb:active {
+      background: color-mix(in srgb, var(--accent) 80%, var(--ink));
+      background-clip: content-box;
+    }
+
+    /* Filled triangle arrows. Their colours are the theme tokens inlined
+       (the data URIs can't read CSS variables): the accent in rest, a
+       shade darker (light) or lighter (dark) on hover. */
+    *::-webkit-scrollbar-button:single-button {
+      display: block;
+      width: 12px;
+      height: 16px;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 10px;
+    }
+
+    *::-webkit-scrollbar-button:single-button:vertical:decrement {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%233553c7' stroke='%233553c7' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M8 4.5L12.5 11.5H3.5Z'/%3E%3C/svg%3E");
+    }
+
+    *::-webkit-scrollbar-button:single-button:vertical:decrement:hover {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2324399a' stroke='%2324399a' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M8 4.5L12.5 11.5H3.5Z'/%3E%3C/svg%3E");
+    }
+
+    *::-webkit-scrollbar-button:single-button:vertical:increment {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%233553c7' stroke='%233553c7' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M8 11.5L3.5 4.5H12.5Z'/%3E%3C/svg%3E");
+    }
+
+    *::-webkit-scrollbar-button:single-button:vertical:increment:hover {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2324399a' stroke='%2324399a' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M8 11.5L3.5 4.5H12.5Z'/%3E%3C/svg%3E");
+    }
+
+    *::-webkit-scrollbar-button:single-button:horizontal:decrement {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%233553c7' stroke='%233553c7' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M4.5 8L11.5 3.5V12.5Z'/%3E%3C/svg%3E");
+    }
+
+    *::-webkit-scrollbar-button:single-button:horizontal:decrement:hover {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2324399a' stroke='%2324399a' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M4.5 8L11.5 3.5V12.5Z'/%3E%3C/svg%3E");
+    }
+
+    *::-webkit-scrollbar-button:single-button:horizontal:increment {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%233553c7' stroke='%233553c7' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M11.5 8L4.5 12.5V3.5Z'/%3E%3C/svg%3E");
+    }
+
+    *::-webkit-scrollbar-button:single-button:horizontal:increment:hover {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2324399a' stroke='%2324399a' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M11.5 8L4.5 12.5V3.5Z'/%3E%3C/svg%3E");
+    }
+
+    .dark *::-webkit-scrollbar-button:single-button:vertical:decrement {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%238fa4f5' stroke='%238fa4f5' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M8 4.5L12.5 11.5H3.5Z'/%3E%3C/svg%3E");
+    }
+
+    .dark *::-webkit-scrollbar-button:single-button:vertical:decrement:hover {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23b9c6ff' stroke='%23b9c6ff' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M8 4.5L12.5 11.5H3.5Z'/%3E%3C/svg%3E");
+    }
+
+    .dark *::-webkit-scrollbar-button:single-button:vertical:increment {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%238fa4f5' stroke='%238fa4f5' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M8 11.5L3.5 4.5H12.5Z'/%3E%3C/svg%3E");
+    }
+
+    .dark *::-webkit-scrollbar-button:single-button:vertical:increment:hover {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23b9c6ff' stroke='%23b9c6ff' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M8 11.5L3.5 4.5H12.5Z'/%3E%3C/svg%3E");
+    }
+
+    .dark *::-webkit-scrollbar-button:single-button:horizontal:decrement {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%238fa4f5' stroke='%238fa4f5' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M4.5 8L11.5 3.5V12.5Z'/%3E%3C/svg%3E");
+    }
+
+    .dark *::-webkit-scrollbar-button:single-button:horizontal:decrement:hover {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23b9c6ff' stroke='%23b9c6ff' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M4.5 8L11.5 3.5V12.5Z'/%3E%3C/svg%3E");
+    }
+
+    .dark *::-webkit-scrollbar-button:single-button:horizontal:increment {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%238fa4f5' stroke='%238fa4f5' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M11.5 8L4.5 12.5V3.5Z'/%3E%3C/svg%3E");
+    }
+
+    .dark *::-webkit-scrollbar-button:single-button:horizontal:increment:hover {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23b9c6ff' stroke='%23b9c6ff' stroke-width='4' stroke-linejoin='round'%3E%3Cpath d='M11.5 8L4.5 12.5V3.5Z'/%3E%3C/svg%3E");
+    }
+
+    /* Firefox has no ::-webkit-scrollbar; in Chromium these standard
+       properties would disable the rules above, hence the guard. */
+    @supports not selector(::-webkit-scrollbar) {
+      * {
+        scrollbar-width: auto;
+        scrollbar-color: color-mix(in srgb, var(--accent) 72%, transparent)
+          transparent;
+      }
+    }
+  }
 }
 
 @utility tabular {
@@ -178,32 +298,6 @@
 
 @utility shadow-panel {
   box-shadow: var(--shadow-panel);
-}
-
-.description-scrollbar {
-  scrollbar-color: color-mix(in srgb, var(--muted) 38%, var(--raised))
-    transparent;
-  scrollbar-width: thin;
-}
-
-.description-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-
-.description-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.description-scrollbar::-webkit-scrollbar-thumb {
-  border: 2px solid transparent;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--muted) 38%, var(--raised));
-  background-clip: content-box;
-}
-
-.description-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--muted) 56%, var(--raised));
-  background-clip: content-box;
 }
 
 /* Cards settling into place one after another (`--delay` staggers them). */
