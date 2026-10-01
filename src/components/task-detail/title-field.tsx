@@ -54,7 +54,7 @@ export function TitleField({
           }}
           rows={1}
           maxLength={MAX_TASK_TITLE_LENGTH}
-          className={`-mx-1 block w-full resize-none overflow-hidden rounded-sm bg-transparent px-1 text-[23px] leading-7.25 font-semibold tracking-[-0.02em] text-pretty caret-accent outline-none sm:text-page ${
+          className={`-mx-1 block w-full resize-none overflow-hidden rounded-sm bg-transparent px-1 text-[23px] leading-7.25 font-semibold tracking-[-0.02em] text-pretty caret-accent outline-none focus-visible:shadow-none sm:text-page ${
             done ? "text-muted line-through decoration-1" : "text-ink"
           }`}
         />

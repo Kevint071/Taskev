@@ -44,7 +44,7 @@ export function CommentComposer({ onAdd }: { onAdd: (body: string) => void }) {
               e.currentTarget.form?.requestSubmit();
             }
           }}
-          className="max-h-36 min-h-9 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-1.5 text-[15px] leading-6 text-ink caret-accent outline-none placeholder:text-muted"
+          className="max-h-36 min-h-9 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-1.5 text-[15px] leading-6 text-ink caret-accent outline-none placeholder:text-muted focus-visible:shadow-none"
         />
         <button
           type="submit"
