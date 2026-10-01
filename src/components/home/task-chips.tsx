@@ -7,7 +7,7 @@ import { formatPriority } from "@/lib/format";
 import { DueLabel } from "./due-label";
 
 const CHIP =
-  "inline-flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-meta font-medium";
+  "inline-flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full text-meta font-medium";
 
 /** The status as a chip tinted with its own color, so it reads before the text does. */
 export function StatusChip({
@@ -20,7 +20,7 @@ export function StatusChip({
 }) {
   return (
     <span
-      className={`${CHIP} ${plain ? "px-0" : ""}`}
+      className={`${CHIP} ${plain ? "" : "px-2.5"}`}
       style={
         {
           color: "var(--ink)",
@@ -51,7 +51,7 @@ export function PriorityChip({
   const value = Math.max(0, Number(priority));
   return (
     <span
-      className={`${CHIP} tabular text-ink ${plain ? "px-0" : "bg-sunken"}`}
+      className={`${CHIP} tabular text-ink ${plain ? "" : "bg-sunken px-2.5"}`}
     >
       <FlagIcon className="size-3.5 text-muted" />
       <span className="sr-only">Prioridad</span>
@@ -73,7 +73,7 @@ export function DueChip({
 }) {
   if (!dueDate) return null;
   return (
-    <span className={`${CHIP} ${plain ? "px-0" : "bg-sunken"}`}>
+    <span className={`${CHIP} ${plain ? "" : "bg-sunken px-2.5"}`}>
       <CalendarIcon className="size-3.5 text-muted" />
       <DueLabel dueDate={dueDate.toISOString()} serverNow={serverNow} />
     </span>
