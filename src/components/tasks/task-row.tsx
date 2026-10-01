@@ -182,7 +182,7 @@ export function TaskRow({
   const rowShape = !inlineGroupStatus
     ? "py-3 first:rounded-t-panel last:rounded-b-panel"
     : flatOnMobile
-      ? "py-3 max-lg:gap-x-3 max-lg:first:rounded-t-[9px] max-lg:last:rounded-b-[9px] not-last:border-b not-last:border-line lg:rounded-lg lg:border lg:border-line lg:bg-raised lg:py-3 lg:shadow-panel dark:not-last:border-white/10 dark:lg:border-white/10 dark:lg:bg-[#101217] dark:hover:bg-[#1b2028]"
+      ? "py-3 max-lg:gap-x-3 max-lg:first:rounded-t-[9px] max-lg:last:rounded-b-[9px] not-last:border-b not-last:border-line lg:rounded-xl lg:border lg:border-line lg:bg-raised lg:py-3.5 lg:shadow-panel lg:hover:border-line-strong dark:not-last:border-white/10 dark:lg:border-white/10 dark:lg:bg-[#101217] dark:hover:bg-[#1b2028]"
       : "rounded-lg border border-line bg-raised py-2 shadow-panel lg:py-3 dark:border-white/10 dark:bg-[#101217] dark:hover:bg-[#1b2028]";
 
   return (

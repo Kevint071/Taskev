@@ -100,7 +100,7 @@ export default function GlobalTasksPage() {
           tasks
             ? `${tasks.length} tarea${tasks.length === 1 ? "" : "s"}${
                 overdueCount > 0
-                  ? ` · ${overdueCount} vencida${overdueCount === 1 ? "" : "s"}`
+                  ? `, ${overdueCount} vencida${overdueCount === 1 ? "" : "s"}`
                   : ""
               }`
             : undefined
@@ -120,7 +120,7 @@ export default function GlobalTasksPage() {
           }
         />
       ) : (
-        <>
+        <div className="flex flex-col gap-4 md:gap-5">
           <TaskToolbar
             filters={filters}
             onChange={setFilters}
@@ -141,7 +141,7 @@ export default function GlobalTasksPage() {
               }
             />
           ) : (
-            <div className="flex flex-col gap-4 md:gap-5">
+            <>
               <TaskViewTabs
                 items={VIEW_TABS}
                 idPrefix={GLOBAL_TASK_TABS_PREFIX}
@@ -162,9 +162,9 @@ export default function GlobalTasksPage() {
                   filtering ? () => setFilters(NO_FILTERS) : undefined
                 }
               />
-            </div>
+            </>
           )}
-        </>
+        </div>
       )}
     </>
   );

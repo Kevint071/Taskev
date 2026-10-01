@@ -3,9 +3,12 @@
 import { type ReactNode, useState } from "react";
 import { STATUS_LABELS } from "@/components/group-types";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
-import { Button } from "@/components/ui/button";
-import { CheckIcon, FilterIcon, SearchIcon } from "@/components/ui/icons";
-import { Input } from "@/components/ui/input";
+import {
+  CheckIcon,
+  CloseIcon,
+  FilterIcon,
+  SearchIcon,
+} from "@/components/ui/icons";
 import { StatusDot } from "@/components/ui/status-badge";
 import {
   ALL_GROUPS,
@@ -26,34 +29,101 @@ export function TaskToolbar({
   counts: Record<OpenStatus, number>;
 }) {
   const [open, setOpen] = useState(false);
-  const filtered = filters.status !== "todas" || filters.groupId !== ALL_GROUPS;
+  const groupName = groups.find((g) => g.id === filters.groupId)?.name;
+  const active: { key: string; label: string; clear: () => void }[] = [];
+  if (filters.status !== "todas") {
+    active.push({
+      key: "status",
+      label: STATUS_LABELS[filters.status],
+      clear: () => onChange({ ...filters, status: "todas" }),
+    });
+  }
+  if (filters.groupId !== ALL_GROUPS) {
+    active.push({
+      key: "group",
+      label: groupName ?? "Grupo",
+      clear: () => onChange({ ...filters, groupId: ALL_GROUPS }),
+    });
+  }
 
   return (
-    <div className="flex gap-2">
-      <div className="relative min-w-0 flex-1">
-        <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
-        <Input
-          type="search"
-          aria-label="Buscar tareas"
-          placeholder="Buscar tarea o grupo"
-          value={filters.query}
-          onChange={(e) => onChange({ ...filters, query: e.target.value })}
-          className="w-full pl-9"
-        />
-      </div>
+    <div className="flex flex-col gap-3">
+      <div className="flex gap-2">
+        <div className="relative min-w-0 flex-1">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-4.5 -translate-y-1/2 text-muted" />
+          <input
+            type="search"
+            aria-label="Buscar tareas"
+            placeholder="Buscar tarea o grupo"
+            value={filters.query}
+            onChange={(e) => onChange({ ...filters, query: e.target.value })}
+            className="h-11 w-full rounded-xl border border-control bg-raised pr-10 pl-10 text-ui text-ink shadow-panel transition-colors placeholder:text-muted hover:border-ink/40 focus-visible:border-accent [&::-webkit-search-cancel-button]:hidden"
+          />
+          {filters.query !== "" && (
+            <button
+              type="button"
+              aria-label="Borrar búsqueda"
+              onClick={() => onChange({ ...filters, query: "" })}
+              className="absolute top-1/2 right-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition-colors hover:bg-sunken hover:text-ink"
+            >
+              <CloseIcon className="size-4" />
+            </button>
+          )}
+        </div>
 
-      <div className="relative shrink-0">
-        <Button variant="secondary" onClick={() => setOpen(true)}>
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          onClick={() => setOpen(true)}
+          className={`inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border px-3.5 text-ui font-medium whitespace-nowrap shadow-panel transition-colors ${
+            active.length > 0
+              ? "border-accent/40 bg-accent-soft text-accent hover:border-accent"
+              : "border-control bg-raised text-ink hover:border-ink/40 hover:bg-sunken"
+          }`}
+        >
           <FilterIcon />
           Filtrar
-        </Button>
-        {filtered && (
-          <span
-            aria-hidden="true"
-            className="absolute -top-1 -right-1 size-2.5 rounded-full bg-accent"
-          />
-        )}
+          {active.length > 0 && (
+            <span className="tabular flex size-5 items-center justify-center rounded-full bg-accent text-[0.75rem] font-semibold text-accent-ink">
+              {active.length}
+            </span>
+          )}
+        </button>
       </div>
+
+      {active.length > 0 && (
+        <ul
+          aria-label="Filtros activos"
+          className="flex flex-wrap items-center gap-2"
+        >
+          {active.map((filter) => (
+            <li key={filter.key}>
+              <button
+                type="button"
+                aria-label={`Quitar filtro: ${filter.label}`}
+                onClick={filter.clear}
+                className="inline-flex h-7 max-w-full items-center gap-1 rounded-full bg-accent-soft pr-1.5 pl-3 text-meta font-medium text-accent transition-colors hover:bg-accent/15"
+              >
+                <span className="truncate">{filter.label}</span>
+                <CloseIcon className="size-3.5 shrink-0" />
+              </button>
+            </li>
+          ))}
+          {active.length > 1 && (
+            <li>
+              <button
+                type="button"
+                onClick={() =>
+                  onChange({ ...filters, status: "todas", groupId: ALL_GROUPS })
+                }
+                className="h-7 rounded-full px-2 text-meta font-medium text-muted transition-colors hover:text-ink"
+              >
+                Limpiar
+              </button>
+            </li>
+          )}
+        </ul>
+      )}
 
       <BottomSheet
         open={open}
