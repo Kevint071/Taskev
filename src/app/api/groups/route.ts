@@ -10,7 +10,7 @@ import {
 } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireUserId } from "@/lib/auth-guard";
-import { createGroup } from "@/lib/data/mutations";
+import { createGroup } from "@/lib/data/services";
 import { db } from "@/lib/db";
 import { groups, tasks } from "@/lib/db/schema";
 

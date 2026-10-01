@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireOwnedTask } from "@/lib/auth-guard";
-import { deleteTask, updateTask } from "@/lib/data/mutations";
+import { deleteTask, updateTask } from "@/lib/data/services";
 
 type Params = { params: Promise<{ id: string }> };
 

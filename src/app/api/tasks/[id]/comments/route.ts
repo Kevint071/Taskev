@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireOwnedTask } from "@/lib/auth-guard";
-import { addComment } from "@/lib/data/mutations";
+import { addComment } from "@/lib/data/services";
 import { db } from "@/lib/db";
 import { taskComments } from "@/lib/db/schema";
 

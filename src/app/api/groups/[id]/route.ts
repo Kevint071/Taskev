@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireOwnedGroup } from "@/lib/auth-guard";
-import { deleteGroup, updateGroup } from "@/lib/data/mutations";
+import { deleteGroup, updateGroup } from "@/lib/data/services";
 import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
 

@@ -9,6 +9,9 @@ import {
   sql,
 } from "drizzle-orm";
 import { STATUS_LABELS } from "@/components/group-types";
+import { ownedGroup, ownedTask } from "@/lib/data/repositories/access";
+import { getActivitySince } from "@/lib/data/repositories/activity";
+import { getUserTaskOverview } from "@/lib/data/repositories/overview";
 import {
   addComment,
   createGroup,
@@ -18,10 +21,7 @@ import {
   type MutationResult,
   updateGroup,
   updateTask,
-} from "@/lib/data/mutations";
-import { ownedGroup, ownedTask } from "@/lib/data/repositories/access";
-import { getActivitySince } from "@/lib/data/repositories/activity";
-import { getUserTaskOverview } from "@/lib/data/repositories/overview";
+} from "@/lib/data/services";
 import { db } from "@/lib/db";
 import { groups, taskComments, tasks } from "@/lib/db/schema";
 import { startOfDayInTimeZone } from "@/lib/time-zone";
