@@ -194,9 +194,7 @@ export function Landing() {
                     className="border-l-2 border-accent pl-4"
                   >
                     <dt className="font-semibold">{point.title}</dt>
-                    <dd className="mt-1 max-w-120 text-muted">
-                      {point.text}
-                    </dd>
+                    <dd className="mt-1 max-w-120 text-muted">{point.text}</dd>
                   </div>
                 ))}
               </dl>

@@ -80,7 +80,7 @@ function toNounPhrase(text: string): string {
   const rest = text.slice(asked[0].length);
   const have = NOUN_THEN_HAVE.exec(fold(rest));
   if (!have) return text;
-  return rest.slice(0, have[1].length) + " " + rest.slice(have[0].length);
+  return `${rest.slice(0, have[1].length)} ${rest.slice(have[0].length)}`;
 }
 
 function stripEnds(text: string): string {
