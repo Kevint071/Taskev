@@ -5,6 +5,7 @@ import {
   canCompleteAtProgress,
   clampProgress,
   parseProgressInput,
+  progressEditBlock,
   statusTransition,
   stepProgress,
 } from "./progress";
@@ -112,4 +113,12 @@ test("statusTransition applies any other status directly", () => {
     statusTransition("bloqueada", { ...untouched, progressPct: 60 }),
     { kind: "apply" },
   );
+});
+
+test("progressEditBlock refuses progress edits only on a disponible task", () => {
+  assert.match(progressEditBlock("disponible") ?? "", /disponible/);
+  assert.equal(progressEditBlock("en_curso"), null);
+  assert.equal(progressEditBlock("bloqueada"), null);
+  assert.equal(progressEditBlock("pausada"), null);
+  assert.equal(progressEditBlock("completada"), null);
 });

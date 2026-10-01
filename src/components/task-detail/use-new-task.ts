@@ -47,14 +47,11 @@ export function useNewTask(groupId: string) {
   }
 
   /**
-   * Keeps the draft creatable: "disponible" means untouched, so any progress
-   * moves it to "en_curso", and "completada" can't stay below 100 %.
+   * Keeps the draft creatable: "completada" can't stay below 100 %. (Progress
+   * can't be edited while "disponible"; the chip refuses before the sheet opens.)
    */
   function changeProgress(progressPct: number) {
     setDraft((prev) => {
-      if (prev.status === "disponible" && progressPct > 0) {
-        return { ...prev, progressPct, status: "en_curso" };
-      }
       if (prev.status === "completada" && progressPct < PROGRESS_MAX) {
         return { ...prev, progressPct, status: "en_curso", completedAt: null };
       }

@@ -47,6 +47,14 @@ export function blockedFromDisponible(
 export const COMPLETE_BLOCKED_MESSAGE =
   "El avance debe estar al 100 % para completar la tarea.";
 
+export const DISPONIBLE_PROGRESS_BLOCKED_MESSAGE =
+  "Una tarea disponible no puede tener avance. Cambia antes su estado.";
+
+/** Why progress can't be edited for a task in `status`, or null when it can. */
+export function progressEditBlock(status: TaskStatus): string | null {
+  return status === "disponible" ? DISPONIBLE_PROGRESS_BLOCKED_MESSAGE : null;
+}
+
 export type StatusTransition =
   | { kind: "none" }
   | { kind: "apply" }

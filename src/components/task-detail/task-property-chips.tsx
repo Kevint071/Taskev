@@ -7,6 +7,7 @@ import {
   formatDueDateForTaskChip,
   formatPriority,
 } from "@/lib/format";
+import { progressEditBlock } from "@/lib/progress";
 import { PropertyChip } from "./property-chip";
 import type { SheetKey } from "./task-property-sheet";
 
@@ -107,7 +108,11 @@ export function TaskPropertyChips({
             </span>
           }
           appearance="quiet"
-          onClick={() => onOpenSheet("progress")}
+          onClick={() => {
+            const blocked = progressEditBlock(status);
+            if (blocked) onBlocked(blocked);
+            else onOpenSheet("progress");
+          }}
         >
           <span className="tabular">{progressPct} %</span>
         </PropertyChip>
