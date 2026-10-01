@@ -46,12 +46,10 @@ export function TaskDetailView({
   const progressSave = useDeferredSave((progressPct: number) => {
     if (progressPct === task.progressPct) return;
     onUpdate({ progressPct });
-    bumpFlash("progress");
   });
   const prioritySave = useDeferredSave((priority: number) => {
     if (priority === Number(task.priority)) return;
     onUpdate({ priority });
-    bumpFlash("priority");
   });
 
   // Resync the draft if the task changes from outside (e.g. a reload).
@@ -73,7 +71,6 @@ export function TaskDetailView({
     progressSave.flush();
     if (change.progressPct !== undefined) {
       setProgressDraft(change.progressPct);
-      bumpFlash("progress");
     }
     onUpdate(change);
   }
@@ -89,7 +86,6 @@ export function TaskDetailView({
     if (task.status === "completada") {
       if (completedAt !== task.completedAt) {
         onUpdate({ completedAt });
-        bumpFlash("completedAt");
       }
     } else {
       onUpdate({ status: "completada", completedAt });
@@ -101,7 +97,6 @@ export function TaskDetailView({
     sheet.hide();
     if (dueDate === task.dueDate) return;
     onUpdate({ dueDate });
-    bumpFlash("dueDate");
   }
 
   const done = task.status === "completada";
@@ -142,7 +137,6 @@ export function TaskDetailView({
             dueDate={task.dueDate}
             completedAt={task.completedAt}
             overdue={overdue}
-            flash={flash}
             onStatusChange={changeStatus}
             onRequestCompletion={requestCompletion}
             onBlocked={onBlocked}

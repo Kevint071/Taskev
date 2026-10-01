@@ -7,11 +7,8 @@ import {
   formatDueDateForTaskChip,
   formatPriority,
 } from "@/lib/format";
-import { type FlashKey, FlashWrap } from "./flash-wrap";
 import { PropertyChip } from "./property-chip";
 import type { SheetKey } from "./task-property-sheet";
-
-const CHIP_WRAP = "max-w-full rounded-full border-transparent";
 
 /**
  * The pills under the title: status, due date, progress, priority and, once
@@ -24,7 +21,6 @@ export function TaskPropertyChips({
   dueDate,
   completedAt,
   overdue = false,
-  flash,
   onStatusChange,
   onRequestCompletion,
   onBlocked,
@@ -37,8 +33,6 @@ export function TaskPropertyChips({
   dueDate: string | null;
   completedAt: string | null;
   overdue?: boolean;
-  /** Counters that replay a field's saved highlight; none while creating. */
-  flash?: Record<FlashKey, number>;
   onStatusChange: (change: StatusChange) => void;
   onRequestCompletion: () => void;
   onBlocked: (message: string) => void;
@@ -47,16 +41,13 @@ export function TaskPropertyChips({
   onMarkComplete?: () => void;
 }) {
   const done = status === "completada";
-  const tick = (key: FlashKey) => flash?.[key] ?? 0;
 
   return (
     <section
       aria-label="Detalles"
       className="flex flex-wrap items-center gap-2"
     >
-      {/* Same transparent border as the FlashWrap chips, so they line up; the
-          status chip itself doesn't flash on save. */}
-      <div className="max-w-full rounded-full border border-transparent">
+      <div className="max-w-full rounded-full">
         <StatusMenu
           status={status}
           progressPct={progressPct}
@@ -79,7 +70,7 @@ export function TaskPropertyChips({
         />
       </div>
 
-      <FlashWrap tick={tick("dueDate")} className={CHIP_WRAP}>
+      <div className="max-w-full rounded-full">
         <PropertyChip
           label={
             dueDate
@@ -99,9 +90,9 @@ export function TaskPropertyChips({
             <span className="font-normal text-muted">Sin fecha</span>
           )}
         </PropertyChip>
-      </FlashWrap>
+      </div>
 
-      <FlashWrap tick={tick("progress")} className={CHIP_WRAP}>
+      <div className="max-w-full rounded-full">
         <PropertyChip
           label={`Avance: ${progressPct} %`}
           icon={
@@ -120,9 +111,9 @@ export function TaskPropertyChips({
         >
           <span className="tabular">{progressPct} %</span>
         </PropertyChip>
-      </FlashWrap>
+      </div>
 
-      <FlashWrap tick={tick("priority")} className={CHIP_WRAP}>
+      <div className="max-w-full rounded-full">
         <PropertyChip
           label={`Prioridad: ${formatPriority(priority)}`}
           icon={<FlagIcon className="text-current" />}
@@ -131,7 +122,7 @@ export function TaskPropertyChips({
         >
           <span className="tabular">{formatPriority(priority)}</span>
         </PropertyChip>
-      </FlashWrap>
+      </div>
 
       {onMarkComplete && (
         <button
@@ -145,7 +136,7 @@ export function TaskPropertyChips({
       )}
 
       {done && completedAt && (
-        <FlashWrap tick={tick("completedAt")} className={CHIP_WRAP}>
+        <div className="max-w-full rounded-full">
           <PropertyChip
             label={`Finalizada el ${formatDueDate(completedAt)}`}
             icon={<CheckIcon className="text-current" />}
@@ -154,7 +145,7 @@ export function TaskPropertyChips({
           >
             Finalizada el {formatDueDate(completedAt)}
           </PropertyChip>
-        </FlashWrap>
+        </div>
       )}
     </section>
   );

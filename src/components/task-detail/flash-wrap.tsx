@@ -1,21 +1,8 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 
-export type FlashKey =
-  | "title"
-  | "progress"
-  | "priority"
-  | "dueDate"
-  | "completedAt"
-  | "description";
+export type FlashKey = "title" | "description";
 
-const NO_FLASH: Record<FlashKey, number> = {
-  title: 0,
-  progress: 0,
-  priority: 0,
-  dueDate: 0,
-  completedAt: 0,
-  description: 0,
-};
+const NO_FLASH: Record<FlashKey, number> = { title: 0, description: 0 };
 
 /** One counter per field; bumping it replays that field's saved highlight. */
 export function useFlash() {
