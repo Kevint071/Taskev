@@ -4,13 +4,20 @@ import Link from "next/link";
 import { type CSSProperties, type PointerEvent, useState } from "react";
 import type { GroupSummary } from "@/components/group-types";
 import { EditGroupDialog } from "@/components/groups/edit-group-dialog";
-import { OpenCount } from "@/components/groups/open-count";
 import { useCountUp } from "@/components/groups/use-count-up";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { ArrowRightIcon, CheckIcon, MoreIcon } from "@/components/ui/icons";
+import { MoreIcon } from "@/components/ui/icons";
 import { Panel } from "@/components/ui/panel";
 import { Popover } from "@/components/ui/popover";
 import { handleUnauthenticated } from "@/lib/api-client";
+
+function GroupStat({ count, label }: { count: number; label: string }) {
+  return (
+    <span className="tabular">
+      <span className="font-semibold text-ink">{count}</span> {label}
+    </span>
+  );
+}
 
 export function GroupCard({
   group: p,
@@ -59,6 +66,7 @@ export function GroupCard({
   }
 
   const empty = p.taskCount === 0;
+  const doneCount = p.taskCount - p.openCount;
   const toneClass = empty
     ? "[--tone:var(--line-strong)]"
     : done
@@ -78,12 +86,12 @@ export function GroupCard({
   return (
     <>
       <Panel
-        className={`group/card spot-border relative h-full transition-[border-color,box-shadow] duration-300 hover:border-line-strong hover:shadow-[0_12px_32px_-16px_color-mix(in_srgb,var(--tone)_55%,transparent)] ${toneClass} ${menuOpen ? "z-20" : ""}`}
+        className={`group/card spot-border relative h-full transition-[border-color,box-shadow,translate] duration-300 hover:-translate-y-0.5 hover:border-line-strong hover:shadow-[0_12px_32px_-16px_color-mix(in_srgb,var(--tone)_55%,transparent)] ${toneClass} ${menuOpen ? "z-20" : ""}`}
       >
         <Link
           href={`/groups/${p.id}`}
           onPointerMove={followPointer}
-          className="group relative flex h-full flex-col gap-4 rounded-panel p-4"
+          className="group relative flex h-full flex-col gap-5 rounded-panel p-4"
         >
           {/* Light that trails the cursor, tinted by the state of the group. */}
           <span
@@ -95,43 +103,43 @@ export function GroupCard({
             }}
           />
 
-          <div className="relative min-w-0 pr-9">
-            <p className="flex items-center gap-1.5 font-semibold">
-              <span className="truncate">{p.name}</span>
-              <ArrowRightIcon className="size-3.5 -translate-x-1.5 text-accent opacity-0 transition-[opacity,translate] duration-300 group-hover:translate-x-0 group-hover:opacity-100" />
+          <div className="relative flex flex-col gap-1.5">
+            <p className="line-clamp-2 pr-9 text-body leading-snug font-semibold wrap-break-word">
+              {p.name}
             </p>
-            {p.description && (
-              <p className="mt-0.5 line-clamp-2 text-meta text-muted">
+            {p.description ? (
+              <p className="line-clamp-2 text-meta leading-relaxed text-muted">
                 {p.description}
+              </p>
+            ) : (
+              <p className="hidden text-meta leading-relaxed text-muted/70 italic md:block">
+                Sin descripción
               </p>
             )}
           </div>
 
-          <div className="relative mt-auto flex flex-col gap-2">
-            <div className="flex items-baseline justify-between gap-3 text-meta">
-              {done ? (
-                <span className="flex items-center gap-1 font-medium text-status-done">
-                  <CheckIcon className="size-3.5" />
-                  Completado
-                </span>
-              ) : (
-                <span className="tabular text-muted">
-                  {empty ? (
-                    "Sin tareas"
-                  ) : (
-                    <OpenCount
-                      open={p.openCount}
-                      total={p.taskCount}
-                      numberClassName="text-body"
-                    />
-                  )}
-                </span>
-              )}
+          <div className="relative mt-auto flex flex-col gap-2.5">
+            <div className="flex items-end justify-between gap-3">
+              <p className="tabular flex flex-wrap items-center gap-x-3.5 gap-y-0.5 text-meta text-muted xl:flex-col xl:items-start">
+                {!done && (
+                  <GroupStat
+                    count={p.openCount}
+                    label={p.openCount === 1 ? "abierta" : "abiertas"}
+                  />
+                )}
+                <GroupStat
+                  count={doneCount}
+                  label={doneCount === 1 ? "completada" : "completadas"}
+                />
+              </p>
               <span
                 aria-hidden="true"
-                className={`tabular font-medium ${done ? "text-status-done" : empty ? "text-muted" : "text-ink"}`}
+                className={`tabular text-section leading-none font-semibold ${done ? "text-status-done" : empty ? "text-muted" : "text-ink"}`}
               >
-                {shown}%
+                {shown}
+                <span className="ml-0.5 text-meta font-medium text-muted">
+                  %
+                </span>
               </span>
             </div>
             <div
@@ -140,27 +148,23 @@ export function GroupCard({
               aria-valuenow={p.avgProgress}
               aria-valuemin={0}
               aria-valuemax={100}
-              className="relative h-0.75 rounded-full bg-line"
+              className="relative h-1 rounded-full bg-line"
             >
               {!empty && (
                 <div
-                  className="animate-line-grow absolute inset-y-0 left-0 rounded-full"
+                  className="animate-line-grow absolute inset-y-0 left-0 rounded-full bg-(--tone)"
                   style={
                     {
                       width: `${p.avgProgress}%`,
                       "--delay": `${enterDelay}ms`,
-                      background:
-                        "linear-gradient(90deg, color-mix(in srgb, var(--tone) 35%, transparent), var(--tone))",
                     } as CSSProperties
                   }
-                >
-                  <span className="absolute top-1/2 right-0 size-1.75 -translate-y-1/2 translate-x-1/2 rounded-full bg-(--tone) shadow-[0_0_10px_2px_color-mix(in_srgb,var(--tone)_70%,transparent)]" />
-                </div>
+                />
               )}
             </div>
           </div>
         </Link>
-        <div className="absolute top-2 right-2 z-20">
+        <div className="absolute top-1.5 right-1 z-20">
           <Popover open={menuOpen} onClose={() => setMenuOpen(false)}>
             <button
               type="button"
@@ -170,7 +174,7 @@ export function GroupCard({
               aria-expanded={menuOpen}
               disabled={pending}
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex size-11 items-center justify-center rounded-control text-muted transition-opacity hover:bg-sunken hover:text-ink focus-visible:opacity-100 disabled:opacity-50 aria-expanded:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/card:opacity-100"
+              className="flex size-11 items-center justify-center rounded-control text-muted transition-[opacity,color] hover:text-ink focus-visible:opacity-100 disabled:opacity-50 aria-expanded:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/card:opacity-100"
             >
               <MoreIcon className="size-5" />
             </button>

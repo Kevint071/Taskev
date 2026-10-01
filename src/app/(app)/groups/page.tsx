@@ -1,12 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { CreateGroupForm } from "@/components/groups/create-group-form";
-import { GroupFilterTabs } from "@/components/groups/group-filter-tabs";
+import { CreateGroupDialog } from "@/components/groups/create-group-dialog";
+import {
+  GroupFilterTabs,
+  groupFilterPanelProps,
+} from "@/components/groups/group-filter-tabs";
 import { GroupGrid } from "@/components/groups/group-grid";
+import {
+  GroupsOverview,
+  GroupsOverviewSkeleton,
+} from "@/components/groups/groups-overview";
+import {
+  NewGroupButton,
+  NewGroupFab,
+} from "@/components/groups/new-group-button";
 import { useGroups } from "@/components/groups/use-groups";
-import { Button } from "@/components/ui/button";
-import { PlusIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/panel";
 import { Toast, type ToastState } from "@/components/ui/toast";
 
@@ -22,50 +31,49 @@ export default function GroupsPage() {
     else reload();
   }
 
-  const openTotal = groups.reduce((sum, g) => sum + g.openCount, 0);
-  const summary =
-    !loading && !showArchived && groups.length > 0
-      ? `${groups.length} ${groups.length === 1 ? "grupo activo" : "grupos activos"} y ${openTotal} ${openTotal === 1 ? "tarea abierta" : "tareas abiertas"}.`
-      : "Agrupa tus tareas por objetivo. Archiva lo que ya no está activo.";
+  const startCreating = () => setCreating(true);
 
   return (
     <>
-      <PageHeader
-        title="Grupos"
-        description={summary}
-        actions={
-          !creating && (
-            <Button variant="primary" onClick={() => setCreating(true)}>
-              <PlusIcon />
-              Nuevo grupo
-            </Button>
-          )
-        }
-      />
+      <PageHeader title="Grupos" />
+
+      {!showArchived &&
+        (loading ? (
+          <GroupsOverviewSkeleton />
+        ) : (
+          groups.length > 0 && <GroupsOverview groups={groups} />
+        ))}
 
       {creating && (
-        <CreateGroupForm
+        <CreateGroupDialog
           onClose={() => setCreating(false)}
           onCreated={handleCreated}
         />
       )}
 
-      <section className="flex flex-col gap-3">
-        <GroupFilterTabs
-          showArchived={showArchived}
-          onChange={setShowArchived}
-        />
-        <GroupGrid
-          groups={groups}
-          loading={loading}
-          showArchived={showArchived}
-          onCreate={creating ? undefined : () => setCreating(true)}
-          onUpdated={reload}
-          onError={(message) =>
-            setToast({ id: Date.now(), message, tone: "error" })
-          }
-        />
+      <section className="flex flex-col gap-5 max-md:pb-20">
+        <div className="relative">
+          <GroupFilterTabs
+            showArchived={showArchived}
+            onChange={setShowArchived}
+          />
+          <div className="absolute inset-y-0 right-0 hidden items-center md:flex">
+            <NewGroupButton onClick={startCreating} />
+          </div>
+        </div>
+        <div role="tabpanel" {...groupFilterPanelProps(showArchived)}>
+          <GroupGrid
+            groups={groups}
+            loading={loading}
+            showArchived={showArchived}
+            onUpdated={reload}
+            onError={(message) =>
+              setToast({ id: Date.now(), message, tone: "error" })
+            }
+          />
+        </div>
       </section>
+      <NewGroupFab onClick={startCreating} />
       <Toast toast={toast} onDismiss={() => setToast(null)} />
     </>
   );

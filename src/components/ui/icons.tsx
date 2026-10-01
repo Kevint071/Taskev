@@ -618,3 +618,22 @@ export function NewChatIcon({ className }: { className?: string } = {}) {
     </svg>
   );
 }
+
+export function LayersIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`size-4 shrink-0 ${className ?? ""}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M10 3.5l7 3.5-7 3.5L3 7z" />
+      <path d="M3 10.5l7 3.5 7-3.5" />
+      <path d="M3 14l7 3.5 7-3.5" />
+    </svg>
+  );
+}

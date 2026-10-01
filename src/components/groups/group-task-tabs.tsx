@@ -85,7 +85,8 @@ export function TaskViewTabs<V extends string>({
   idPrefix: string;
   ariaLabel: string;
   active: V;
-  counts: Record<V, number>;
+  /** A tab without an entry shows no count. */
+  counts: Partial<Record<V, number>>;
   onChange: (view: V) => void;
 }) {
   const tabRefs = useRef(new Map<V, HTMLButtonElement>());
@@ -178,21 +179,23 @@ export function TaskViewTabs<V extends string>({
                 <Icon className="size-4" />
               </span>
               <span className="truncate">{view.label}</span>
-              <span
-                className={`tabular hidden h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[0.75rem] font-semibold transition-colors md:inline-flex ${
-                  selected ? "" : "bg-sunken text-muted group-hover:bg-line"
-                }`}
-                style={
-                  selected
-                    ? {
-                        backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`,
-                        color,
-                      }
-                    : undefined
-                }
-              >
-                {count}
-              </span>
+              {count !== undefined && (
+                <span
+                  className={`tabular hidden h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[0.75rem] font-semibold transition-colors md:inline-flex ${
+                    selected ? "" : "bg-sunken text-muted group-hover:bg-line"
+                  }`}
+                  style={
+                    selected
+                      ? {
+                          backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`,
+                          color,
+                        }
+                      : undefined
+                  }
+                >
+                  {count}
+                </span>
+              )}
             </span>
           </button>
         );

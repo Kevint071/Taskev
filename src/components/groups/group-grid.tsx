@@ -1,8 +1,6 @@
 import type { CSSProperties } from "react";
 import type { GroupSummary } from "@/components/group-types";
 import { GroupCard } from "@/components/groups/group-card";
-import { Button } from "@/components/ui/button";
-import { PlusIcon } from "@/components/ui/icons";
 
 const GRID = "grid gap-4 sm:grid-cols-2 xl:grid-cols-3";
 const STAGGER_MS = 70;
@@ -17,15 +15,12 @@ export function GroupGrid({
   groups,
   loading,
   showArchived,
-  onCreate,
   onUpdated,
   onError,
 }: {
   groups: GroupSummary[];
   loading: boolean;
   showArchived: boolean;
-  /** Undefined while the creation form is already open. */
-  onCreate?: () => void;
   onUpdated: () => void;
   onError: (message: string) => void;
 }) {
@@ -36,7 +31,7 @@ export function GroupGrid({
           <li
             // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders
             key={i}
-            className="h-36 animate-pulse rounded-panel bg-sunken"
+            className="h-40 animate-pulse rounded-panel bg-sunken"
           />
         ))}
       </ul>
@@ -55,7 +50,7 @@ export function GroupGrid({
             <span className="h-2.5 w-28 rounded-full bg-line-strong" />
             <span className="h-2 w-40 rounded-full bg-line" />
           </div>
-          <span className="relative h-[3px] rounded-full bg-line">
+          <span className="relative h-0.75 rounded-full bg-line">
             <span className="animate-line-grow absolute inset-y-0 left-0 w-2/5 rounded-full bg-accent shadow-[0_0_10px_color-mix(in_srgb,var(--accent)_60%,transparent)]" />
           </span>
         </div>
@@ -71,17 +66,9 @@ export function GroupGrid({
               : "Un grupo reúne las tareas de un mismo objetivo y muestra cuánto llevas avanzado."}
           </p>
         </div>
-        {!showArchived && onCreate && (
-          <Button variant="primary" onClick={onCreate}>
-            <PlusIcon />
-            Crear el primer grupo
-          </Button>
-        )}
       </div>
     );
   }
-
-  const canCreate = !showArchived && onCreate;
 
   return (
     <ul className={GRID}>
@@ -100,24 +87,6 @@ export function GroupGrid({
           />
         </li>
       ))}
-      {canCreate && (
-        <li
-          data-motion-ok=""
-          className="animate-rise"
-          style={{ "--delay": `${delayFor(groups.length)}ms` } as CSSProperties}
-        >
-          <button
-            type="button"
-            onClick={onCreate}
-            className="flex h-full min-h-36 w-full flex-col items-center justify-center gap-3 rounded-panel border border-dashed border-line-strong font-medium text-muted transition-colors hover:border-accent hover:bg-accent-soft hover:text-accent"
-          >
-            <span className="flex size-12 items-center justify-center rounded-full border border-current">
-              <PlusIcon className="size-5" />
-            </span>
-            Nuevo grupo
-          </button>
-        </li>
-      )}
     </ul>
   );
 }
