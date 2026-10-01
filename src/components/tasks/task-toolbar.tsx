@@ -57,7 +57,7 @@ export function TaskToolbar({
             placeholder="Buscar tarea o grupo"
             value={filters.query}
             onChange={(e) => onChange({ ...filters, query: e.target.value })}
-            className="h-11 w-full rounded-xl border border-control bg-raised pr-10 pl-10 text-ui text-ink shadow-panel transition-colors placeholder:text-muted hover:border-ink/40 focus-visible:border-accent [&::-webkit-search-cancel-button]:hidden"
+            className="h-11 w-full rounded-xl border border-control bg-raised pr-10 pl-10 text-ui text-ink shadow-panel transition-[color,background-color,border-color,box-shadow] placeholder:text-muted hover:border-ink/40 focus-visible:border-accent focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_18%,transparent)] [&::-webkit-search-cancel-button]:hidden"
           />
           {filters.query !== "" && (
             <button

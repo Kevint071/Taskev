@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 
 export const controlClass =
-  "rounded-control border border-control bg-raised text-ink placeholder:text-muted transition-colors hover:border-ink/30 focus-visible:border-accent disabled:opacity-50";
+  "rounded-control border border-control bg-raised text-ink placeholder:text-muted transition-[color,background-color,border-color,box-shadow] hover:border-ink/30 focus-visible:border-accent disabled:opacity-50";
 
 export function Input({ className = "", ...props }: ComponentProps<"input">) {
   return (

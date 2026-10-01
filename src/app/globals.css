@@ -138,10 +138,27 @@
     overflow-x: clip;
   }
 
+  /* Keyboard focus: the ring eases out from the element's edge instead of
+     snapping in, and follows the element's own corner radius. */
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
-    border-radius: 4px;
+    animation: focus-ring 160ms ease-out;
+  }
+
+  /* Text fields mark focus on the border plus a soft halo, not an outline. */
+  input:not(
+      [type="checkbox"],
+      [type="radio"],
+      [type="range"],
+      [type="file"]
+    ):focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: none;
+    animation: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
   }
 
   input[type="number"] {
@@ -793,6 +810,13 @@
 
 @utility animate-shake {
   animation: shake 400ms ease-in-out;
+}
+
+@keyframes focus-ring {
+  from {
+    outline-color: transparent;
+    outline-offset: 0;
+  }
 }
 
 /* Brief border highlight on a field right after its change is confirmed saved. */
