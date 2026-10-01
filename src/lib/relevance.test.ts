@@ -153,6 +153,54 @@ test("compareForGroupOrder: workable tasks go before blocked or paused ones, eve
   );
 });
 
+test("compareForGroupOrder: on an exact tie, the task in progress goes first", () => {
+  const list = [
+    { id: "available", status: "disponible", relevance: 80, progressPct: 0 },
+    { id: "in-progress", status: "en_curso", relevance: 80, progressPct: 0 },
+  ];
+  assert.deepEqual(
+    list.sort(compareForGroupOrder).map((t) => t.id),
+    ["in-progress", "available"],
+  );
+});
+
+test("compareForGroupOrder: being in progress never beats higher relevance", () => {
+  const list = [
+    { id: "in-progress", status: "en_curso", relevance: 60, progressPct: 0 },
+    { id: "available", status: "disponible", relevance: 80, progressPct: 0 },
+  ];
+  assert.deepEqual(
+    list.sort(compareForGroupOrder).map((t) => t.id),
+    ["available", "in-progress"],
+  );
+});
+
+test("orderGroupTasks: same priority and due date, the in-progress task comes before the available one", () => {
+  const dueDate = "2026-06-15T00:00:00Z";
+  const tasks = [
+    {
+      id: "available",
+      status: "disponible",
+      priority: "4",
+      dueDate,
+      progressPct: 0,
+      updatedAt: "2026-01-01T00:00:00Z",
+    },
+    {
+      id: "in-progress",
+      status: "en_curso",
+      priority: "4",
+      dueDate,
+      progressPct: 0,
+      updatedAt: "2026-01-01T00:00:00Z",
+    },
+  ];
+  assert.deepEqual(
+    orderGroupTasks(tasks, NOW).map((task) => task.id),
+    ["in-progress", "available"],
+  );
+});
+
 test("sameTaskIdSequence: detects matching and differing task orders", () => {
   assert.equal(
     sameTaskIdSequence(["task-a", "task-b"], ["task-a", "task-b"]),

@@ -71,6 +71,7 @@ export function isActionable(status: string): boolean {
 /**
  * Sort comparator for a group's automatic order: workable tasks first by
  * relevance, then blocked and paused ones (also by relevance) at the end.
+ * When everything else ties, the task already in progress goes first.
  */
 export function compareForGroupOrder(
   a: { status: string; relevance: number | null; progressPct: number },
@@ -78,7 +79,8 @@ export function compareForGroupOrder(
 ): number {
   return (
     Number(!isActionable(a.status)) - Number(!isActionable(b.status)) ||
-    compareByRelevance(a, b)
+    compareByRelevance(a, b) ||
+    Number(b.status === "en_curso") - Number(a.status === "en_curso")
   );
 }
 
