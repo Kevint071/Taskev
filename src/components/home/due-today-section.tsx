@@ -20,9 +20,9 @@ const STEP_MS = 70;
  * hydration; the browser then settles the day from its own clock. Renders
  * nothing when no task is due.
  *
- * Each task is a tile with its status color on the left edge, its group, and
- * a row of plain status and priority labels plus the progress bar (empty at
- * 0%, so every tile has the same layout).
+ * Each task is a tile with its group, a row of plain status and priority
+ * labels, and the progress bar (empty at 0%, so every tile has the same
+ * layout).
  */
 export function DueTodaySection({
   tasks,
@@ -62,14 +62,8 @@ export function DueTodaySection({
               <Link
                 href={taskHref(task.groupId, task.id, "hoy")}
                 style={{ "--tone": tone } as CSSProperties}
-                className="group/tile relative flex h-full min-w-0 flex-col gap-3 rounded-xl border border-line bg-raised py-4 pr-4 pl-5 shadow-panel transition-[translate,scale,background-color,border-color,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--tone)_50%,var(--line))] hover:bg-sunken hover:shadow-[0_10px_24px_-16px_color-mix(in_srgb,var(--ink)_55%,transparent)] active:scale-[0.99]"
+                className="group/tile relative flex h-full min-w-0 flex-col gap-3 rounded-xl border border-line bg-raised p-4 shadow-panel transition-[translate,scale,background-color,border-color,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--tone)_50%,var(--line))] hover:bg-sunken hover:shadow-[0_10px_24px_-16px_color-mix(in_srgb,var(--ink)_55%,transparent)] active:scale-[0.99]"
               >
-                <span
-                  aria-hidden="true"
-                  className="animate-grow-y absolute inset-y-3 left-0 w-1 rounded-r-full bg-(--tone)"
-                  style={{ "--delay": `${delay + 200}ms` } as CSSProperties}
-                />
-
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 flex-col gap-0.5">
                     <p className="min-w-0 truncate text-meta text-muted">
