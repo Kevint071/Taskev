@@ -24,6 +24,14 @@ const DUE_CHIP_TONE = {
 const CHIP =
   "inline-flex h-6 items-center gap-1 whitespace-nowrap rounded-full px-2 text-meta font-medium tabular first:-ml-2";
 
+/**
+ * The `<ul>` of rows rendered with `flatOnMobile`: below `lg` one bordered
+ * panel (not clipped, since rows open menus; the first and last row round
+ * their own corners), from `lg` a plain stack of cards.
+ */
+export const FLAT_TASK_LIST =
+  "flex flex-col rounded-panel border border-line bg-raised shadow-panel dark:border-white/10 dark:bg-[#101217] lg:gap-2 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none dark:lg:bg-transparent";
+
 export type TaskRowTask = Task & { groupName?: string };
 
 export type TaskStatusChange = StatusChange;
@@ -60,10 +68,10 @@ export function TaskRow({
   inlineGroupStatus?: boolean;
   /**
    * Below `lg`, a row of a shared panel (the parent `<ul>` draws the border):
-   * the due date moves to a right-hand column as plain text, and a leading
-   * status icon (which also shows progress) replaces the colour bar, the
-   * progress ring and the priority chip. From `lg` it falls back to the card
-   * layout.
+   * the due date moves to a right-hand column as plain text, the priority flag
+   * sits beside the status, and a leading status icon (which also shows
+   * progress) replaces the colour bar and the progress ring. From `lg` it
+   * falls back to the card layout.
    */
   flatOnMobile?: boolean;
   /** Hides the group-name meta text, e.g. inside that group's own page. */
@@ -174,7 +182,7 @@ export function TaskRow({
   const rowShape = !inlineGroupStatus
     ? "py-3 first:rounded-t-panel last:rounded-b-panel"
     : flatOnMobile
-      ? "py-3 max-lg:gap-x-3 not-last:border-b not-last:border-line lg:rounded-lg lg:border lg:border-line lg:bg-raised lg:py-3 lg:shadow-panel dark:not-last:border-white/10 dark:lg:border-white/10 dark:lg:bg-[#101217] dark:hover:bg-[#1b2028]"
+      ? "py-3 max-lg:gap-x-3 max-lg:first:rounded-t-[9px] max-lg:last:rounded-b-[9px] not-last:border-b not-last:border-line lg:rounded-lg lg:border lg:border-line lg:bg-raised lg:py-3 lg:shadow-panel dark:not-last:border-white/10 dark:lg:border-white/10 dark:lg:bg-[#101217] dark:hover:bg-[#1b2028]"
       : "rounded-lg border border-line bg-raised py-2 shadow-panel lg:py-3 dark:border-white/10 dark:bg-[#101217] dark:hover:bg-[#1b2028]";
 
   return (
@@ -211,7 +219,7 @@ export function TaskRow({
         <div
           className={`flex min-w-0 items-center gap-1.5 text-meta text-muted ${
             inlineGroupStatus
-              ? "flex-wrap gap-y-0.5 lg:gap-y-1 lg:mt-0.5"
+              ? `flex-wrap gap-y-0.5 lg:gap-y-1 lg:mt-0.5 ${flatOnMobile ? "max-lg:flex-nowrap" : ""}`
               : "mt-0.5"
           }`}
         >
@@ -233,6 +241,15 @@ export function TaskRow({
             >
               <CalendarIcon className="size-3.5" />
               {dueText}
+            </span>
+          ) : null}
+          {flatOnMobile && hasPriority ? (
+            // Plain flag and number beside the status (or group name); the
+            // chip below takes over from `lg`.
+            <span className="ml-1.5 inline-flex shrink-0 items-center gap-0.5 font-medium tabular lg:hidden">
+              <FlagIcon className="size-3.5" />
+              <span className="sr-only">Prioridad</span>
+              {formatPriority(priority)}
             </span>
           ) : null}
           {hasPriority ? (

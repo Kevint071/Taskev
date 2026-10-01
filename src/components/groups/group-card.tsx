@@ -4,6 +4,7 @@ import Link from "next/link";
 import { type CSSProperties, type PointerEvent, useState } from "react";
 import type { GroupSummary } from "@/components/group-types";
 import { EditGroupDialog } from "@/components/groups/edit-group-dialog";
+import { OpenCount } from "@/components/groups/open-count";
 import { useCountUp } from "@/components/groups/use-count-up";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ArrowRightIcon, CheckIcon, MoreIcon } from "@/components/ui/icons";
@@ -115,9 +116,15 @@ export function GroupCard({
                 </span>
               ) : (
                 <span className="tabular text-muted">
-                  {empty
-                    ? "Sin tareas"
-                    : `${p.openCount} ${p.openCount === 1 ? "abierta" : "abiertas"} de ${p.taskCount}`}
+                  {empty ? (
+                    "Sin tareas"
+                  ) : (
+                    <OpenCount
+                      open={p.openCount}
+                      total={p.taskCount}
+                      numberClassName="text-body"
+                    />
+                  )}
                 </span>
               )}
               <span

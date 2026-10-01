@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Group } from "@/components/group-types";
 import { BackLink } from "@/components/groups/back-link";
+import { OpenCount } from "@/components/groups/open-count";
 import { type SyncState, SyncStatus } from "@/components/ui/sync-status";
 
 export function GroupDetailHeader({
@@ -40,14 +41,48 @@ export function GroupDetailHeader({
           {group.description && (
             <p className="mt-1 max-w-prose text-muted">{group.description}</p>
           )}
-          <p className="tabular mt-1 text-meta text-muted">
-            {taskCount === 0
-              ? "Sin tareas"
-              : `${openCount} abiertas de ${taskCount}`}
+          <p className="tabular mt-1 text-meta text-muted max-md:hidden">
+            {taskCount === 0 ? (
+              "Sin tareas"
+            ) : (
+              <OpenCount open={openCount} total={taskCount} />
+            )}
           </p>
         </div>
         {action && <div className="pt-1">{action}</div>}
       </header>
+      <PhoneSummary taskCount={taskCount} openCount={openCount} />
+    </div>
+  );
+}
+
+/** Phones only: the open and completed counts in one row under the title. */
+function PhoneSummary({
+  taskCount,
+  openCount,
+}: {
+  taskCount: number;
+  openCount: number;
+}) {
+  const doneCount = taskCount - openCount;
+  const figure = "text-body font-semibold text-ink";
+
+  return (
+    <div className="flex min-h-6 items-baseline text-meta text-muted md:hidden">
+      {taskCount === 0 ? (
+        <p>Sin tareas</p>
+      ) : (
+        <p className="tabular flex items-baseline gap-4">
+          <span>
+            <span className={figure}>{openCount}</span>{" "}
+            {openCount === 1 ? "abierta" : "abiertas"}
+          </span>
+          <span>
+            <span className={figure}>{doneCount}</span>{" "}
+            {doneCount === 1 ? "completada" : "completadas"}
+          </span>
+        </p>
+      )}
     </div>
   );
 }

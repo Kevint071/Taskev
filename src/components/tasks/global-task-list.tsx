@@ -1,6 +1,6 @@
 import type { GlobalTask } from "@/components/group-types";
 import { taskPanelId, taskTabId } from "@/components/groups/group-task-tabs";
-import { TaskRow } from "@/components/tasks/task-row";
+import { FLAT_TASK_LIST, TaskRow } from "@/components/tasks/task-row";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/panel";
 import type { BackSource } from "@/lib/back-navigation";
@@ -68,9 +68,7 @@ export function GlobalTaskList({
           }
         />
       ) : (
-        // Below `lg` one bordered panel with hairline dividers; from `lg` the
-        // panel chrome drops away and each row is its own card again.
-        <ul className="flex flex-col overflow-hidden rounded-panel border border-line bg-raised shadow-panel dark:border-white/10 dark:bg-[#101217] lg:gap-2 lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none dark:lg:bg-transparent">
+        <ul className={FLAT_TASK_LIST}>
           {tasks.map((task) => (
             <TaskRow
               key={task.id}

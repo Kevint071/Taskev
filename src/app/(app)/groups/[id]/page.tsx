@@ -89,8 +89,9 @@ export default function GroupDetailPage() {
         action={<NewTaskButton href={createHref} />}
       />
 
-      {/* Tabs sit closer to the list they filter than to the header. */}
-      <div className="flex flex-col gap-4 md:gap-5">
+      {/* Tabs sit closer to the list they filter than to the header; on
+          phones they pull up under the summary, closer than the page gap. */}
+      <div className="-mt-4 flex flex-col gap-4 md:mt-0 md:gap-5">
         {tasks.length > 0 && (
           <GroupTaskTabs
             active={view}

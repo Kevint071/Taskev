@@ -7,7 +7,7 @@ import type {
   LocalTask,
   TaskUpdates,
 } from "@/components/task-detail/task-detail-view";
-import { TaskRow } from "@/components/tasks/task-row";
+import { FLAT_TASK_LIST, TaskRow } from "@/components/tasks/task-row";
 import { EmptyState } from "@/components/ui/panel";
 import type { GroupTaskView } from "@/lib/group-task-views";
 
@@ -64,7 +64,7 @@ export function GroupTaskList({
           action={emptyAction}
         />
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className={FLAT_TASK_LIST}>
           {tasks.map((task) => (
             <TaskRow
               key={task.key}
@@ -73,6 +73,7 @@ export function GroupTaskList({
               showGroup={false}
               centerProgressOnDesktop
               inlineGroupStatus
+              flatOnMobile
               onStatusChange={(change) => onTaskChange(task.key, change)}
               onBlocked={onBlocked}
             />
