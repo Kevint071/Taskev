@@ -3,10 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Task } from "@/components/group-types";
-import {
-  TaskDetailView,
-  type TaskUpdates,
-} from "@/components/task-detail/task-detail-view";
+import { TaskDetailView } from "@/components/task-detail/task-detail-view";
+import type { TaskUpdates } from "@/components/task-detail/task-types";
 import { Toast, type ToastState, type ToastTone } from "@/components/ui/toast";
 import {
   ApiError,

@@ -6,7 +6,7 @@ import {
 import type {
   LocalTask,
   TaskUpdates,
-} from "@/components/task-detail/task-detail-view";
+} from "@/components/task-detail/task-types";
 import { FLAT_TASK_LIST, TaskRow } from "@/components/tasks/task-row";
 import { EmptyState } from "@/components/ui/panel";
 import type { GroupTaskView } from "@/lib/group-task-views";

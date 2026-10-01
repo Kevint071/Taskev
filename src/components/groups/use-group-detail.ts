@@ -4,7 +4,7 @@ import type { Group, Task } from "@/components/group-types";
 import type {
   LocalTask,
   TaskUpdates,
-} from "@/components/task-detail/task-detail-view";
+} from "@/components/task-detail/task-types";
 import type { SyncState } from "@/components/ui/sync-status";
 import type { ToastState, ToastTone } from "@/components/ui/toast";
 import { handleUnauthenticated } from "@/lib/api-client";
