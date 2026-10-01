@@ -5,7 +5,7 @@ import { Brand } from "@/components/brand";
 import { BackIcon } from "@/components/ui/icons";
 
 export const metadata: Metadata = {
-  title: "Página no encontrada · Taskev",
+  title: "Página no encontrada",
 };
 
 /**

@@ -5,7 +5,7 @@ import { getStoredKeys } from "@/lib/ai/key-store";
 import { getCurrentUser } from "@/lib/auth-guard";
 import { SettingsView } from "./settings-view";
 
-export const metadata: Metadata = { title: "Ajustes | Taskev" };
+export const metadata: Metadata = { title: "Ajustes" };
 
 function status(key: string | null) {
   return key

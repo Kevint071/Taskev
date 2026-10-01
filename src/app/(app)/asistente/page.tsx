@@ -8,7 +8,7 @@ import { getCurrentUser } from "@/lib/auth-guard";
 import { listConversations } from "@/lib/data/repositories/conversations";
 import { settingsHref } from "@/lib/settings-tabs";
 
-export const metadata: Metadata = { title: "Asistente | Taskev" };
+export const metadata: Metadata = { title: "Asistente" };
 
 export default async function AssistantPage() {
   const user = await getCurrentUser();

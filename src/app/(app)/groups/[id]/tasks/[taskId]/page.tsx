@@ -6,7 +6,7 @@ import { resolveBack } from "@/lib/back-navigation";
 import { getTaskWithGroup } from "@/lib/data/repositories/access";
 import { TaskDetailPageClient } from "./task-detail-page-client";
 
-export const metadata: Metadata = { title: "Tarea | Taskev" };
+export const metadata: Metadata = { title: "Tarea" };
 
 export default async function TaskDetailPage({
   params,
