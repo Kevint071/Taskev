@@ -9,7 +9,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/panel";
 import { summarizeActivity } from "@/lib/activity";
 import { getCurrentUser } from "@/lib/auth-guard";
-import { getActivitySince } from "@/lib/data/activity";
+import { getActivitySince } from "@/lib/data/repositories/activity";
 import { startOfDayInTimeZone, TIME_ZONE_COOKIE } from "@/lib/time-zone";
 
 export const metadata: Metadata = { title: "Actividad | Taskev" };

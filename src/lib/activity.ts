@@ -1,4 +1,4 @@
-import type { ActivityEvent } from "@/lib/data/activity";
+import type { ActivityEvent } from "@/lib/data/repositories/activity";
 
 export type TaskActivity = {
   taskId: string;

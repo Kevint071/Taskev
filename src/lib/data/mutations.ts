@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { MAX_GROUP_NAME_LENGTH } from "@/lib/constraints";
-import { recordTaskEvent } from "@/lib/data/activity";
+import { recordTaskEvent } from "@/lib/data/repositories/activity";
 import { db } from "@/lib/db";
 import { groups, taskComments, tasks } from "@/lib/db/schema";
 import { positionAtEnd } from "@/lib/ordering";

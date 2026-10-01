@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUserId } from "@/lib/auth-guard";
-import { listConversations } from "@/lib/data/conversations";
+import { listConversations } from "@/lib/data/repositories/conversations";
 
 export async function GET() {
   const userId = await requireUserId();

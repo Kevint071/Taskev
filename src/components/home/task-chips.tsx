@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { STATUS_LABELS } from "@/components/group-types";
 import { CalendarIcon, FlagIcon } from "@/components/ui/icons";
 import { STATUS_DOT, STATUS_TONE } from "@/components/ui/status-badge";
-import type { OverviewTask } from "@/lib/data/overview";
+import type { OverviewTask } from "@/lib/data/repositories/overview";
 import { formatPriority } from "@/lib/format";
 import { DueLabel } from "./due-label";
 

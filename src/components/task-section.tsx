@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/icons";
 import { Panel } from "@/components/ui/panel";
 import { type BackSource, taskHref } from "@/lib/back-navigation";
-import type { OverviewTask } from "@/lib/data/overview";
+import type { OverviewTask } from "@/lib/data/repositories/overview";
 import { formatDueDate } from "@/lib/format";
 
 export const STATUS_COLOR: Record<OverviewTask["status"], string> = {

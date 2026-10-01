@@ -35,7 +35,7 @@ import {
   createConversation,
   getOwnedConversation,
   saveTurn,
-} from "@/lib/data/conversations";
+} from "@/lib/data/repositories/conversations";
 import type { TranscriptItem } from "@/lib/db/schema";
 import { TIME_ZONE_COOKIE } from "@/lib/time-zone";
 

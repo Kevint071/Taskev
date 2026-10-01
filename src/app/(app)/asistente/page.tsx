@@ -5,7 +5,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/panel";
 import { configuredProviders, getStoredKeys } from "@/lib/ai/key-store";
 import { getCurrentUser } from "@/lib/auth-guard";
-import { listConversations } from "@/lib/data/conversations";
+import { listConversations } from "@/lib/data/repositories/conversations";
 import { settingsHref } from "@/lib/settings-tabs";
 
 export const metadata: Metadata = { title: "Asistente | Taskev" };

@@ -3,8 +3,8 @@ import { LocalDate } from "@/components/local-date";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/panel";
 import { activityKind, summarizeActivity } from "@/lib/activity";
-import { getActivitySince } from "@/lib/data/activity";
-import { getUserTaskOverview } from "@/lib/data/overview";
+import { getActivitySince } from "@/lib/data/repositories/activity";
+import { getUserTaskOverview } from "@/lib/data/repositories/overview";
 import {
   dayKeyInTimeZone,
   startOfDayInTimeZone,

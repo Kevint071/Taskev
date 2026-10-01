@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Task } from "@/components/group-types";
 import { getCurrentUser } from "@/lib/auth-guard";
 import { resolveBack } from "@/lib/back-navigation";
-import { getTaskWithGroup } from "@/lib/data/access";
+import { getTaskWithGroup } from "@/lib/data/repositories/access";
 import { TaskDetailPageClient } from "./task-detail-page-client";
 
 export const metadata: Metadata = { title: "Tarea | Taskev" };

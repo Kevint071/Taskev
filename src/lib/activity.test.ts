@@ -8,7 +8,7 @@ import {
   hourlyActivity,
   summarizeActivity,
 } from "./activity";
-import type { ActivityEvent } from "./data/activity";
+import type { ActivityEvent } from "./data/repositories/activity";
 
 function event(
   id: string,

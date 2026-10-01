@@ -5,7 +5,7 @@ import {
   deleteConversation,
   getOwnedConversation,
   renameConversation,
-} from "@/lib/data/conversations";
+} from "@/lib/data/repositories/conversations";
 
 type Params = { params: Promise<{ id: string }> };
 

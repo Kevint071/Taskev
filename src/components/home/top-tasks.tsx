@@ -4,7 +4,7 @@ import { STATUS_LABELS } from "@/components/group-types";
 import { ChevronRightIcon } from "@/components/ui/icons";
 import { STATUS_DOT, STATUS_TONE } from "@/components/ui/status-badge";
 import { taskHref } from "@/lib/back-navigation";
-import type { OverviewTask } from "@/lib/data/overview";
+import type { OverviewTask } from "@/lib/data/repositories/overview";
 import { PrioritySlider } from "./priority-slider";
 import { DueChip, PriorityChip, ProgressDial, StatusChip } from "./task-chips";
 

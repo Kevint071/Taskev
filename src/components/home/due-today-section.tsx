@@ -5,7 +5,7 @@ import { type CSSProperties, useSyncExternalStore } from "react";
 import { ChevronRightIcon } from "@/components/ui/icons";
 import { STATUS_TONE } from "@/components/ui/status-badge";
 import { taskHref } from "@/lib/back-navigation";
-import type { OverviewTask } from "@/lib/data/overview";
+import type { OverviewTask } from "@/lib/data/repositories/overview";
 import { dueOnDay, startOfDayKey } from "@/lib/today";
 import { PriorityChip, ProgressMeter, StatusChip } from "./task-chips";
 

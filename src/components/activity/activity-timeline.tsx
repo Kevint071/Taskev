@@ -4,7 +4,7 @@ import { STATUS_LABELS } from "@/components/group-types";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { STATUS_TONE } from "@/components/ui/status-badge";
 import { taskHref } from "@/lib/back-navigation";
-import type { ActivityEvent } from "@/lib/data/activity";
+import type { ActivityEvent } from "@/lib/data/repositories/activity";
 import { LocalTime } from "./local-time";
 
 /** Entries that stagger in; the rest of a long day just appear. */

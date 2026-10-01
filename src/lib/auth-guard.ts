@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getGroupById, getTaskWithGroup } from "@/lib/data/access";
+import { getGroupById, getTaskWithGroup } from "@/lib/data/repositories/access";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 
