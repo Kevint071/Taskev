@@ -150,7 +150,7 @@ export function ConfirmDialog({
         )}
         {confirmText !== undefined && (
           // biome-ignore lint/a11y/noLabelWithoutControl: wraps the Input component
-          <label className="flex flex-col gap-1.5 pl-[calc(2.5rem+0.875rem)]">
+          <label className="flex flex-col gap-1.5 pl-13.5">
             <span className="text-meta text-muted">{confirmTextLabel}</span>
             <Input
               value={typed}
