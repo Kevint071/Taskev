@@ -103,7 +103,7 @@ export function NewTaskView({
                 }}
                 rows={1}
                 maxLength={MAX_TASK_TITLE_LENGTH}
-                className="-mx-1 block w-full resize-none overflow-hidden rounded-sm bg-transparent px-1 text-[23px] leading-7.25 font-semibold tracking-[-0.02em] text-pretty text-ink caret-accent outline-none placeholder:text-muted sm:text-page"
+                className="-mx-1 block w-full resize-none overflow-hidden rounded-sm bg-transparent px-1 text-[23px] leading-7.25 font-semibold tracking-[-0.02em] text-pretty text-ink caret-accent outline-none placeholder:text-muted focus-visible:shadow-none sm:text-page"
               />
             </label>
 
