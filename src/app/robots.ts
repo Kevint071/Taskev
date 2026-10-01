@@ -6,15 +6,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      // Authenticated app sections (src/app/(app)) and the API.
-      disallow: [
-        "/api/",
-        "/groups",
-        "/tasks",
-        "/asistente",
-        "/actividad",
-        "/settings",
-      ],
+      // Only the API is blocked: the authenticated pages (src/app/(app)) carry
+      // a noindex tag, which crawlers can read only if they may fetch them.
+      disallow: ["/api/"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };
