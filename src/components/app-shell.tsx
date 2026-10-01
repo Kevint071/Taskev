@@ -142,6 +142,7 @@ export function AppShell({
         <main
           id="contenido"
           tabIndex={-1}
+          data-page-scroll={focusScreen || chatScreen ? undefined : ""}
           className={`flex min-w-0 w-full flex-1 flex-col gap-8 focus:outline-none ${
             focusScreen
               ? "min-h-0 overflow-y-auto overscroll-contain px-0 pt-0 pb-0"

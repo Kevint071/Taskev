@@ -126,6 +126,10 @@
     overflow-x: clip;
   }
 
+  html:has([data-page-scroll]) {
+    scrollbar-gutter: stable;
+  }
+
   body {
     background-color: var(--surface);
     color: var(--ink);
@@ -327,6 +331,9 @@
       transparent 70%
     );
     -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask:
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
