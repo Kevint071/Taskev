@@ -1,31 +1,26 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { type KeyboardEvent, type ReactNode, useRef } from "react";
-import { SettingsIconTile } from "@/components/settings-icons";
-import { useTheme } from "@/components/theme-provider";
-import { Avatar } from "@/components/ui/avatar";
-import { BackIcon, ChevronRightIcon } from "@/components/ui/icons";
+import type { ReactNode } from "react";
+import { BackIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/panel";
 import type { Provider } from "@/lib/ai/provider";
 import {
   DEFAULT_SETTINGS_TAB,
   parseSettingsSection,
-  SETTINGS_PATH,
   SETTINGS_TAB_PARAM,
   SETTINGS_TABS,
   type SettingsTab,
-  settingsHref,
 } from "@/lib/settings-tabs";
-import { THEME_OPTIONS } from "@/lib/theme";
-import {
-  AccountSection,
-  AppearanceSection,
-  AssistantSection,
-  type KeyStatus,
-  PasswordSection,
-  ProfileSection,
-} from "./sections";
+import { AccountSection } from "./sections/account-section";
+import { AppearanceSection } from "./sections/appearance-section";
+import { AssistantSection } from "./sections/assistant-section";
+import type { KeyStatus } from "./sections/key-providers";
+import { PasswordSection } from "./sections/password-section";
+import { ProfileSection } from "./sections/profile-section";
+import { SettingsIndex } from "./settings-index";
+import { SettingsTabBar } from "./settings-tab-bar";
+import { useSettingsNavigation } from "./use-settings-navigation";
 
 /**
  * Phones drill down: a section index, then one section per screen with a
@@ -44,51 +39,8 @@ export function SettingsView({
   const searchParams = useSearchParams();
   const section = parseSettingsSection(searchParams.get(SETTINGS_TAB_PARAM));
   const active = section ?? DEFAULT_SETTINGS_TAB;
-  // The section last pushed from the phone index: going back to the index
-  // from it pops that entry instead of stacking a new one.
-  const pushedFromIndex = useRef<SettingsTab | null>(null);
-  const tabRefs = useRef(new Map<SettingsTab, HTMLButtonElement>());
-
-  function openSection(tab: SettingsTab) {
-    pushedFromIndex.current = tab;
-    window.history.pushState(null, "", settingsHref(tab));
-    window.scrollTo(0, 0);
-  }
-
-  function backToIndex() {
-    if (pushedFromIndex.current === section) {
-      pushedFromIndex.current = null;
-      window.history.back();
-      return;
-    }
-    // Opened straight from a link (the avatar menu): swap the entry so the
-    // system back button still leaves settings.
-    window.history.replaceState(null, "", SETTINGS_PATH);
-    window.scrollTo(0, 0);
-  }
-
-  function selectTab(tab: SettingsTab) {
-    // Replace rather than push: switching tabs shouldn't fill the back stack.
-    window.history.replaceState(null, "", settingsHref(tab));
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    const step =
-      event.key === "ArrowDown" || event.key === "ArrowRight"
-        ? 1
-        : event.key === "ArrowUp" || event.key === "ArrowLeft"
-          ? -1
-          : 0;
-    if (!step) return;
-    event.preventDefault();
-    const index = SETTINGS_TABS.findIndex((tab) => tab.value === active);
-    const next =
-      SETTINGS_TABS[
-        (index + step + SETTINGS_TABS.length) % SETTINGS_TABS.length
-      ].value;
-    selectTab(next);
-    tabRefs.current.get(next)?.focus();
-  }
+  const { openSection, backToIndex, selectTab } =
+    useSettingsNavigation(section);
 
   const panels: Record<SettingsTab, ReactNode> = {
     perfil: <ProfileSection email={email} name={name} />,
@@ -112,48 +64,7 @@ export function SettingsView({
       ) : null}
 
       <div className="md:flex md:flex-col md:gap-6">
-        <div
-          role="tablist"
-          aria-label="Secciones de ajustes"
-          aria-orientation="horizontal"
-          onKeyDown={handleKeyDown}
-          // The bar's rule is an inset shadow, not a border: a border would need
-          // the tabs to overlap it (-mb-px), which makes them overflow the box
-          // and turns overflow-x-auto into a 1px vertical scroll.
-          className="hidden gap-1 overflow-x-auto shadow-[inset_0_-1px_0_var(--color-line)] md:flex"
-        >
-          {SETTINGS_TABS.map((tab) => {
-            const selected = tab.value === active;
-            return (
-              <button
-                key={tab.value}
-                ref={(node) => {
-                  if (node) tabRefs.current.set(tab.value, node);
-                  else tabRefs.current.delete(tab.value);
-                }}
-                type="button"
-                role="tab"
-                id={`settings-tab-${tab.value}`}
-                aria-selected={selected}
-                aria-controls={`settings-panel-${tab.value}`}
-                tabIndex={selected ? 0 : -1}
-                onClick={() => selectTab(tab.value)}
-                // The active underline paints over the bar's inset rule.
-                className={`flex h-12 shrink-0 items-center gap-2.5 whitespace-nowrap border-b-2 px-3 font-medium transition-colors ${
-                  selected
-                    ? "border-accent text-ink"
-                    : "border-transparent text-muted hover:border-line-strong hover:text-ink"
-                }`}
-              >
-                <SettingsIconTile
-                  tab={tab.value}
-                  className="size-7 rounded-lg"
-                />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        <SettingsTabBar active={active} onSelect={selectTab} />
 
         {SETTINGS_TABS.map((tab) => (
           // Inactive panels stay mounted but hidden so half-typed forms survive
@@ -188,74 +99,5 @@ export function SettingsView({
         ))}
       </div>
     </div>
-  );
-}
-
-/** The phone landing screen: who you are, then every section one tap away. */
-function SettingsIndex({
-  email,
-  name,
-  onOpen,
-}: {
-  email: string;
-  name: string | null;
-  onOpen: (tab: SettingsTab) => void;
-}) {
-  const { theme } = useTheme();
-  const identity = name?.trim() || email;
-  const themeLabel = THEME_OPTIONS.find(
-    (option) => option.value === theme,
-  )?.label;
-
-  return (
-    <nav
-      aria-label="Secciones de ajustes"
-      className="animate-reveal flex flex-col gap-5 md:hidden"
-    >
-      <button
-        type="button"
-        onClick={() => onOpen("perfil")}
-        className="flex items-center gap-4 rounded-2xl border border-line bg-raised p-4 text-left shadow-panel transition-colors active:bg-sunken"
-      >
-        <Avatar identity={identity} className="size-14 text-lg" />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-body font-semibold">
-            {name?.trim() || "Añade tu nombre"}
-          </span>
-          <span className="block truncate text-meta text-muted">{email}</span>
-        </span>
-        <ChevronRightIcon className="text-muted" />
-      </button>
-
-      <div className="overflow-hidden rounded-2xl border border-line bg-raised shadow-panel">
-        {SETTINGS_TABS.filter((tab) => tab.value !== "perfil").map((tab, i) => (
-          <button
-            key={tab.value}
-            type="button"
-            onClick={() => onOpen(tab.value)}
-            className="flex w-full items-center gap-3 pl-4 text-left transition-colors active:bg-sunken"
-          >
-            <SettingsIconTile tab={tab.value} />
-            {/* The divider starts after the icon, like a native grouped list. */}
-            <span
-              className={`flex min-h-16 min-w-0 flex-1 items-center gap-2 border-line py-3 pr-4 ${
-                i > 0 ? "border-t" : ""
-              }`}
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block font-medium">{tab.label}</span>
-                <span className="block truncate text-meta text-muted">
-                  {tab.description}
-                </span>
-              </span>
-              {tab.value === "apariencia" && themeLabel ? (
-                <span className="text-meta text-muted">{themeLabel}</span>
-              ) : null}
-              <ChevronRightIcon className="text-muted" />
-            </span>
-          </button>
-        ))}
-      </div>
-    </nav>
   );
 }
