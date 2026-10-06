@@ -9,7 +9,6 @@ import {
 import { GroupGrid } from "@/components/groups/group-grid";
 import {
   GroupsOverview,
-  GroupsOverviewSkeleton,
   GroupsPageSkeleton,
 } from "@/components/groups/groups-overview";
 import {
@@ -24,7 +23,8 @@ export default function GroupsPage() {
   const [showArchived, setShowArchived] = useState(false);
   const [creating, setCreating] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
-  const { groups, loading, loaded, reload } = useGroups(showArchived);
+  const { groups, activeGroups, loading, loaded, reload } =
+    useGroups(showArchived);
 
   function handleCreated() {
     setCreating(false);
@@ -41,12 +41,7 @@ export default function GroupsPage() {
     <>
       <PageHeader title="Grupos" />
 
-      {!showArchived &&
-        (loading ? (
-          <GroupsOverviewSkeleton />
-        ) : (
-          groups.length > 0 && <GroupsOverview groups={groups} />
-        ))}
+      {activeGroups.length > 0 && <GroupsOverview groups={activeGroups} />}
 
       {creating && (
         <CreateGroupDialog
