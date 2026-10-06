@@ -50,7 +50,8 @@ export function GroupGrid({
   groups: GroupSummary[];
   loading: boolean;
   showArchived: boolean;
-  onUpdated: () => void;
+  /** `activeChanged`: whether the action may have changed the active groups. */
+  onUpdated: (activeChanged: boolean) => void;
   onError: (message: string) => void;
 }) {
   if (loading) return <GroupGridSkeleton />;

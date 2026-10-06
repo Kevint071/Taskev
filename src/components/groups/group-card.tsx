@@ -28,7 +28,8 @@ export function GroupCard({
   group: GroupSummary;
   /** Milliseconds before the meter starts filling (staggers the grid). */
   enterDelay?: number;
-  onUpdated: () => void;
+  /** `activeChanged`: whether the action may have changed the active groups. */
+  onUpdated: (activeChanged: boolean) => void;
   onError: (message: string) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -53,7 +54,9 @@ export function GroupCard({
       if (handleUnauthenticated(response)) return;
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       setConfirmDelete(false);
-      onUpdated();
+      // Only unarchiving adds to the active groups; archiving is seen from the
+      // active tab, which always reloads its own list.
+      onUpdated(method === "PATCH");
     } catch {
       onError(
         method === "DELETE"
@@ -225,7 +228,7 @@ export function GroupCard({
       {editing && (
         <EditGroupDialog
           group={p}
-          onSaved={onUpdated}
+          onSaved={() => onUpdated(false)}
           onClose={() => setEditing(false)}
         />
       )}

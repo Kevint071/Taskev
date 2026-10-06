@@ -23,8 +23,9 @@ export function useGroups(showArchived: boolean) {
   const [loaded, setLoaded] = useState(false);
 
   // `refreshActive` also refetches the active list while the archived tab is
-  // open: needed after an action there (unarchiving changes the overview), not
-  // when just switching tabs, since the active list is already loaded then.
+  // open: needed only after an action that changes the active groups
+  // (unarchiving), not when switching tabs or editing/deleting an archived
+  // group, since the active list is already loaded and unchanged then.
   async function load(archived: boolean, refreshActive: boolean) {
     setLoading(true);
     const withActive = archived && refreshActive;
@@ -50,6 +51,7 @@ export function useGroups(showArchived: boolean) {
     activeGroups,
     loading,
     loaded,
-    reload: () => load(showArchived, true),
+    /** `activeChanged`: the action may have changed the active groups. */
+    reload: (activeChanged: boolean) => load(showArchived, activeChanged),
   };
 }

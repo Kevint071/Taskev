@@ -29,7 +29,7 @@ export default function GroupsPage() {
   function handleCreated() {
     setCreating(false);
     if (showArchived) setShowArchived(false);
-    else reload();
+    else reload(true);
   }
 
   const startCreating = () => setCreating(true);
