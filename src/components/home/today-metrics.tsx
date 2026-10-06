@@ -99,7 +99,6 @@ export function TodayMetrics({
             className="flex h-28 items-end gap-2 border-b border-line"
           >
             {week.map((day, i) => {
-              const isToday = i === lastIndex;
               const barPx =
                 day.count === 0
                   ? 0
@@ -112,7 +111,7 @@ export function TodayMetrics({
                     onClick={() => setSelected(day.count > 0 ? i : null)}
                     onFocus={() => setSelected(day.count > 0 ? i : null)}
                     onMouseEnter={() => setSelected(day.count > 0 ? i : null)}
-                    className={`group flex h-full w-full flex-col items-center justify-end gap-1.5 rounded-t-md outline-offset-2 transition-opacity focus-visible:outline-2 focus-visible:outline-accent ${
+                    className={`flex h-full w-full flex-col items-center justify-end gap-1.5 rounded-t-md outline-offset-2 transition-opacity focus-visible:outline-2 focus-visible:outline-accent ${
                       selected !== null && selected !== i ? "opacity-40" : ""
                     }`}
                   >
@@ -125,7 +124,7 @@ export function TodayMetrics({
                       <>
                         <span
                           aria-hidden="true"
-                          className={`animate-rise tabular text-[0.8125rem] font-semibold leading-none transition-colors ${isToday || selected === i ? "text-accent" : "text-ink"}`}
+                          className={`animate-rise tabular text-[0.8125rem] font-semibold leading-none transition-colors ${selected === i ? "text-accent" : "text-ink"}`}
                           style={
                             { "--delay": `${i * 55 + 250}ms` } as CSSProperties
                           }
@@ -134,11 +133,7 @@ export function TodayMetrics({
                         </span>
                         <span
                           aria-hidden="true"
-                          className={`animate-grow-y block w-full max-w-9 rounded-t-lg bg-linear-to-t transition-[translate,box-shadow] duration-300 group-hover:-translate-y-0.5 ${
-                            isToday || selected === i
-                              ? "from-accent to-accent/75 shadow-[0_6px_16px_-6px_var(--accent)]"
-                              : "from-accent/60 to-accent/40"
-                          }`}
+                          className="animate-grow-y block w-full max-w-9 rounded-t-lg bg-linear-to-t from-accent to-accent/75"
                           style={
                             {
                               height: `${barPx}px`,
