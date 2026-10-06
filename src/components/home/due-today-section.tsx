@@ -69,7 +69,7 @@ export function DueTodaySection({
                     <p className="min-w-0 truncate text-meta text-muted">
                       {task.groupName}
                     </p>
-                    <p className="line-clamp-2 min-h-13 wrap-break-word text-body font-medium">
+                    <p className="line-clamp-2 wrap-break-word text-body font-medium">
                       {task.title}
                     </p>
                   </div>
