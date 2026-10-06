@@ -160,7 +160,8 @@ export function TodayActivity({
                   onClick={() => setSelected(hour.total > 0 ? i : null)}
                   onFocus={() => setSelected(hour.total > 0 ? i : null)}
                   onMouseEnter={() => setSelected(hour.total > 0 ? i : null)}
-                  className={`flex h-full w-full items-end justify-center rounded-t-md outline-offset-2 transition-opacity focus-visible:outline-2 focus-visible:outline-accent ${
+                  onMouseLeave={() => setSelected(null)}
+                  className={`pointer-events-none flex h-full w-full items-end justify-center rounded-t-md outline-offset-2 transition-opacity focus-visible:outline-2 focus-visible:outline-accent ${
                     selected !== null && selected !== i ? "opacity-40" : ""
                   }`}
                 >
@@ -222,7 +223,7 @@ function HourColumn({
   return (
     <span
       aria-hidden="true"
-      className="animate-grow-y flex w-full max-w-7 flex-col-reverse gap-0.5 overflow-hidden rounded-t-md"
+      className="animate-grow-y pointer-events-auto flex w-full max-w-7 flex-col-reverse gap-0.5 overflow-hidden rounded-t-md"
       style={{ "--delay": `${index * 35}ms` } as CSSProperties}
     >
       {STACK.map((kind) =>
