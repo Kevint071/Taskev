@@ -160,7 +160,7 @@ export function ProgressMeter({
     >
       <span
         aria-hidden="true"
-        className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-sunken"
+        className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-ink/25"
       >
         <span
           className="animate-bar-fill block h-full rounded-full"
