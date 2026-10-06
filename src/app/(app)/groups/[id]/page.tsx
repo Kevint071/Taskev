@@ -9,14 +9,14 @@ import {
   NewTaskFab,
   newTaskHref,
 } from "@/components/groups/add-task-form";
-import { BackLink } from "@/components/groups/back-link";
 import { GroupDetailHeader } from "@/components/groups/group-detail-header";
+import { GroupDetailSkeleton } from "@/components/groups/group-detail-skeleton";
 import { GroupTaskList } from "@/components/groups/group-task-list";
 import { GroupTaskTabs } from "@/components/groups/group-task-tabs";
 import { useGroupDetail } from "@/components/groups/use-group-detail";
 import { Button, buttonClass } from "@/components/ui/button";
 import { PlusIcon } from "@/components/ui/icons";
-import { EmptyState, LoadingRows } from "@/components/ui/panel";
+import { EmptyState } from "@/components/ui/panel";
 import { Toast } from "@/components/ui/toast";
 import {
   GROUP_TASK_VIEW_PARAM,
@@ -59,16 +59,7 @@ export default function GroupDetailPage() {
     window.history.replaceState(null, "", groupTaskViewHref(id, next));
   }
 
-  if (!group) {
-    return (
-      <>
-        <div className="-mx-2 flex h-11 items-center">
-          <BackLink />
-        </div>
-        <LoadingRows rows={4} />
-      </>
-    );
-  }
+  if (!group) return <GroupDetailSkeleton />;
 
   const openCount = tasks.filter((t) => t.status !== "completada").length;
   const byView = splitGroupTasks(tasks);
