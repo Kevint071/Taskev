@@ -10,6 +10,7 @@ import {
   type HourActivity,
   hourlyActivity,
 } from "@/lib/activity";
+import { useStickyCounts } from "./use-sticky-counts";
 
 const noopSubscribe = () => () => {};
 
@@ -38,8 +39,7 @@ function changesLabel(n: number) {
 }
 
 /**
- * "Actividad de hoy": the day's changes as a headline number, their makeup as a
- * row of icon counts and their rhythm as one stacked column per hour, with the
+ * "Actividad de hoy": the day's changes as a row of icon counts and their rhythm as one stacked column per hour, with the
  * full feed one link away on its own page. Which hour it is depends on the
  * viewer's clock, so server render and hydration use the time zone cookie
  * (`timeZone`) and `serverNow`, then the browser recomputes from its own.
@@ -76,7 +76,7 @@ export function TodayActivity({
   // The breakdown up top follows the selected hour, else the whole day.
   const active = selected === null ? null : (hours[selected] ?? null);
   const counts = active ? active.counts : summary;
-  const changes = active ? active.total : summary.changes;
+  const shownCounts = useStickyCounts<ActivityKind>(counts);
   const labelEvery = hours.length <= ALL_LABELS_UP_TO ? 1 : 3;
   /** Places a floating label centred just above an hour's column. */
   const floatOver = (i: number): CSSProperties => ({
@@ -86,33 +86,24 @@ export function TodayActivity({
 
   return (
     <section className="flex min-w-0 flex-col gap-4">
-      <div>
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 className="text-section font-semibold">Actividad de hoy</h2>
-          <Link
-            href="/actividad"
-            className="group inline-flex shrink-0 items-center gap-1 text-ui font-medium text-accent"
-          >
-            Ver detalle
-            <ArrowRightIcon className="transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        </div>
-        <p className="tabular mt-1 text-meta text-muted">
-          <span className="mr-1 font-semibold text-ink">{changes}</span>{" "}
-          {changes === 1 ? "cambio" : "cambios"}
-          {active
-            ? ` a las ${hourLabel(active.hour)}`
-            : ` en ${summary.tasks} ${summary.tasks === 1 ? "tarea" : "tareas"}`}
-        </p>
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 className="text-section font-semibold">Actividad de hoy</h2>
+        <Link
+          href="/actividad"
+          className="group inline-flex shrink-0 items-center gap-1 text-ui font-medium text-accent"
+        >
+          Ver detalle
+          <ArrowRightIcon className="transition-transform group-hover:translate-x-0.5" />
+        </Link>
       </div>
 
-      <div className="rounded-2xl border border-line bg-raised p-5 shadow-panel md:p-6">
+      <div>
         {/* Kinds with nothing to count collapse out of the row instead of unmounting, so the others glide into place as the selected hour changes. The row is never empty: the section needs changes to render and only hours with changes can be selected. */}
         <ul className="flex min-h-5 flex-wrap gap-y-2">
           {CHIPS.map((chip) => {
             const { Icon } = chip;
-            const count = counts[chip.key];
-            const shown = count > 0;
+            const shown = counts[chip.key] > 0;
+            const count = shownCounts[chip.key];
             return (
               <li
                 key={chip.key}
@@ -183,18 +174,24 @@ export function TodayActivity({
                 <FlameIcon className="size-4" />
               </span>
             </span>
-            {/* The hovered hour's time pops in over its column; keyed by the column so each new one animates in instead of moving across. */}
-            {active && (
-              <span
-                key={shownIndex}
-                aria-hidden="true"
-                className="pointer-events-none absolute z-10 -translate-x-1/2"
-                style={floatOver(shownIndex)}
-              >
-                <span className="tabular animate-rise block whitespace-nowrap rounded-full border border-line/80 bg-raised/70 px-2 py-0.5 text-[0.75rem] font-semibold leading-4 text-accent shadow-[0_6px_16px_-6px_rgb(0_0_0/0.25)] backdrop-blur-md">
-                  {hourLabel(active.hour)}
+            {/* The hovered hour's time floats over its column. One per active hour stays mounted, so each fades in and out in place instead of moving across or vanishing. */}
+            {hours.map((hour, i) =>
+              hour.total > 0 ? (
+                <span
+                  key={hour.hour}
+                  aria-hidden="true"
+                  className="pointer-events-none absolute z-10 -translate-x-1/2"
+                  style={floatOver(i)}
+                >
+                  <span
+                    className={`tabular block whitespace-nowrap text-[0.75rem] font-semibold leading-4 text-accent transition-[opacity,translate,scale] duration-200 ease-out ${
+                      selected === i ? "" : "translate-y-1 scale-90 opacity-0"
+                    }`}
+                  >
+                    {hourLabel(hour.hour)}
+                  </span>
                 </span>
-              </span>
+              ) : null,
             )}
             <ol
               aria-label="Cambios por hora"

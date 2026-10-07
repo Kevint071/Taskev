@@ -34,6 +34,25 @@ export function CheckIcon({ className }: { className?: string } = {}) {
   );
 }
 
+/** A check inside a circle: as heavy as the framed icons it sits beside. */
+export function CheckCircleIcon({ className }: { className?: string } = {}) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`size-4 shrink-0 ${className ?? ""}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="10" cy="10" r="7.25" />
+      <path d="M7 10.25l2 2 4-4.5" />
+    </svg>
+  );
+}
+
 export function CalendarIcon({ className }: { className?: string }) {
   return (
     <svg
