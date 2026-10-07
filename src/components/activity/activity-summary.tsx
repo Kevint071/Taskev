@@ -1,87 +1,95 @@
+import type { CSSProperties, ReactNode } from "react";
+import {
+  CheckIcon,
+  LayersIcon,
+  NoteIcon,
+  PlusIcon,
+  RefreshIcon,
+} from "@/components/ui/icons";
 import type { ActivitySummary as Summary } from "@/lib/activity";
 
 export const CHIPS: {
   key: "completed" | "created" | "statusChanges" | "notes";
   color: string;
+  /** Colour for the icon; `color` alone is a hairline grey for notes, too faint. */
+  tone: string;
+  Icon: (props: { className?: string }) => ReactNode;
   label: (n: number) => string;
 }[] = [
   {
     key: "completed",
     color: "var(--status-done)",
+    tone: "var(--status-done)",
+    Icon: CheckIcon,
     label: (n) => (n === 1 ? "completada" : "completadas"),
   },
   {
     key: "created",
     color: "var(--status-paused)",
+    tone: "var(--status-paused)",
+    Icon: PlusIcon,
     label: (n) => (n === 1 ? "creada" : "creadas"),
   },
   {
     key: "statusChanges",
     color: "var(--status-progress)",
+    tone: "var(--status-progress)",
+    Icon: RefreshIcon,
     label: (n) => (n === 1 ? "cambio de estado" : "cambios de estado"),
   },
   {
     key: "notes",
     color: "var(--line-strong)",
+    tone: "var(--status-open)",
+    Icon: NoteIcon,
     label: (n) => (n === 1 ? "nota" : "notas"),
   },
 ];
 
 /**
- * The day at a glance: the total as one plain sentence, the makeup of the day
- * as a proportional bar and a legend with a count per kind of change (kinds
- * with nothing to count are left out).
+ * The day at a glance, as one row without a card around it: a count per kind
+ * of change, each with its icon (kinds with nothing to count are left out),
+ * then how many tasks they touched.
  */
 export function ActivitySummary({ summary }: { summary: Summary }) {
-  const chips = CHIPS.filter((chip) => summary[chip.key] > 0);
+  const items = [
+    ...CHIPS.filter((chip) => summary[chip.key] > 0).map(
+      ({ key, tone, Icon, label }) => ({
+        key,
+        tone,
+        Icon,
+        count: summary[key],
+        label: label(summary[key]),
+      }),
+    ),
+    {
+      key: "tasks",
+      tone: "var(--status-open)",
+      Icon: LayersIcon,
+      count: summary.tasks,
+      label: summary.tasks === 1 ? "tarea editada" : "tareas editadas",
+    },
+  ];
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-line bg-raised p-5 shadow-panel md:p-6">
-      <p className="tabular text-ui text-muted">
-        <span className="font-semibold text-ink">{summary.changes}</span>{" "}
-        {summary.changes === 1 ? "cambio" : "cambios"} en {summary.tasks}{" "}
-        {summary.tasks === 1 ? "tarea" : "tareas"} hoy
-      </p>
-      {chips.length > 0 && (
-        <>
-          <div
+    <ul className="flex flex-wrap gap-x-6 gap-y-2">
+      {items.map(({ key, tone, Icon, count, label }, i) => (
+        <li
+          key={key}
+          className="tabular animate-rise inline-flex items-center gap-2 text-ui"
+          style={{ "--delay": `${i * 55}ms` } as CSSProperties}
+        >
+          <span
             aria-hidden="true"
-            className="h-2 overflow-hidden rounded-full bg-sunken"
+            className="inline-flex"
+            style={{ color: tone }}
           >
-            {/* The negative margin clips the last segment's trailing gap. */}
-            <div className="-mr-0.5 flex h-full">
-              {chips.map((chip) => (
-                <span
-                  key={chip.key}
-                  className="mr-0.5 block h-full basis-0 min-w-1"
-                  style={{
-                    flexGrow: summary[chip.key],
-                    backgroundColor: chip.color,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-          <ul className="flex flex-wrap gap-x-5 gap-y-2">
-            {chips.map((chip) => (
-              <li
-                key={chip.key}
-                className="tabular inline-flex items-center gap-2 text-meta"
-              >
-                <span
-                  aria-hidden="true"
-                  className="size-2 rounded-full"
-                  style={{ backgroundColor: chip.color }}
-                />
-                <span className="font-semibold">{summary[chip.key]}</span>
-                <span className="text-muted">
-                  {chip.label(summary[chip.key])}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </section>
+            <Icon className="size-4" />
+          </span>
+          <span className="font-semibold">{count}</span>
+          <span className="text-muted">{label}</span>
+        </li>
+      ))}
+    </ul>
   );
 }

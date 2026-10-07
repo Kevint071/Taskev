@@ -28,18 +28,18 @@ export default async function ActivityPage() {
 
   return (
     <div data-motion-ok="" className="flex min-w-0 flex-col gap-8">
-      <div className="-mx-2 -mb-4 flex h-11 items-center">
+      <div className="-mx-2 -mb-4 flex h-11 items-center justify-between gap-4">
         <BackLink href="/" label="Hoy" />
-      </div>
-
-      <header>
-        <h1 className="text-page font-semibold">Actividad</h1>
-        <p className="mt-1 text-muted first-letter:uppercase">
+        <p className="pr-2 text-meta text-muted first-letter:uppercase">
           <LocalDate
             date={now.toISOString()}
             options={{ weekday: "long", day: "numeric", month: "long" }}
           />
         </p>
+      </div>
+
+      <header>
+        <h1 className="text-page font-semibold">Actividad</h1>
       </header>
 
       {events.length === 0 ? (

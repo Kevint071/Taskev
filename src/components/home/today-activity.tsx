@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { type CSSProperties, useState, useSyncExternalStore } from "react";
 import { CHIPS } from "@/components/activity/activity-summary";
-import { ArrowRightIcon } from "@/components/ui/icons";
+import { ArrowRightIcon, FlameIcon } from "@/components/ui/icons";
 import {
   type ActivityKind,
   type ActivitySummary,
@@ -39,7 +39,7 @@ function changesLabel(n: number) {
 
 /**
  * "Actividad de hoy": the day's changes as a headline number, their makeup as a
- * proportional bar and their rhythm as one stacked column per hour, with the
+ * row of icon counts and their rhythm as one stacked column per hour, with the
  * full feed one link away on its own page. Which hour it is depends on the
  * viewer's clock, so server render and hydration use the time zone cookie
  * (`timeZone`) and `serverNow`, then the browser recomputes from its own.
@@ -70,13 +70,19 @@ export function TodayActivity({
   );
   const peak = Math.max(...hours.map((h) => h.total));
   const peakIndex = hours.findIndex((h) => h.total === peak);
-  const shown = hours[selected ?? peakIndex] ?? hours[peakIndex];
+  const shownIndex =
+    selected !== null && hours[selected] ? selected : peakIndex;
+  const shown = hours[shownIndex];
   // The breakdown up top follows the selected hour, else the whole day.
   const active = selected === null ? null : (hours[selected] ?? null);
   const counts = active ? active.counts : summary;
   const changes = active ? active.total : summary.changes;
-  const chips = CHIPS.filter((chip) => counts[chip.key] > 0);
   const labelEvery = hours.length <= ALL_LABELS_UP_TO ? 1 : 3;
+  /** Places a floating label centred just above an hour's column. */
+  const floatOver = (i: number): CSSProperties => ({
+    left: `${((i + 0.5) / hours.length) * 100}%`,
+    bottom: `${columnPx(hours[i], peak) + 6}px`,
+  });
 
   return (
     <section className="flex min-w-0 flex-col gap-4">
@@ -101,44 +107,49 @@ export function TodayActivity({
       </div>
 
       <div className="rounded-2xl border border-line bg-raised p-5 shadow-panel md:p-6">
-        <div
-          aria-hidden="true"
-          className="h-2 overflow-hidden rounded-full bg-sunken"
-        >
-          {/* Every kind stays mounted so its width, gap included, animates as the selected hour changes; the negative margin clips the last segment's trailing gap. */}
-          <div className="-mr-0.5 flex h-full">
-            {STACK.map((kind) => (
-              <span
-                key={kind}
-                className="block h-full basis-0 transition-[flex-grow,min-width,margin-right] duration-500 ease-out"
+        {/* Kinds with nothing to count collapse out of the row instead of unmounting, so the others glide into place as the selected hour changes. The row is never empty: the section needs changes to render and only hours with changes can be selected. */}
+        <ul className="flex min-h-5 flex-wrap gap-y-2">
+          {CHIPS.map((chip) => {
+            const { Icon } = chip;
+            const count = counts[chip.key];
+            const shown = count > 0;
+            return (
+              <li
+                key={chip.key}
+                aria-hidden={!shown}
+                className="tabular grid text-meta transition-[grid-template-columns,opacity] duration-300 ease-out"
                 style={{
-                  flexGrow: counts[kind],
-                  minWidth: counts[kind] > 0 ? 4 : 0,
-                  marginRight: counts[kind] > 0 ? 2 : 0,
-                  backgroundColor: KIND[kind].color,
+                  gridTemplateColumns: shown ? "1fr" : "0fr",
+                  opacity: shown ? 1 : 0,
                 }}
-              />
-            ))}
-          </div>
-        </div>
-        <ul className="mt-3 flex min-h-4.5 flex-wrap gap-x-4 gap-y-1.5">
-          {chips.length === 0 && (
-            <li className="text-meta text-muted">Sin cambios</li>
-          )}
-          {chips.map((chip) => (
-            <li
-              key={chip.key}
-              className="tabular inline-flex items-center gap-2 text-meta"
-            >
-              <span
-                aria-hidden="true"
-                className="size-2 rounded-full"
-                style={{ backgroundColor: chip.color }}
-              />
-              <span className="font-semibold">{counts[chip.key]}</span>
-              <span className="text-muted">{chip.label(counts[chip.key])}</span>
-            </li>
-          ))}
+              >
+                <span className="min-w-0 overflow-hidden whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1.5 pr-5">
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex"
+                      style={{ color: chip.tone }}
+                    >
+                      <Icon className="size-4" />
+                    </span>
+                    {/* Keyed by the count so a new number settles in instead of swapping silently. */}
+                    <span key={count} className="animate-rise font-semibold">
+                      {count}
+                    </span>
+                    {/* The plural sizes the label, so going to or from a single item doesn't shift what sits to its right. */}
+                    <span className="relative text-muted">
+                      <span aria-hidden="true" className="invisible">
+                        {chip.label(2)}
+                      </span>
+                      <span className="absolute left-0">
+                        {chip.label(count)}
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </li>
+            );
+          })}
         </ul>
 
         {/* An empty hour counts as no selection, so it reads as if nothing were hovered. */}
@@ -148,28 +159,66 @@ export function TodayActivity({
           onMouseLeave={() => setSelected(null)}
           role="presentation"
         >
-          <ol
-            aria-label="Cambios por hora"
-            className="flex h-28 items-end gap-1 border-b border-line"
-          >
-            {hours.map((hour, i) => (
-              <li key={hour.hour} className="h-full min-w-0 flex-1">
-                <button
-                  type="button"
-                  aria-label={`${hourLabel(hour.hour)}: ${changesLabel(hour.total)}`}
-                  onClick={() => setSelected(hour.total > 0 ? i : null)}
-                  onFocus={() => setSelected(hour.total > 0 ? i : null)}
-                  onMouseEnter={() => setSelected(hour.total > 0 ? i : null)}
-                  onMouseLeave={() => setSelected(null)}
-                  className={`pointer-events-none flex h-full w-full items-end justify-center rounded-t-md outline-offset-2 transition-opacity focus-visible:outline-2 focus-visible:outline-accent ${
-                    selected !== null && selected !== i ? "opacity-40" : ""
-                  }`}
-                >
-                  <HourColumn hour={hour} peak={peak} index={i} />
-                </button>
-              </li>
-            ))}
-          </ol>
+          <div className="relative">
+            <p aria-live="polite" className="sr-only">
+              {selected === null ? "Hora más activa " : ""}
+              {hourLabel(shown.hour)}
+            </p>
+            {/* At rest a lone flame marks the busiest hour; it fades while another hour is shown. */}
+            <span
+              aria-hidden="true"
+              className="animate-rise pointer-events-none absolute z-10 -translate-x-1/2"
+              style={
+                {
+                  ...floatOver(peakIndex),
+                  "--delay": "600ms",
+                } as CSSProperties
+              }
+            >
+              <span
+                className={`block transition-[opacity,scale] duration-200 ${
+                  selected === null ? "" : "scale-75 opacity-0"
+                }`}
+              >
+                <FlameIcon className="size-4" />
+              </span>
+            </span>
+            {/* The hovered hour's time pops in over its column; keyed by the column so each new one animates in instead of moving across. */}
+            {active && (
+              <span
+                key={shownIndex}
+                aria-hidden="true"
+                className="pointer-events-none absolute z-10 -translate-x-1/2"
+                style={floatOver(shownIndex)}
+              >
+                <span className="tabular animate-rise block whitespace-nowrap rounded-full border border-line/80 bg-raised/70 px-2 py-0.5 text-[0.75rem] font-semibold leading-4 text-accent shadow-[0_6px_16px_-6px_rgb(0_0_0/0.25)] backdrop-blur-md">
+                  {hourLabel(active.hour)}
+                </span>
+              </span>
+            )}
+            <ol
+              aria-label="Cambios por hora"
+              className="flex h-32 items-end gap-1 border-b border-line"
+            >
+              {hours.map((hour, i) => (
+                <li key={hour.hour} className="h-full min-w-0 flex-1">
+                  <button
+                    type="button"
+                    aria-label={`${hourLabel(hour.hour)}: ${changesLabel(hour.total)}`}
+                    onClick={() => setSelected(hour.total > 0 ? i : null)}
+                    onFocus={() => setSelected(hour.total > 0 ? i : null)}
+                    onMouseEnter={() => setSelected(hour.total > 0 ? i : null)}
+                    onMouseLeave={() => setSelected(null)}
+                    className={`pointer-events-none flex h-full w-full items-end justify-center rounded-t-md outline-offset-2 transition-opacity focus-visible:outline-2 focus-visible:outline-accent ${
+                      selected !== null && selected !== i ? "opacity-40" : ""
+                    }`}
+                  >
+                    <HourColumn hour={hour} peak={peak} index={i} />
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </div>
           <ol aria-hidden="true" className="mt-2 flex gap-1">
             {hours.map((hour, i) => (
               <li
@@ -187,18 +236,23 @@ export function TodayActivity({
             ))}
           </ol>
         </div>
-
-        <p
-          aria-live="polite"
-          className="tabular mt-4 min-h-4.5 text-meta text-muted"
-        >
-          <span className="font-semibold text-ink">
-            {selected === null ? "Hora más activa " : ""}
-            {hourLabel(shown.hour)}
-          </span>
-        </p>
       </div>
     </section>
+  );
+}
+
+/** Height in px of one kind's segment within an hour's column. */
+function segmentPx(count: number, peak: number) {
+  return Math.max(SEGMENT_MIN_PX, (count / peak) * BAR_MAX_PX);
+}
+
+/** Height in px of an hour's whole column, 2px gaps between segments included. */
+function columnPx(hour: HourActivity, peak: number) {
+  const kinds = STACK.filter((kind) => hour.counts[kind] > 0);
+  if (kinds.length === 0) return 2;
+  return (
+    kinds.reduce((sum, kind) => sum + segmentPx(hour.counts[kind], peak), 0) +
+    (kinds.length - 1) * 2
   );
 }
 
@@ -232,7 +286,7 @@ function HourColumn({
             key={kind}
             className="block w-full"
             style={{
-              height: `${Math.max(SEGMENT_MIN_PX, (hour.counts[kind] / peak) * BAR_MAX_PX)}px`,
+              height: `${segmentPx(hour.counts[kind], peak)}px`,
               backgroundColor: KIND[kind].color,
             }}
           />
