@@ -144,7 +144,7 @@ function TaskCard({
                 <PriorityChip priority={task.priority} plain />
               </span>
               <span className={REVEAL} style={at(560)}>
-                <DueChip dueDate={task.dueDate} serverNow={serverNow} />
+                <DueChip dueDate={task.dueDate} serverNow={serverNow} plain />
               </span>
             </div>
             <span className={REVEAL} style={at(620)}>

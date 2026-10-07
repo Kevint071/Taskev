@@ -7,6 +7,7 @@ import {
   formatDueDateWithWeekday,
   formatDueRelative,
   formatRelativeTime,
+  formatTimeLeft,
 } from "./format";
 
 const now = new Date("2026-09-16T12:00:00Z");
@@ -85,4 +86,16 @@ test("formatDueDateForTaskChip: other days show only the formatted date", () => 
     formatDueDateForTaskChip(date, localNoon),
     formatDueDateWithWeekday(date),
   );
+});
+
+test("formatTimeLeft: hours and minutes, dropping whichever is zero", () => {
+  assert.equal(formatTimeLeft(5 * 60 + 30), "quedan 5 h 30 min");
+  assert.equal(formatTimeLeft(3 * 60), "quedan 3 h");
+  assert.equal(formatTimeLeft(42), "quedan 42 min");
+});
+
+test("formatTimeLeft: only a lone hour or minute takes the singular verb", () => {
+  assert.equal(formatTimeLeft(60), "queda 1 h");
+  assert.equal(formatTimeLeft(1), "queda 1 min");
+  assert.equal(formatTimeLeft(61), "quedan 1 h 1 min");
 });

@@ -2,16 +2,26 @@
 
 import Link from "next/link";
 import { type CSSProperties, useSyncExternalStore } from "react";
-import { ChevronRightIcon } from "@/components/ui/icons";
-import { STATUS_TONE } from "@/components/ui/status-badge";
+import { STATUS_LABELS } from "@/components/group-types";
+import { STATUS_TONE, StatusIcon } from "@/components/ui/status-badge";
 import { taskHref } from "@/lib/back-navigation";
 import type { OverviewTask } from "@/lib/data/repositories/overview";
-import { dueOnDay, startOfDayKey } from "@/lib/today";
-import { PriorityChip, ProgressMeter, StatusChip } from "./task-chips";
+import { formatTimeLeft } from "@/lib/format";
+import { dayClock, dueOnDay, startOfDayKey } from "@/lib/today";
+import { PriorityChip, ProgressMeter } from "./task-chips";
 
-const noopSubscribe = () => () => {};
-
+const MINUTE_MS = 60_000;
 const STEP_MS = 70;
+/** Under this many minutes left, the countdown turns red. */
+const LATE_MINUTES = 180;
+
+// The current minute, ticking while the page is open; null on the server.
+function subscribeMinute(onTick: () => void) {
+  const id = setInterval(onTick, MINUTE_MS / 4);
+  return () => clearInterval(id);
+}
+const minuteSnapshot = () => Math.floor(Date.now() / MINUTE_MS);
+const serverMinute = () => null;
 
 /**
  * The "Vence hoy" list. Which day that is depends on the viewer's clock, so
@@ -20,9 +30,11 @@ const STEP_MS = 70;
  * hydration; the browser then settles the day from its own clock. Renders
  * nothing when no task is due.
  *
- * Each task is a tile with its group, a row of plain status and priority
- * labels, and the progress bar (empty at 0%, so every tile has the same
- * layout).
+ * Above the list, the day as a track: the stretch still left before midnight
+ * is drawn in from the right and the countdown sits at its end, red in the
+ * last hours. Each task is a bare row: its status glyph, title and group, and
+ * on the right its priority and progress. Blocked or paused tasks name their
+ * status, since that is what puts the deadline at risk.
  */
 export function DueTodaySection({
   tasks,
@@ -31,28 +43,34 @@ export function DueTodaySection({
   tasks: OverviewTask[];
   serverToday: number;
 }) {
-  const hydrated = useSyncExternalStore(
-    noopSubscribe,
-    () => true,
-    () => false,
+  const minute = useSyncExternalStore(
+    subscribeMinute,
+    minuteSnapshot,
+    serverMinute,
   );
-  const today = hydrated ? startOfDayKey(new Date()) : serverToday;
+  const now = minute === null ? null : new Date(minute * MINUTE_MS);
+  const today = now ? startOfDayKey(now) : serverToday;
   const due = dueOnDay(tasks, today);
 
   if (due.length === 0) return null;
 
   return (
     <section className="flex min-w-0 flex-col gap-4">
-      <div className="flex items-center gap-2.5">
-        <h2 className="text-section font-semibold">Vence hoy</h2>
-        <span className="tabular rounded-full bg-accent-soft px-2 py-0.5 text-meta font-semibold text-accent">
+      <h2 className="text-section font-semibold">
+        Vence hoy
+        <span className="tabular ml-2 font-medium text-muted">
           {due.length}
         </span>
-      </div>
-      <ul className="grid gap-3 md:grid-cols-2">
+      </h2>
+
+      <DayTrack now={now} />
+
+      <ul className="-mx-3 flex flex-col gap-0.5">
         {due.map((task, i) => {
           const tone = STATUS_TONE[task.status];
-          const delay = i * STEP_MS;
+          const delay = 240 + i * STEP_MS;
+          const atRisk =
+            task.status === "bloqueada" || task.status === "pausada";
           return (
             <li
               key={task.id}
@@ -61,32 +79,43 @@ export function DueTodaySection({
             >
               <Link
                 href={taskHref(task.groupId, task.id, "hoy")}
-                style={{ "--tone": tone } as CSSProperties}
-                className="group/tile relative flex h-full min-w-0 flex-col gap-3 rounded-xl border border-line bg-raised p-4 shadow-panel transition-[translate,scale,background-color,border-color,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--tone)_50%,var(--line))] hover:bg-sunken hover:shadow-[0_10px_24px_-16px_color-mix(in_srgb,var(--ink)_55%,transparent)] active:scale-[0.99]"
+                className="group/row grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 rounded-lg px-3 py-2.5 transition-colors duration-200 hover:bg-raised active:bg-sunken"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 flex-col gap-0.5">
-                    <p className="min-w-0 truncate text-meta text-muted">
-                      {task.groupName}
-                    </p>
-                    <p className="line-clamp-2 wrap-break-word text-body font-medium">
-                      {task.title}
-                    </p>
-                  </div>
-                  <ChevronRightIcon className="mt-1 size-4 shrink-0 text-muted transition-transform duration-300 group-hover/tile:translate-x-1 group-hover/tile:text-accent" />
+                <StatusIcon
+                  status={task.status}
+                  progressPct={task.progressPct}
+                  className="mt-1.25 size-4"
+                />
+
+                <div className="flex min-w-0 flex-col">
+                  <p className="line-clamp-2 wrap-break-word text-body font-medium transition-colors group-hover/row:text-accent">
+                    {task.title}
+                  </p>
+                  <p className="flex min-w-0 items-center gap-3 text-meta text-muted">
+                    <span className="min-w-0 truncate">{task.groupName}</span>
+                    {atRisk && (
+                      <span
+                        className="shrink-0 font-medium"
+                        style={{ color: tone }}
+                      >
+                        {STATUS_LABELS[task.status]}
+                      </span>
+                    )}
+                  </p>
                 </div>
 
-                <div className="mt-auto flex flex-col gap-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <StatusChip status={task.status} plain />
-                    <PriorityChip priority={task.priority} plain />
+                <div className="mt-0.5 flex items-center gap-4">
+                  <PriorityChip priority={task.priority} plain />
+                  <div className="hidden w-28 sm:block">
+                    <ProgressMeter
+                      pct={task.progressPct}
+                      tone={tone}
+                      delay={delay + 320}
+                    />
                   </div>
-
-                  <ProgressMeter
-                    pct={task.progressPct}
-                    tone={tone}
-                    delay={delay + 320}
-                  />
+                  <span className="tabular w-9 text-right text-meta text-muted sm:hidden">
+                    {task.progressPct}%
+                  </span>
                 </div>
               </Link>
             </li>
@@ -94,5 +123,54 @@ export function DueTodaySection({
         })}
       </ul>
     </section>
+  );
+}
+
+/**
+ * Today from midnight to midnight, with what's left of it in the accent (red
+ * once under `LATE_MINUTES`) and a marker at the current minute. Until the
+ * browser's clock is known it holds its height empty, so nothing jumps.
+ */
+function DayTrack({ now }: { now: Date | null }) {
+  if (!now) return <div aria-hidden="true" className="h-5" />;
+
+  const { minutesLeft, elapsedPct } = dayClock(now);
+  const color = minutesLeft < LATE_MINUTES ? "var(--danger)" : "var(--accent)";
+  const label = formatTimeLeft(minutesLeft);
+
+  return (
+    <div className="flex h-5 items-center gap-3">
+      <span
+        aria-hidden="true"
+        className="relative h-1 flex-1 rounded-full bg-line"
+      >
+        <span
+          className="animate-bar-fill absolute inset-y-0 right-0 rounded-full"
+          style={
+            {
+              left: `${elapsedPct}%`,
+              backgroundColor: color,
+              transformOrigin: "right",
+            } as CSSProperties
+          }
+        />
+        <span
+          className="animate-node-pop absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface"
+          style={
+            {
+              left: `${elapsedPct}%`,
+              backgroundColor: color,
+              "--delay": "600ms",
+            } as CSSProperties
+          }
+        />
+      </span>
+      <span
+        className="tabular shrink-0 text-meta font-semibold"
+        style={{ color }}
+      >
+        {label}
+      </span>
+    </div>
   );
 }

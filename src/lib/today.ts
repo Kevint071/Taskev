@@ -30,6 +30,29 @@ export function startOfDayKey(now: Date): number {
   return Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
+export type DayClock = {
+  /** Whole minutes until the viewer's next midnight, rounded up (never 0 before it). */
+  minutesLeft: number;
+  /** How far through the viewer's day `now` is, 0 to 100. */
+  elapsedPct: number;
+};
+
+/**
+ * Where `now` sits in the viewer's local day. Midnights come from the local
+ * calendar rather than a fixed 24 h, so days with a DST shift keep their
+ * real length.
+ */
+export function dayClock(now: Date): DayClock {
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const length = end.getTime() - start.getTime();
+  const elapsed = now.getTime() - start.getTime();
+  return {
+    minutesLeft: Math.ceil((length - elapsed) / 60_000),
+    elapsedPct: (elapsed / length) * 100,
+  };
+}
+
 /**
  * Splits tasks into the "Hoy" sections. `top` holds the workable open tasks
  * (not blocked or paused) with the highest relevance, up to `topLimit`, ties

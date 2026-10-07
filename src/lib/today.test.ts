@@ -4,6 +4,7 @@ import {
   buildTodayMetrics,
   buildTodaySections,
   buildWeekActivity,
+  dayClock,
   dueAroundDay,
   dueOnDay,
   type TodayTask,
@@ -350,4 +351,21 @@ test("dueAroundDay keeps open tasks due within a day either side", () => {
     dueAroundDay(tasks, Date.UTC(2026, 8, 26)).map((t) => t.id),
     ["yesterday", "today", "tomorrow"],
   );
+});
+
+test("dayClock: counts the minutes left until the viewer's midnight", () => {
+  const clock = dayClock(new Date(2026, 9, 6, 18, 30));
+  assert.equal(clock.minutesLeft, 5 * 60 + 30);
+  assert.equal(Math.round(clock.elapsedPct), 77);
+});
+
+test("dayClock: right after midnight the whole day is left", () => {
+  const clock = dayClock(new Date(2026, 9, 6, 0, 0));
+  assert.equal(clock.minutesLeft, 24 * 60);
+  assert.equal(clock.elapsedPct, 0);
+});
+
+test("dayClock: the last seconds of the day still count one minute left", () => {
+  const clock = dayClock(new Date(2026, 9, 6, 23, 59, 30));
+  assert.equal(clock.minutesLeft, 1);
 });

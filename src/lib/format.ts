@@ -149,3 +149,13 @@ export function isOverdue(iso: string | Date, now = new Date()): boolean {
   const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   return due.getTime() < today;
 }
+
+/** "quedan 5 h 30 min", "queda 1 h": time left, singular only for a lone hour or minute. */
+export function formatTimeLeft(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  const parts = [hours > 0 ? `${hours} h` : "", rest > 0 ? `${rest} min` : ""];
+  const amount = parts.filter(Boolean).join(" ");
+  const single = minutes === 60 || minutes === 1;
+  return `${single ? "queda" : "quedan"} ${amount}`;
+}
