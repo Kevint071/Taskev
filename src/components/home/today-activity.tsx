@@ -217,10 +217,7 @@ export function TodayActivity({
               ) : null,
             )}
             {/* Columns are spaced by padding, not a gap, so one rolling out of the window collapses all the way. */}
-            <ol
-              aria-label="Cambios por hora"
-              className="-mx-0.5 flex h-32 items-end"
-            >
+            <ol aria-label="Cambios por hora" className="flex h-32 items-end">
               {columns.map(({ hour, roll }, i) => {
                 const select = () =>
                   setSelected(hour.total > 0 ? hour.hour : null);
@@ -255,7 +252,7 @@ export function TodayActivity({
               })}
             </ol>
           </div>
-          <ol aria-hidden="true" className="-mx-0.5 mt-2 flex">
+          <ol aria-hidden="true" className="mt-2 flex">
             {columns.map(({ hour, roll }) => {
               const isNow = hour === hours[hours.length - 1];
               return (
