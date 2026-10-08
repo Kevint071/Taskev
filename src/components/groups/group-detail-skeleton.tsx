@@ -58,26 +58,8 @@ export function GroupDetailSkeleton() {
         aria-hidden="true"
         className="-mt-4 flex flex-col gap-4 md:mt-0 md:gap-5"
       >
-        <div className="relative flex w-full gap-1 border-b border-line md:gap-2">
-          {TABS.map((width) => (
-            <div
-              key={width}
-              className="flex h-11 min-w-0 flex-auto items-center justify-center md:h-12 md:flex-none"
-            >
-              <div className="flex items-center gap-2 px-2 py-1.5 md:px-2.5">
-                <Bone className="hidden size-4 rounded-sm md:block" />
-                <Bone className={`h-3.5 rounded-sm ${width}`} />
-                <Bone className="hidden h-5 w-6 rounded-full md:block" />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <ul className={FLAT_TASK_LIST}>
-          {ROWS.map((row) => (
-            <SkeletonRow key={`${row.title}-${row.meta}-${row.due}`} {...row} />
-          ))}
-        </ul>
+        <TaskTabsSkeleton widths={TABS} />
+        <TaskListSkeleton />
       </div>
 
       {/* Room so the floating button never covers the last row, and the
@@ -85,6 +67,37 @@ export function GroupDetailSkeleton() {
       <div aria-hidden="true" className="h-1 md:hidden" />
       <Bone className="fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-10 size-14 rounded-full md:hidden" />
     </div>
+  );
+}
+
+/** Placeholder for TaskViewTabs; `widths` sizes each tab's label. */
+export function TaskTabsSkeleton({ widths }: { widths: string[] }) {
+  return (
+    <div className="relative flex w-full gap-1 border-b border-line md:gap-2">
+      {widths.map((width) => (
+        <div
+          key={width}
+          className="flex h-11 min-w-0 flex-auto items-center justify-center md:h-12 md:flex-none"
+        >
+          <div className="flex items-center gap-2 px-2 py-1.5 md:px-2.5">
+            <Bone className="hidden size-4 rounded-sm md:block" />
+            <Bone className={`h-3.5 rounded-sm ${width}`} />
+            <Bone className="hidden h-5 w-6 rounded-full md:block" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Placeholder for a `FLAT_TASK_LIST` of task rows. */
+export function TaskListSkeleton() {
+  return (
+    <ul className={FLAT_TASK_LIST}>
+      {ROWS.map((row) => (
+        <SkeletonRow key={`${row.title}-${row.meta}-${row.due}`} {...row} />
+      ))}
+    </ul>
   );
 }
 

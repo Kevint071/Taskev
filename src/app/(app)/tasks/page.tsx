@@ -11,10 +11,11 @@ import {
   GlobalTaskList,
   type GlobalTaskView,
 } from "@/components/tasks/global-task-list";
+import { GlobalTasksSkeleton } from "@/components/tasks/global-tasks-skeleton";
 import { TaskToolbar } from "@/components/tasks/task-toolbar";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { CalendarIcon, CheckIcon } from "@/components/ui/icons";
-import { EmptyState, LoadingRows, PageHeader } from "@/components/ui/panel";
+import { EmptyState, PageHeader } from "@/components/ui/panel";
 import { handleUnauthenticated } from "@/lib/api-client";
 import {
   ALL_GROUPS,
@@ -92,24 +93,21 @@ export default function GlobalTasksPage() {
       buckets.find((bucket) => bucket.key === "completadas")?.tasks ?? [],
   };
 
+  // First load: one skeleton for the whole page, so nothing shows ahead of the rest.
+  if (tasks === null) return <GlobalTasksSkeleton />;
+
   return (
     <>
       <PageHeader
         title="Tareas"
-        description={
-          tasks
-            ? `${tasks.length} tarea${tasks.length === 1 ? "" : "s"}${
-                overdueCount > 0
-                  ? `, ${overdueCount} vencida${overdueCount === 1 ? "" : "s"}`
-                  : ""
-              }`
-            : undefined
-        }
+        description={`${tasks.length} tarea${tasks.length === 1 ? "" : "s"}${
+          overdueCount > 0
+            ? `, ${overdueCount} vencida${overdueCount === 1 ? "" : "s"}`
+            : ""
+        }`}
       />
 
-      {tasks === null ? (
-        <LoadingRows rows={5} />
-      ) : tasks.length === 0 ? (
+      {tasks.length === 0 ? (
         <EmptyState
           title="Todavía no tienes tareas"
           description="Las tareas viven dentro de un grupo. Crea uno y añade la primera."
