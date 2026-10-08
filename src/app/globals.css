@@ -363,6 +363,32 @@
     backwards;
 }
 
+/* "Hoy" activity: when the clock rolls into a new hour, its column widens in
+   while the one leaving the window collapses, so the rest glide over. */
+@keyframes roll-in {
+  from {
+    flex-grow: 0;
+    padding-inline: 0;
+    opacity: 0;
+  }
+}
+
+@utility animate-roll-in {
+  animation: roll-in 600ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes roll-out {
+  to {
+    flex-grow: 0;
+    padding-inline: 0;
+    opacity: 0;
+  }
+}
+
+@utility animate-roll-out {
+  animation: roll-out 600ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 /* "Hoy" priorities: the thread draws down to the next node, each node pops in,
    the first one sends out a slow ping, and a progress fill grows from the left. */
 @keyframes thread-draw {

@@ -1,7 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { type CSSProperties, useState, useSyncExternalStore } from "react";
+import {
+  type CSSProperties,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { CHIPS } from "@/components/activity/activity-summary";
 import { ArrowRightIcon, FlameIcon } from "@/components/ui/icons";
 import {
@@ -12,7 +17,21 @@ import {
 } from "@/lib/activity";
 import { useStickyCounts } from "./use-sticky-counts";
 
-const noopSubscribe = () => () => {};
+const MINUTE_MS = 60_000;
+
+// The current minute, ticking while the page is open; null on the server.
+function subscribeMinute(onTick: () => void) {
+  const id = setInterval(onTick, MINUTE_MS / 4);
+  return () => clearInterval(id);
+}
+const minuteSnapshot = () => Math.floor(Date.now() / MINUTE_MS);
+const serverMinute = () => null;
+
+/** Length of a roll into a new hour; matches `animate-roll-in`/`-out`. */
+const ROLL_MS = 600;
+/** Moves the floating marks along with the columns as the chart rolls. */
+const ROLL_TRANSITION =
+  "transition-[left,bottom] duration-600 ease-[cubic-bezier(0.22,1,0.36,1)]";
 
 /** Height in px of the tallest column; the others scale against the busiest hour. */
 const BAR_MAX_PX = 88;
@@ -56,25 +75,27 @@ export function TodayActivity({
   serverNow: string;
   timeZone?: string;
 }) {
-  const hydrated = useSyncExternalStore(
-    noopSubscribe,
-    () => true,
-    () => false,
+  const minute = useSyncExternalStore(
+    subscribeMinute,
+    minuteSnapshot,
+    serverMinute,
   );
+  // The selected hour of day, not its index, so it stays put as the chart rolls.
   const [selected, setSelected] = useState<number | null>(null);
 
   const hours = hourlyActivity(
     events.map((e) => ({ at: new Date(e.at), kind: e.kind })),
-    hydrated ? new Date() : new Date(serverNow),
-    hydrated ? undefined : timeZone,
+    minute === null ? new Date(serverNow) : new Date(minute * MINUTE_MS),
+    minute === null ? timeZone : undefined,
   );
+  const columns = useRollingHours(hours);
   const peak = Math.max(...hours.map((h) => h.total));
   const peakIndex = hours.findIndex((h) => h.total === peak);
-  const shownIndex =
-    selected !== null && hours[selected] ? selected : peakIndex;
+  const selectedIndex = hours.findIndex((h) => h.hour === selected);
+  const shownIndex = selectedIndex === -1 ? peakIndex : selectedIndex;
   const shown = hours[shownIndex];
   // The breakdown up top follows the selected hour, else the whole day.
-  const active = selected === null ? null : (hours[selected] ?? null);
+  const active = selectedIndex === -1 ? null : hours[selectedIndex];
   const counts = active ? active.counts : summary;
   const shownCounts = useStickyCounts<ActivityKind>(counts);
   const labelEvery = hours.length <= ALL_LABELS_UP_TO ? 1 : 3;
@@ -150,15 +171,15 @@ export function TodayActivity({
           onMouseLeave={() => setSelected(null)}
           role="presentation"
         >
-          <div className="relative">
+          <div className="relative border-b border-line">
             <p aria-live="polite" className="sr-only">
-              {selected === null ? "Hora más activa " : ""}
+              {active === null ? "Hora más activa " : ""}
               {hourLabel(shown.hour)}
             </p>
             {/* At rest a lone flame marks the busiest hour; it fades while another hour is shown. */}
             <span
               aria-hidden="true"
-              className="animate-rise pointer-events-none absolute z-10 -translate-x-1/2"
+              className={`animate-rise pointer-events-none absolute z-10 -translate-x-1/2 ${ROLL_TRANSITION}`}
               style={
                 {
                   ...floatOver(peakIndex),
@@ -168,7 +189,7 @@ export function TodayActivity({
             >
               <span
                 className={`block transition-[opacity,scale] duration-200 ${
-                  selected === null ? "" : "scale-75 opacity-0"
+                  active === null ? "" : "scale-75 opacity-0"
                 }`}
               >
                 <FlameIcon className="size-4" />
@@ -180,12 +201,14 @@ export function TodayActivity({
                 <span
                   key={hour.hour}
                   aria-hidden="true"
-                  className="pointer-events-none absolute z-10 -translate-x-1/2"
+                  className={`pointer-events-none absolute z-10 -translate-x-1/2 ${ROLL_TRANSITION}`}
                   style={floatOver(i)}
                 >
                   <span
                     className={`tabular block whitespace-nowrap text-[0.75rem] font-semibold leading-4 text-accent transition-[opacity,translate,scale] duration-200 ease-out ${
-                      selected === i ? "" : "translate-y-1 scale-90 opacity-0"
+                      selectedIndex === i
+                        ? ""
+                        : "translate-y-1 scale-90 opacity-0"
                     }`}
                   >
                     {hourLabel(hour.hour)}
@@ -193,49 +216,114 @@ export function TodayActivity({
                 </span>
               ) : null,
             )}
+            {/* Columns are spaced by padding, not a gap, so one rolling out of the window collapses all the way. */}
             <ol
               aria-label="Cambios por hora"
-              className="flex h-32 items-end gap-1 border-b border-line"
+              className="-mx-0.5 flex h-32 items-end"
             >
-              {hours.map((hour, i) => (
-                <li key={hour.hour} className="h-full min-w-0 flex-1">
-                  <button
-                    type="button"
-                    aria-label={`${hourLabel(hour.hour)}: ${changesLabel(hour.total)}`}
-                    onClick={() => setSelected(hour.total > 0 ? i : null)}
-                    onFocus={() => setSelected(hour.total > 0 ? i : null)}
-                    onMouseEnter={() => setSelected(hour.total > 0 ? i : null)}
-                    onMouseLeave={() => setSelected(null)}
-                    className={`pointer-events-none flex h-full w-full items-end justify-center rounded-t-md outline-offset-2 transition-opacity focus-visible:outline-2 focus-visible:outline-accent ${
-                      selected !== null && selected !== i ? "opacity-40" : ""
-                    }`}
+              {columns.map(({ hour, roll }, i) => {
+                const select = () =>
+                  setSelected(hour.total > 0 ? hour.hour : null);
+                return (
+                  <li
+                    key={hour.hour}
+                    inert={roll === "out"}
+                    className={`h-full min-w-0 flex-1 px-0.5 ${ROLL_CLASS[roll]}`}
                   >
-                    <HourColumn hour={hour} peak={peak} index={i} />
-                  </button>
-                </li>
-              ))}
+                    <button
+                      type="button"
+                      aria-label={`${hourLabel(hour.hour)}: ${changesLabel(hour.total)}`}
+                      onClick={select}
+                      onFocus={select}
+                      onMouseEnter={select}
+                      onMouseLeave={() => setSelected(null)}
+                      className={`pointer-events-none flex h-full w-full items-end justify-center rounded-t-md outline-offset-2 transition-opacity focus-visible:outline-2 focus-visible:outline-accent ${
+                        active !== null && active.hour !== hour.hour
+                          ? "opacity-40"
+                          : ""
+                      }`}
+                    >
+                      {/* A column rolling out keeps its scale, even if it held the old peak. */}
+                      <HourColumn
+                        hour={hour}
+                        peak={Math.max(peak, hour.total)}
+                        index={i}
+                      />
+                    </button>
+                  </li>
+                );
+              })}
             </ol>
           </div>
-          <ol aria-hidden="true" className="mt-2 flex gap-1">
-            {hours.map((hour, i) => (
-              <li
-                key={hour.hour}
-                className={`min-w-0 flex-1 whitespace-nowrap text-center text-[0.75rem] leading-none ${
-                  i === hours.length - 1
-                    ? "font-semibold text-ink"
-                    : "text-muted"
-                }`}
-              >
-                {hour.hour % labelEvery === 0 || i === hours.length - 1
-                  ? `${hour.hour}h`
-                  : ""}
-              </li>
-            ))}
+          <ol aria-hidden="true" className="-mx-0.5 mt-2 flex">
+            {columns.map(({ hour, roll }) => {
+              const isNow = hour === hours[hours.length - 1];
+              return (
+                <li
+                  key={hour.hour}
+                  className={`min-w-0 flex-1 whitespace-nowrap px-0.5 text-center text-[0.75rem] leading-none ${ROLL_CLASS[roll]} ${
+                    isNow ? "font-semibold text-ink" : "text-muted"
+                  }`}
+                >
+                  {hour.hour % labelEvery === 0 || isNow ? `${hour.hour}h` : ""}
+                </li>
+              );
+            })}
           </ol>
         </div>
       </div>
     </section>
   );
+}
+
+type Roll = "in" | "out" | "none";
+
+const ROLL_CLASS: Record<Roll, string> = {
+  in: "animate-roll-in overflow-hidden",
+  out: "animate-roll-out overflow-hidden",
+  none: "",
+};
+
+/**
+ * The chart's hours, each tagged with how it is rolling. When the window
+ * moves to a new hour, the hours that left it stay mounted for one roll so
+ * they can collapse while the new ones widen in, instead of every column
+ * jumping to its new width at once.
+ */
+function useRollingHours(
+  hours: HourActivity[],
+): { hour: HourActivity; roll: Roll }[] {
+  const key = hours.map((h) => h.hour).join();
+  const [prev, setPrev] = useState({ key, hours });
+  const [leaving, setLeaving] = useState<HourActivity[]>([]);
+  const [entering, setEntering] = useState<number[]>([]);
+
+  // Adjusts state while rendering, so the first frame of a new hour already
+  // has the old columns to collapse.
+  if (prev.key !== key) {
+    const before = new Set(prev.hours.map((h) => h.hour));
+    const after = new Set(hours.map((h) => h.hour));
+    setPrev({ key, hours });
+    setLeaving(prev.hours.filter((h) => !after.has(h.hour)));
+    setEntering(hours.filter((h) => !before.has(h.hour)).map((h) => h.hour));
+  }
+
+  useEffect(() => {
+    if (leaving.length === 0 && entering.length === 0) return;
+    const id = setTimeout(() => {
+      setLeaving([]);
+      setEntering([]);
+    }, ROLL_MS);
+    return () => clearTimeout(id);
+  }, [leaving, entering]);
+
+  return [
+    ...leaving.map((hour) => ({ hour, roll: "out" as const })),
+    ...hours.map((hour) => ({
+      hour,
+      roll: entering.includes(hour.hour) ? ("in" as const) : ("none" as const),
+    })),
+  ].sort((a, b) => a.hour.hour - b.hour.hour);
 }
 
 /** Height in px of one kind's segment within an hour's column. */
@@ -281,7 +369,7 @@ function HourColumn({
         hour.counts[kind] > 0 ? (
           <span
             key={kind}
-            className="block w-full"
+            className="block w-full transition-[height] duration-600 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{
               height: `${segmentPx(hour.counts[kind], peak)}px`,
               backgroundColor: KIND[kind].color,
