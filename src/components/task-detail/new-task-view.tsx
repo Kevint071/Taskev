@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { TrashIcon } from "@/components/ui/icons";
 import { STATUS_TONE } from "@/components/ui/status-badge";
 import { Toast } from "@/components/ui/toast";
 import { MAX_TASK_TITLE_LENGTH } from "@/lib/constraints";
@@ -177,6 +179,17 @@ export function NewTaskView({
         onProgressChange={form.changeProgress}
         onPickCompletion={saveCompletion}
         onMarkComplete={() => sheet.show("completion")}
+      />
+
+      <ConfirmDialog
+        open={form.guard.asking}
+        layout="compact"
+        icon={<TrashIcon className="size-4" />}
+        title="¿Descartar esta tarea?"
+        description="Todavía no se ha creado. Si sales ahora, perderás lo que llevas."
+        confirmLabel="Descartar"
+        onConfirm={form.guard.discard}
+        onClose={form.guard.stay}
       />
 
       <Toast toast={form.toast} onDismiss={form.dismissToast} />

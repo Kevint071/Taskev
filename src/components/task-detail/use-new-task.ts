@@ -1,4 +1,3 @@
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Task } from "@/components/group-types";
 import type { ToastState, ToastTone } from "@/components/ui/toast";
@@ -7,6 +6,7 @@ import { groupTaskViewHref, groupTaskViewOf } from "@/lib/group-task-views";
 import { PROGRESS_MAX } from "@/lib/progress";
 import { ApiError, sendJson } from "@/lib/sync-queue";
 import { unpinOnCompletion } from "@/lib/task-input";
+import { useLeaveGuard } from "./use-leave-guard";
 
 export type Draft = {
   title: string;
@@ -30,14 +30,24 @@ const EMPTY_DRAFT: Draft = {
   pinnedToday: false,
 };
 
+/** Whether the draft holds anything worth asking about before dropping it. */
+function hasChanges(draft: Draft): boolean {
+  return (Object.keys(EMPTY_DRAFT) as (keyof Draft)[]).some((key) => {
+    const value = draft[key];
+    return (
+      (typeof value === "string" ? value.trim() : value) !== EMPTY_DRAFT[key]
+    );
+  });
+}
+
 /** The local form state of a task that does not exist yet, and its creation. */
 export function useNewTask(groupId: string) {
-  const router = useRouter();
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
 
   const canSave = draft.title.trim() !== "" && !saving;
+  const guard = useLeaveGuard(hasChanges(draft));
 
   function showToast(message: string, tone: ToastTone = "warning") {
     setToast({ id: Date.now(), message, tone });
@@ -76,7 +86,7 @@ export function useNewTask(groupId: string) {
       });
       // Land on the tab the new task falls into; replace so going back from
       // the group doesn't reopen an empty form.
-      router.replace(groupTaskViewHref(groupId, groupTaskViewOf(draft)));
+      guard.leave(groupTaskViewHref(groupId, groupTaskViewOf(draft)));
     } catch (err) {
       setSaving(false);
       if (err instanceof ApiError && err.status === 401) {
@@ -97,6 +107,7 @@ export function useNewTask(groupId: string) {
     saving,
     canSave,
     toast,
+    guard,
     showToast,
     dismissToast: () => setToast(null),
     update,
