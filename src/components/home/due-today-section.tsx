@@ -2,18 +2,15 @@
 
 import Link from "next/link";
 import { type CSSProperties, useSyncExternalStore } from "react";
-import { STATUS_LABELS } from "@/components/group-types";
-import { STATUS_TONE, StatusIcon } from "@/components/ui/status-badge";
+import { ChevronRightIcon } from "@/components/ui/icons";
+import { STATUS_TONE } from "@/components/ui/status-badge";
 import { taskHref } from "@/lib/back-navigation";
 import type { OverviewTask } from "@/lib/data/repositories/overview";
-import { formatTimeLeft } from "@/lib/format";
-import { dayClock, dueOnDay, startOfDayKey } from "@/lib/today";
-import { PriorityChip, ProgressMeter } from "./task-chips";
+import { dueOnDay, startOfDayKey } from "@/lib/today";
+import { PriorityChip, ProgressDial, StatusChip } from "./task-chips";
 
 const MINUTE_MS = 60_000;
 const STEP_MS = 70;
-/** Under this many minutes left, the countdown turns red. */
-const LATE_MINUTES = 180;
 
 // The current minute, ticking while the page is open; null on the server.
 function subscribeMinute(onTick: () => void) {
@@ -30,11 +27,9 @@ const serverMinute = () => null;
  * hydration; the browser then settles the day from its own clock. Renders
  * nothing when no task is due.
  *
- * Above the list, the day as a track: the stretch still left before midnight
- * is drawn in from the right and the countdown sits at its end, red in the
- * last hours. Each task is a bare row: its status glyph, title and group, and
- * on the right its priority and progress. Blocked or paused tasks name their
- * status, since that is what puts the deadline at risk.
+ * The tasks are rows in one panel, styled like the `lg` rows of `TopTasks`
+ * minus the rank: a status stripe, the title over a line with group, status
+ * and priority, and a progress ring on the right.
  */
 export function DueTodaySection({
   tasks,
@@ -63,59 +58,45 @@ export function DueTodaySection({
         </span>
       </h2>
 
-      <DayTrack now={now} />
-
-      <ul className="-mx-3 flex flex-col gap-0.5">
+      <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-raised shadow-panel">
         {due.map((task, i) => {
           const tone = STATUS_TONE[task.status];
           const delay = 240 + i * STEP_MS;
-          const atRisk =
-            task.status === "bloqueada" || task.status === "pausada";
           return (
-            <li
-              key={task.id}
-              className="animate-rise min-w-0"
-              style={{ "--delay": `${delay}ms` } as CSSProperties}
-            >
+            <li key={task.id} className="min-w-0">
               <Link
                 href={taskHref(task.groupId, task.id, "hoy")}
-                className="group/row grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 rounded-lg px-3 py-2.5 transition-colors duration-200 hover:bg-raised active:bg-sunken"
+                style={
+                  { "--tone": tone, "--delay": `${delay}ms` } as CSSProperties
+                }
+                className="animate-rise group/card relative grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 px-5 py-3.5 transition-colors duration-300 ease-out hover:bg-sunken"
               >
-                <StatusIcon
-                  status={task.status}
-                  progressPct={task.progressPct}
-                  className="mt-1.25 size-4"
+                {/* The status color as a stripe that draws itself down the left edge. */}
+                <span
+                  aria-hidden="true"
+                  className="animate-grow-y absolute inset-y-3 left-0 w-1 rounded-r-full bg-(--tone)"
+                  style={{ "--delay": `${delay + 200}ms` } as CSSProperties}
                 />
 
-                <div className="flex min-w-0 flex-col">
-                  <p className="line-clamp-2 wrap-break-word text-body font-medium transition-colors group-hover/row:text-accent">
-                    {task.title}
+                <p className="col-start-1 row-start-1 min-w-0 truncate text-[0.9375rem] font-semibold leading-6">
+                  {task.title}
+                </p>
+
+                <div className="col-start-1 row-start-2 flex min-w-0 flex-wrap items-center gap-2">
+                  <p className="max-w-44 truncate pr-1 text-meta text-muted">
+                    {task.groupName}
                   </p>
-                  <p className="flex min-w-0 items-center gap-3 text-meta text-muted">
-                    <span className="min-w-0 truncate">{task.groupName}</span>
-                    {atRisk && (
-                      <span
-                        className="shrink-0 font-medium"
-                        style={{ color: tone }}
-                      >
-                        {STATUS_LABELS[task.status]}
-                      </span>
-                    )}
-                  </p>
+                  <StatusChip status={task.status} plain />
+                  <PriorityChip priority={task.priority} plain />
                 </div>
 
-                <div className="mt-0.5 flex items-center gap-4">
-                  <PriorityChip priority={task.priority} plain />
-                  <div className="hidden w-28 sm:block">
-                    <ProgressMeter
-                      pct={task.progressPct}
-                      tone={tone}
-                      delay={delay + 320}
-                    />
-                  </div>
-                  <span className="tabular w-9 text-right text-meta text-muted sm:hidden">
-                    {task.progressPct}%
-                  </span>
+                <div className="col-start-2 row-span-2 row-start-1 flex items-center gap-3">
+                  <ProgressDial
+                    pct={task.progressPct}
+                    tone={tone}
+                    delay={delay + 320}
+                  />
+                  <ChevronRightIcon className="size-4 shrink-0 text-muted transition-transform duration-300 group-hover/card:translate-x-1 group-hover/card:text-accent" />
                 </div>
               </Link>
             </li>
@@ -123,54 +104,5 @@ export function DueTodaySection({
         })}
       </ul>
     </section>
-  );
-}
-
-/**
- * Today from midnight to midnight, with what's left of it in the accent (red
- * once under `LATE_MINUTES`) and a marker at the current minute. Until the
- * browser's clock is known it holds its height empty, so nothing jumps.
- */
-function DayTrack({ now }: { now: Date | null }) {
-  if (!now) return <div aria-hidden="true" className="h-5" />;
-
-  const { minutesLeft, elapsedPct } = dayClock(now);
-  const color = minutesLeft < LATE_MINUTES ? "var(--danger)" : "var(--accent)";
-  const label = formatTimeLeft(minutesLeft);
-
-  return (
-    <div className="flex h-5 items-center gap-3">
-      <span
-        aria-hidden="true"
-        className="relative h-1 flex-1 rounded-full bg-line"
-      >
-        <span
-          className="animate-bar-fill absolute inset-y-0 right-0 rounded-full"
-          style={
-            {
-              left: `${elapsedPct}%`,
-              backgroundColor: color,
-              transformOrigin: "right",
-            } as CSSProperties
-          }
-        />
-        <span
-          className="animate-node-pop absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface"
-          style={
-            {
-              left: `${elapsedPct}%`,
-              backgroundColor: color,
-              "--delay": "600ms",
-            } as CSSProperties
-          }
-        />
-      </span>
-      <span
-        className="tabular shrink-0 text-meta font-semibold"
-        style={{ color }}
-      >
-        {label}
-      </span>
-    </div>
   );
 }
